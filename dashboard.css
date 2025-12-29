@@ -1,0 +1,158 @@
+/* ===== RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* ===== BODY ===== */
+body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #ffffff;
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 8%;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(10px);
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: bold;
+    color: #00ffd5;
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px;
+    list-style: none;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: #00ffd5;
+}
+
+/* ===== HERO ===== */
+.hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 80px 8%;
+}
+
+.hero-text {
+    max-width: 600px;
+}
+
+.hero-text h1 {
+    font-size: 42px;
+    margin-bottom: 15px;
+}
+
+.hero-text p {
+    font-size: 16px;
+    opacity: 0.85;
+}
+
+/* ===== FEATURES / DASHBOARD ===== */
+.features {
+    padding: 60px 8%;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 25px;
+}
+
+/* ===== CARD ===== */
+.card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(15px);
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-6px);
+}
+
+/* ===== STATUS TEXT ===== */
+.status-text {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+/* ===== COLORS ===== */
+.safe {
+    color: #00ff9c;
+}
+
+.on {
+    color: #00ffd5;
+}
+
+.stop {
+    color: #ff4d4d;
+}
+
+/* ===== ZONE BORDERS ===== */
+.safe-zone {
+    border-left: 4px solid #00ff9c;
+}
+
+.machine-status {
+    border-left: 4px solid #00ffd5;
+}
+
+.ai-confidence {
+    border-left: 4px solid #ffd700;
+}
+
+.system-action {
+    border-left: 4px solid #ff4d4d;
+}
+
+/* ===== CTA ===== */
+.cta {
+    text-align: center;
+    padding: 80px 8%;
+}
+
+.cta button {
+    padding: 14px 32px;
+    font-size: 16px;
+    border: none;
+    border-radius: 30px;
+    background: #00ffd5;
+    color: #000;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.cta button:hover {
+    transform: scale(1.05);
+}
+
+/* ===== FOOTER ===== */
+footer {
+    text-align: center;
+    padding: 20px;
+    opacity: 0.7;
+}

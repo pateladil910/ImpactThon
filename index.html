@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Safety System</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #profile-name{
+            margin-right: 15px;
+            font-weight: bold;
+            color: white;
+        }
+        .logout-btn{
+            padding: 8px 16px;
+            margin-left: 0px;
+            margin-right: 0px;
+            background-color: #ff4d4d;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+        }
+        .nav-btn{
+            padding: 8px 16px;
+            margin-left: 10px;
+            margin-right: 10px;
+            background-color: #4DE6D6;
+            border: none;
+            border-radius: 10px;
+            color: #08343D;
+            cursor: pointer;
+            text-decoration: none;
+        }s
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="logo">AI Safety</div>
+
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="solution.html">Solution</a></li>
+    <li><a href="dashboard.html">Dashboard</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+
+  <!-- Login / Signup -->
+  <div id="auth-buttons">
+    <a href="auth/login.html" class="nav-btn">Login</a>
+    <a href="auth/signup.html" class="nav-btn">Sign Up</a>
+  </div>
+
+  <!-- Profile / Logout -->
+  <div id="profile-section" style="display:none;">
+    <span id="profile-name" class="profile-name">User</span>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-text">
+        <h1>AI-Based Smart Safety System</h1>
+        <p>
+            Real-time human detection near machines using AI, sensors, and smart alerts.
+            Designed for industrial safety & automation.
+        </p>
+       <div class="hero-actions">
+        <a href="solution.html" class="btn-primary">View Demo</a>
+        <a href="learn-more.html" class="btn-outline" style="color: white; text-decoration: none;">Learn More</a>
+        <a href="setup.html" class="btn-secondary">Get Start</a>
+    </div>    
+</div>
+
+
+    </div>
+
+    <!-- LIVE STATUS CARD -->
+    <div class="hero-card">
+        <h3>Live AI Status</h3>
+
+        <div class="status">
+            <span>Confidence</span>
+            <b>92%</b>
+        </div>
+
+        <div class="status">
+            <span>Response Time</span>
+            <b>0.3s</b>
+        </div>
+
+        <div class="status alert">
+            <span>Action</span>
+            <b>STOP</b>
+        </div>
+
+        <!-- ADDED -->
+        <div class="status">
+            <span>Safety Zone</span>
+            <b class="danger">DANGER</b>
+        </div>
+
+        <div class="status">
+            <span>Machine Status</span>
+            <b class="off">OFF</b>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+    <h2>Why Our System?</h2>
+
+    <div class="feature-grid">
+        <div class="card">
+            <h3>🧠 AI Vision</h3>
+            <p>Detects human presence near machines using YOLO & computer vision.</p>
+        </div>
+
+        <div class="card">
+            <h3>⚡ Real-Time Alerts</h3>
+            <p>Instant alerts and emergency machine stop within milliseconds.</p>
+        </div>
+
+        <div class="card">
+            <h3>📊 Smart Dashboard</h3>
+            <p>Live monitoring dashboard with analytics & confidence scores.</p>
+        </div>
+
+        <div class="card">
+            <h3>🔒 Industrial Ready</h3>
+            <p>Designed for factories, workshops, and high-risk zones.</p>
+        </div>
+    </div>
+</section>
+
+<!-- SAFETY ZONES (ADDED WITHOUT CHANGING LAYOUT) -->
+<section class="features">
+    <h2>Safety Zone Classification</h2>
+
+    <div class="feature-grid">
+        <div class="card safe-zone">
+            <h3>🟢 Safe Zone</h3>
+            <p>No human detected near machine. Normal operation allowed.</p>
+        </div>
+
+        <div class="card warning-zone">
+            <h3>🟡 Warning Zone</h3>
+            <p>Human detected at safe distance. Alert sent to operator.</p>
+        </div>
+
+        <div class="card danger-zone">
+            <h3>🔴 Danger Zone</h3>
+            <p>Human too close to machine. Automatic emergency STOP.</p>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+    <h2>Make Your Workplace Smarter & Safer</h2>
+    <p>Upgrade your safety system with AI-powered automation.</p>
+    <button>Request Access</button>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <p>© 2025 AI Smart Safety System | Built for Real-World Use</p>
+</footer>
+
+<script src="script.js"></script>
+
+</body>
+</html>

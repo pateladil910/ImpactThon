@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Dashboard</title>
+
+    <!-- SAME CSS FILE -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">AI Safety</div>
+    <ul class="nav-links">
+        <li><a href="index.html" style="color: white;">Home</a></li>
+        <li><a href="solution.html">Solution</a></li>
+        <li><a class="active" href="contact.html">Contact</a></li>
+    </ul>
+</nav>
+
+<!-- DASHBOARD HEADER -->
+<section class="hero" style="min-height: auto; padding-bottom: 40px;">
+    <div class="hero-text">
+        <h1>Live Safety Dashboard</h1>
+        <p>
+            Real-time monitoring of human proximity, machine status, and AI-based safety decisions.
+        </p>
+    </div>
+</section>
+
+<!-- DASHBOARD CARDS -->
+<section class="features">
+
+    <div class="feature-grid">
+
+        <!-- SAFETY ZONE -->
+        <div class="card safe-zone">
+            <h3>🛡 Safety Zone</h3>
+            <p class="status-text safe">SAFE</p>
+            <small>Human distance above threshold</small>
+        </div>
+
+        <!-- MACHINE STATUS -->
+        <div class="card machine-status">
+            <h3>⚙ Machine Status</h3>
+            <p class="status-text on">ON</p>
+            <small>Machine running normally</small>
+        </div>
+
+        <!-- AI CONFIDENCE -->
+        <div class="card ai-confidence">
+            <h3>🧠 AI Confidence</h3>
+            <p class="status-text">92%</p>
+            <small>YOLO detection accuracy</small>
+        </div>
+
+        <!-- SYSTEM ACTION -->
+        <div class="card system-action danger">
+            <h3>🚨 System Action</h3>
+            <p class="status-text stop">STOP</p>
+            <small>Emergency stop activated</small>
+        </div>
+
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <p>© 2025 AI Smart Safety System | Live Industrial Monitoring</p>
+</footer>
+
+    <script>
+       if (localStorage.getItem("isLoggedIn") !== "true") {
+          window.location.href = "auth/login.html";
+       }
+    </script>
+
+
+</body>
+</html>

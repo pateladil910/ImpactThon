@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Smart Safety System</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    .hero {
+      height: 100vh;
+      background:
+        linear-gradient(120deg, rgba(0,229,255,0.25), rgba(0,0,0,0.85)),
+        url("ai-bg.jpg");
+      background-size: 200% 200%, cover;
+      background-position: center;
+      animation: liveBg 10s ease infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    @keyframes liveBg {
+      0% {
+        background-position: 0% 50%, center;
+      }
+      50% {
+        background-position: 100% 50%, center;
+      }
+      100% {
+        background-position: 0% 50%, center;
+      }
+    }
+
+    .content {
+      color: white;
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    .content h1 {
+      font-size: 48px;
+      margin-bottom: 15px;
+      text-shadow: 0 0 10px rgba(0,229,255,0.5);
+    }
+
+    .content p {
+      font-size: 18px;
+      color: #b0d7e6;
+      margin-bottom: 25px;
+    }
+
+    .content button {
+      padding: 12px 30px;
+      font-size: 16px;
+      background: #00e5ff;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      color: #000;
+      transition: 0.3s;
+    }
+
+    .content button:hover {
+      background: #00bcd4;
+      transform: scale(1.05);
+    }
+  </style>
+
+</head>
+<body>
+
+  <section class="hero">
+    <div class="content">
+      <h1>AI-Based Smart Safety System</h1>
+      <p>Real-time human detection & automatic machine safety</p>
+      <button>Get Started</button>
+    </div>
+  </section>
+
+</body>
+</html>
