@@ -7,7 +7,11 @@
 
     <!-- SAME CSS FILE -->
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 </head>
+
 <body>
 
 <!-- NAVBAR -->
@@ -38,28 +42,28 @@
         <!-- SAFETY ZONE -->
         <div class="card safe-zone">
             <h3>🛡 Safety Zone</h3>
-            <p class="status-text safe">SAFE</p>
+            <p id="safetyZone" class="status-text safe">SAFE</p>
             <small>Human distance above threshold</small>
         </div>
 
         <!-- MACHINE STATUS -->
         <div class="card machine-status">
             <h3>⚙ Machine Status</h3>
-            <p class="status-text on">ON</p>
+            <p id="machineStatus" class="status-text on">ON</p>
             <small>Machine running normally</small>
         </div>
 
         <!-- AI CONFIDENCE -->
         <div class="card ai-confidence">
             <h3>🧠 AI Confidence</h3>
-            <p class="status-text">92%</p>
+            <p id="aiConfidence" class="status-text">92%</p>
             <small>YOLO detection accuracy</small>
         </div>
 
         <!-- SYSTEM ACTION -->
         <div class="card system-action danger">
             <h3>🚨 System Action</h3>
-            <p class="status-text stop">STOP</p>
+            <p id="systemAction" class="status-text stop">STOP</p>
             <small>Emergency stop activated</small>
         </div>
 
@@ -71,11 +75,53 @@
     <p>© 2025 AI Smart Safety System | Live Industrial Monitoring</p>
 </footer>
 
-    <script>
-       if (localStorage.getItem("isLoggedIn") !== "true") {
-          window.location.href = "auth/login.html";
-       }
-    </script>
+ <script>
+const safetyText  = document.getElementById("safetyZone");
+const machineText = document.getElementById("machineStatus");
+const actionText  = document.getElementById("systemAction");
+const aiText      = document.getElementById("aiConfidence");
+
+async function loadStatus() {
+  try {
+    const res = await fetch("http://localhost:5000/api/status");
+    const data = await res.json();
+
+    if (data.danger === true) {
+      // 🔴 DANGER
+      safetyText.innerText = "DANGER";
+      safetyText.className = "status-text danger";
+
+      machineText.innerText = "OFF";
+      machineText.className = "status-text off";
+
+      actionText.innerText = "STOP";
+      actionText.className = "status-text stop";
+
+      aiText.innerText = data.confidence + "%";
+    } else {
+      // 🟢 SAFE
+      safetyText.innerText = "SAFE";
+      safetyText.className = "status-text safe";
+
+      machineText.innerText = "ON";
+      machineText.className = "status-text on";
+
+      actionText.innerText = "RUNNING";
+      actionText.className = "status-text safe";
+
+      aiText.innerText = data.confidence + "%";
+    }
+
+  } catch (error) {
+    console.error("Dashboard API error:", error);
+  }
+}
+
+// ⏱ refresh every second
+setInterval(loadStatus, 1000);
+loadStatus();
+</script>
+
 
 
 </body>

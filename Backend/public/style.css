@@ -800,3 +800,49 @@ footer {
     background: #facc15;
     color: #332400;
 }
+
+.status-text.danger { color: red; }
+.status-text.safe { color: #00ff88; }
+.status-text.stop { color: red; }
+.status-text.off { color: orange; }
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 30px;
+  background: rgba(10, 30, 40, 0.95);
+
+  z-index: 1000;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: #00ffd5;   /* bright cyan */
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.auth-buttons a {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #00ffd5;
+  color: #002b2b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-buttons a:hover {
+  opacity: 0.85;
+}
