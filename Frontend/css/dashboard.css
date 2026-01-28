@@ -240,7 +240,6 @@ body::-webkit-scrollbar-thumb:hover {
     box-shadow: 0 15px 35px rgba(0, 255, 178, 0.45);
 }
 
-
 table {
     width: 100%;
     margin-top: 20px;
@@ -254,5 +253,41 @@ th, td {
 
 .safe-text { color: #22c55e; }
 .danger-text { color: #ef4444; }
+
+/* Last Detection Card */
+.last-detection-card {
+  background: rgba(22, 40, 46, 0.9);
+  border-radius: 18px;
+  padding: 22px 26px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  border-left: 4px solid #21f3b3;
+  color: #e9fffa;
+  min-height: 120px;
+}
+
+/* Title */
+.last-detection-card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #a9ffe3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Time value */
+.last-detection-card h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #21f3b3;
+  margin: 4px 0 6px 0;
+}
+
+/* Description */
+.last-detection-card p {
+  font-size: 13px;
+  color: #9fb7b1;
+}
 
 /* ================= END OF FILE ================= */

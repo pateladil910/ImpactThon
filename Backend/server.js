@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const detectionRoutes = require("./routes/detection");
 
 const app = express();
 
@@ -9,6 +10,7 @@ app.use(express.json());
 
 // ✅ SERVE PUBLIC FOLDER (THIS LINE IS CRITICAL)
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/api/detection", detectionRoutes);
 
 // ✅ TEST STATUS API
 app.get("/api/status", (req, res) => {

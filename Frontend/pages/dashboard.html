@@ -67,6 +67,12 @@
         </div>
       </div>
 
+        <div class="last-detection-card">
+            <h4>🕒 Last Detection</h4>
+            <h2 id="lastTime">--</h2>
+            <p>Most recent safety event</p>
+        </div>
+
       <!-- 🚨 SYSTEM ACTION -->
       <div class="box safe" id="action-box">
         <div class="box-title">🚨 System Action</div>
@@ -175,6 +181,33 @@ async function updateStatus() {
 
 setInterval(updateStatus, 300);
 updateStatus();
+
+const LAST_URL = "http://127.0.0.1:5001/last_detection";
+
+async function updateLastDetection() {
+  try {
+    const res = await fetch(LAST_URL, { cache: "no-store" });
+    const data = await res.json();
+
+    const lastTimeEl = document.getElementById("lastTime");
+
+    if (data.time) {
+      lastTimeEl.innerText = data.time;
+
+      // optional color change
+      if (data.status === "DANGER") {
+        lastTimeEl.style.color = "#ff4c4c";
+      } else {
+        lastTimeEl.style.color = "#4cffb0";
+      }
+    }
+  } catch (err) {
+    console.error("❌ Last detection error:", err);
+  }
+}
+
+setInterval(updateLastDetection, 1000);
+updateLastDetection();
 </script>
 
 </body>
