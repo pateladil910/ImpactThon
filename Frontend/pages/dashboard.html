@@ -1,128 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Safety Dashboard</title>
+  <meta charset="UTF-8" />
+  <title>AI Safety Dashboard</title>
 
-    <!-- SAME CSS FILE -->
-    <link rel="stylesheet" href="style.css">
-
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/dashboard.css" />
 
 </head>
-
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar">
+<div class="page">
+
+  <!-- ================= NAVBAR ================= -->
+  <nav class="navbar">
     <div class="logo">AI Safety</div>
     <ul class="nav-links">
-        <li><a href="index.html" style="color: white;">Home</a></li>
-        <li><a href="solution.html">Solution</a></li>
-        <li><a class="active" href="contact.html">Contact</a></li>
+      <li>Home</li>
+      <li>Solution</li>
+      <li>Contact</li>
     </ul>
-</nav>
+  </nav>
 
-<!-- DASHBOARD HEADER -->
-<section class="hero" style="min-height: auto; padding-bottom: 40px;">
-    <div class="hero-text">
-        <h1>Live Safety Dashboard</h1>
-        <p>
-            Real-time monitoring of human proximity, machine status, and AI-based safety decisions.
-        </p>
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+
+    <h1>Live Safety Dashboard</h1>
+    <p class="subtitle">
+      Real-time monitoring of human proximity, machine status, and AI-based safety decisions.
+    </p>
+
+    <!-- ================= GRID ================= -->
+    <div class="dashboard-grid">
+
+      <!-- 🎥 CAMERA -->
+      <div class="box camera">
+        <div class="box-title">Camera Detection Live</div>
+
+        <div class="camera-box">
+          <img
+            id="ai-camera"
+            alt="AI Camera Stream"
+          />
+        </div>
+
+        <div class="camera-status">
+          LIVE – Real-time Monitoring
+        </div>
+      </div>
+
+      <!-- 🛡 SAFETY ZONE -->
+      <div class="box safe" id="safety-box">
+        <div class="box-title">🛡 Safety Zone</div>
+        <div class="box-value" id="safety-status">SAFE</div>
+        <div class="box-desc" id="safety-desc">
+          Human distance above threshold
+        </div>
+      </div>
+
+      <!-- 🧠 AI CONFIDENCE -->
+      <div class="box">
+        <div class="box-title">🧠 AI Confidence</div>
+        <div class="box-value" id="confidence-value">92%</div>
+        <div class="box-desc">
+          YOLO detection accuracy
+        </div>
+      </div>
+
+      <!-- 🚨 SYSTEM ACTION -->
+      <div class="box safe" id="action-box">
+        <div class="box-title">🚨 System Action</div>
+        <div class="box-value" id="system-action">RUN</div>
+        <div class="box-desc" id="system-desc">
+          System running normally
+        </div>
+      </div>
+
     </div>
-</section>
 
-<!-- DASHBOARD CARDS -->
-<section class="features">
 
-    <div class="feature-grid">
+</div>
 
-        <!-- SAFETY ZONE -->
-        <div class="card safe-zone">
-            <h3>🛡 Safety Zone</h3>
-            <p id="safetyZone" class="status-text safe">SAFE</p>
-            <small>Human distance above threshold</small>
-        </div>
+    <div class="history-btn-wrapper">
+    <a href="history.html" class="history-btn">
+        📊 View Detection History →
+    </a>
+</div>
 
-        <!-- MACHINE STATUS -->
-        <div class="card machine-status">
-            <h3>⚙ Machine Status</h3>
-            <p id="machineStatus" class="status-text on">ON</p>
-            <small>Machine running normally</small>
-        </div>
 
-        <!-- AI CONFIDENCE -->
-        <div class="card ai-confidence">
-            <h3>🧠 AI Confidence</h3>
-            <p id="aiConfidence" class="status-text">92%</p>
-            <small>YOLO detection accuracy</small>
-        </div>
+  </main>
 
-        <!-- SYSTEM ACTION -->
-        <div class="card system-action danger">
-            <h3>🚨 System Action</h3>
-            <p id="systemAction" class="status-text stop">STOP</p>
-            <small>Emergency stop activated</small>
-        </div>
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    © 2025 AI Smart Safety System | Live Industrial Monitoring
+  </footer>
 
-    </div>
-</section>
+</div>
 
-<!-- FOOTER -->
-<footer>
-    <p>© 2025 AI Smart Safety System | Live Industrial Monitoring</p>
-</footer>
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+/* ==========================
+   🎥 CAMERA STREAM
+========================== */
+document.addEventListener("DOMContentLoaded", () => {
+  const cameraImg = document.getElementById("ai-camera");
+  if (cameraImg) {
+    cameraImg.src = "http://127.0.0.1:5001/video_feed";
+  }
+});
 
- <script>
-const safetyText  = document.getElementById("safetyZone");
-const machineText = document.getElementById("machineStatus");
-const actionText  = document.getElementById("systemAction");
-const aiText      = document.getElementById("aiConfidence");
+/* ==========================
+   🛡 AI STATUS
+========================== */
+const STATUS_URL = "http://127.0.0.1:5001/status";
 
-async function loadStatus() {
+let lastSafety = null;
+let lastAction = null;
+
+async function updateStatus() {
   try {
-    const res = await fetch("http://localhost:5000/api/status");
+    const res = await fetch(STATUS_URL, { cache: "no-store" });
     const data = await res.json();
 
-    if (data.danger === true) {
-      // 🔴 DANGER
-      safetyText.innerText = "DANGER";
-      safetyText.className = "status-text danger";
+    const safetyBox = document.getElementById("safety-box");
+    const safetyStatus = document.getElementById("safety-status");
+    const safetyDesc = document.getElementById("safety-desc");
 
-      machineText.innerText = "OFF";
-      machineText.className = "status-text off";
+    const actionBox = document.getElementById("action-box");
+    const actionStatus = document.getElementById("system-action");
+    const actionDesc = document.getElementById("system-desc");
 
-      actionText.innerText = "STOP";
-      actionText.className = "status-text stop";
+    /* ===== SAFETY ZONE ===== */
+    if (data.safety !== lastSafety) {
+      if (data.safety === "DANGER") {
+        safetyStatus.innerText = "DANGER";
+        safetyDesc.innerText = "Human detected inside danger zone";
 
-      aiText.innerText = data.confidence + "%";
-    } else {
-      // 🟢 SAFE
-      safetyText.innerText = "SAFE";
-      safetyText.className = "status-text safe";
+        safetyBox.classList.add("danger");
+        safetyBox.classList.remove("safe");
+      } else {
+        safetyStatus.innerText = "SAFE";
+        safetyDesc.innerText = "Human distance above threshold";
 
-      machineText.innerText = "ON";
-      machineText.className = "status-text on";
-
-      actionText.innerText = "RUNNING";
-      actionText.className = "status-text safe";
-
-      aiText.innerText = data.confidence + "%";
+        safetyBox.classList.add("safe");
+        safetyBox.classList.remove("danger");
+      }
+      lastSafety = data.safety;
     }
 
-  } catch (error) {
-    console.error("Dashboard API error:", error);
+    /* ===== SYSTEM ACTION ===== */
+    const action = data.safety === "DANGER" ? "STOP" : "RUN";
+
+    if (action !== lastAction) {
+      if (action === "STOP") {
+        actionStatus.innerText = "STOP";
+        actionDesc.innerText = "Emergency stop activated";
+
+        actionBox.classList.add("danger");
+        actionBox.classList.remove("safe");
+      } else {
+        actionStatus.innerText = "RUN";
+        actionDesc.innerText = "System running normally";
+
+        actionBox.classList.add("safe");
+        actionBox.classList.remove("danger");
+      }
+      lastAction = action;
+    }
+
+  } catch (err) {
+    console.error("❌ Status fetch error:", err);
   }
 }
 
-// ⏱ refresh every second
-setInterval(loadStatus, 1000);
-loadStatus();
+setInterval(updateStatus, 300);
+updateStatus();
 </script>
-
-
 
 </body>
 </html>

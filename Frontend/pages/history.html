@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Detection History | AI Safety</title>
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <style>
+    /* ===== HISTORY PAGE ONLY ===== */
+
+        .download-btn {
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        color: white;
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+        margin: 15px 0;
+        }
+        .download-btn:hover {
+        opacity: 0.9;
+        }
+
+    .history-container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 30px 0;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .history-header h2 {
+      color: #00ff9c;
+      font-size: 26px;
+    }
+
+    .download-btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #00ff9c, #00c97f);
+      color: #003f2e;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .download-btn:hover {
+      opacity: 0.85;
+    }
+
+    .table-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 25px rgba(0, 255, 156, 0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #e5e5e5;
+    }
+
+    th {
+      text-align: left;
+      padding: 14px;
+      color: #00ff9c;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 15px;
+    }
+
+    tr:hover {
+      background: rgba(0, 255, 156, 0.06);
+    }
+
+    .badge-danger {
+      color: #ff4d4d;
+      font-weight: bold;
+    }
+
+    .badge-safe {
+      color: #00ff9c;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <div class="logo">AI Safety</div>
+      <ul class="nav-links">
+        <li onclick="location.href='dashboard.html'">Dashboard</li>
+        <li class="active">History</li>
+        <li>Contact</li>
+        <li onclick="location.href='chart.html'">Analytics</li>
+      </ul>
+    </nav>
+
+    <div style="color:#00ffb3; font-size:14px; margin-bottom:10px;">
+  Live Time: <span id="liveTime">--:--:--</span>
+</div>
+
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="history-container">
+
+        <div class="history-header">
+          <h2>📜 Human Detection History</h2>
+          <button onclick="downloadExcel()" class="download-btn">
+            ⬇ Download Excel
+          </button>
+        </div>
+
+        <div class="table-box">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Event</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+
+            <tbody id="historyBody"></tbody>
+          </table>
+
+           <a href="dashboard.html" class="history-btn">⬅ Back</a>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      © 2025 AI Smart Safety System | Detection Logs
+    </footer>
+
+  </div>
+
+<script>
+async function loadHistory() {
+  const res = await fetch("http://127.0.0.1:5001/history");
+  const data = await res.json();
+
+  const tbody = document.getElementById("historyBody");
+  tbody.innerHTML = "";
+
+  data.forEach((item, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${item.event}</td>
+        <td>${item.status}</td>
+        <td>${item.date}</td>
+        <td>${item.time}</td>
+      </tr>
+    `;
+  });
+}
+
+/* 🔹 LIVE CLOCK (CURRENT TIME) */
+function updateLiveTime() {
+  const now = new Date();
+  const options = {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  };
+  document.getElementById("liveTime").innerText =
+    now.toLocaleTimeString("en-IN", options);
+}
+
+function downloadExcel() {
+  window.location.href = "http://localhost:5001/api/history/download";
+}
+
+setInterval(loadHistory, 5000);
+setInterval(updateLiveTime, 1000);
+
+loadHistory();
+updateLiveTime();
+</script>
+
+
+
+</body>
+</html>

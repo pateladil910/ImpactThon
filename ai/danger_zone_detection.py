@@ -1,93 +1,120 @@
 import cv2
+import numpy as np
 from ultralytics import YOLO
 
-# Load YOLOv8 model
+# =========================
+# LOAD YOLO MODEL
+# =========================
 model = YOLO("yolov8n.pt")
 
-# Webcam
+# =========================
+# CAMERA
+# =========================
 cap = cv2.VideoCapture(2)
 
-if not cap.isOpened():
-    print("Camera not working")
-    exit()
+# =========================
+# MACHINE DANGER ZONE (RECTANGLE)
+# (x1, y1, x2, y2)
+# =========================
+MACHINE_ZONE = (360, 100, 620, 420)
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+# =========================
+# GLOBAL SAFETY STATE
+# =========================
+safety_state = "SAFE"
+danger_counter = 0
+safe_counter = 0
 
-    frame = cv2.flip(frame, 1)
-    h, w, _ = frame.shape
+ENTER_THRESHOLD = 5
+EXIT_THRESHOLD = 8
 
-    # -----------------------------
-    # MACHINE DANGER ZONE (FIXED)
-    # -----------------------------
-    # Adjust these values according to your setup
-    mx1, my1 = int(w * 0.55), int(h * 0.2)
-    mx2, my2 = int(w * 0.95), int(h * 0.85)
+# =========================
+# BOX OVERLAP CHECK (FROM temp.py)
+# =========================
+def box_overlap(boxA, boxB):
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+    return xA < xB and yA < yB
 
-    human_near_machine = False
+# =========================
+# FRAME GENERATOR
+# =========================
+def generate_frames():
+    global safety_state, danger_counter, safe_counter
 
-    # Run YOLO
-    results = model(frame, stream=True)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-    for r in results:
-        for box in r.boxes:
-            cls = int(box.cls[0])
-            conf = float(box.conf[0])
+        danger_in_frame = False
 
-            # PERSON = class 0
-            if cls == 0 and conf > 0.5:
+        # Draw machine zone
+        cv2.rectangle(
+            frame,
+            (MACHINE_ZONE[0], MACHINE_ZONE[1]),
+            (MACHINE_ZONE[2], MACHINE_ZONE[3]),
+            (0, 255, 255),
+            3
+        )
+        cv2.putText(frame, "MACHINE ZONE",
+                    (MACHINE_ZONE[0], MACHINE_ZONE[1] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+
+        # YOLO detect humans only
+        results = model(frame, conf=0.5, classes=[0], verbose=False)
+
+        for r in results:
+            for box in r.boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
+                human_box = (x1, y1, x2, y2)
 
-                # Draw human box
-                cv2.rectangle(frame, (x1, y1), (x2, y2),
-                              (255, 0, 0), 2)
-                cv2.putText(frame, "Human",
-                            (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.7, (255, 0, 0), 2)
+                if box_overlap(human_box, MACHINE_ZONE):
+                    danger_in_frame = True
+                    color = (0, 0, 255)
+                    label = "DANGER"
+                else:
+                    color = (0, 255, 0)
+                    label = "SAFE"
 
-                # Check overlap with machine zone
-                if not (x2 < mx1 or x1 > mx2 or y2 < my1 or y1 > my2):
-                    human_near_machine = True
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
+                cv2.putText(frame, label, (x1, y1 - 8),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
 
-    # -----------------------------
-    # DRAW MACHINE ZONE
-    # -----------------------------
-    zone_color = (0, 0, 255) if human_near_machine else (0, 255, 0)
-    cv2.rectangle(frame, (mx1, my1), (mx2, my2), zone_color, 3)
-    cv2.putText(frame, "Machine Zone",
-                (mx1, my1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.8, zone_color, 2)
+        # =========================
+        # STABLE STATE MACHINE
+        # =========================
+        if danger_in_frame:
+            danger_counter += 1
+            safe_counter = 0
+        else:
+            safe_counter += 1
+            danger_counter = 0
 
-    # -----------------------------
-    # ALERT SYSTEM
-    # -----------------------------
-    if human_near_machine:
-        cv2.putText(frame,
-                    "ALERT! HUMAN NEAR MACHINE",
-                    (30, 40),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0, 0, 255), 3)
+        if danger_counter >= ENTER_THRESHOLD:
+            safety_state = "DANGER"
 
-        # Red screen border
-        cv2.rectangle(frame, (0, 0), (w, h), (0, 0, 255), 10)
-    else:
-        cv2.putText(frame,
-                    "SAFE OPERATION",
-                    (30, 40),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0, 255, 0), 3)
+        if safe_counter >= EXIT_THRESHOLD:
+            safety_state = "SAFE"
 
-        # Green border
-        cv2.rectangle(frame, (0, 0), (w, h), (0, 255, 0), 10)
+        # Banner
+        banner_color = (0, 0, 255) if safety_state == "DANGER" else (0, 255, 0)
+        banner_text = "SYSTEM STOPPED" if safety_state == "DANGER" else "SYSTEM RUNNING"
 
-    cv2.imshow("AI Machine Safety System", frame)
+        cv2.putText(frame, banner_text,
+                    (30, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.1, banner_color, 3)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        _, buffer = cv2.imencode(".jpg", frame)
+        frame = buffer.tobytes()
 
-cap.release()
-cv2.destroyAllWindows()
+        yield (b"--frame\r\n"
+               b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+
+# =========================
+# SAFETY STATE ACCESS
+# =========================
+def get_safety_state():
+    return safety_state

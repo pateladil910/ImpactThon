@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Smart Safety System</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../css/style.css">
+
     <style>
         #profile-name{
             margin-right: 15px;
@@ -47,9 +48,10 @@
     <li><a href="contact.html">Contact</a></li>
   </ul>
 
+  <!-- FIXED LINKS -->
   <div class="auth-buttons" id="auth-buttons">
-    <a href="auth/login.html">Login</a>
-    <a href="auth/signup.html">Sign Up</a>
+    <a href="login.html">Login</a>
+    <a href="signup.html">Sign Up</a>
   </div>
 
   <!-- Profile / Logout -->
@@ -58,8 +60,6 @@
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 </nav>
-
-
 
 <!-- HERO -->
 <section class="hero">
@@ -73,10 +73,7 @@
         <a href="solution.html" class="btn-primary">View Demo</a>
         <a href="learn-more.html" class="btn-outline" style="color: white; text-decoration: none;">Learn More</a>
         <a href="setup.html" class="btn-secondary">Get Start</a>
-    </div>    
-</div>
-
-
+       </div>    
     </div>
 
     <!-- LIVE STATUS CARD -->
@@ -98,7 +95,6 @@
             <b>STOP</b>
         </div>
 
-        <!-- ADDED -->
         <div class="status">
             <span>Safety Zone</span>
             <b class="danger">DANGER</b>
@@ -138,7 +134,7 @@
     </div>
 </section>
 
-<!-- SAFETY ZONES (ADDED WITHOUT CHANGING LAYOUT) -->
+<!-- SAFETY ZONES -->
 <section class="features">
     <h2>Safety Zone Classification</h2>
 
@@ -172,7 +168,9 @@
     <p>© 2025 AI Smart Safety System | Built for Real-World Use</p>
 </footer>
 
-<script src="script.js"></script>
+<!-- ✅ REQUIRED AUTH SCRIPT -->
+<script src="../js/auth.js"></script>
+<script src="../js/script.js"></script>
 
 </body>
 </html>

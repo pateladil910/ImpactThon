@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Login</title>
-  <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="../css/auth.css">
 </head>
 <body>
 
@@ -10,11 +10,12 @@
   <div class="auth-card">
     <h2>Login</h2>
 
-    <form onsubmit="login(event)">
-      <input id="username" type="text" placeholder="Username" required>
-      <input id="password" type="password" placeholder="Password" required>
+    <form id="loginForm">
+      <input id="username" type="text" required>
+      <input id="password" type="password" required>
       <button type="submit">Login</button>
     </form>
+ 
 
     <p>
       Don’t have an account?
@@ -23,6 +24,6 @@
   </div>
 </div>
 
-<script src="auth.js"></script>
+<script src="../js/auth.js"></script>
 </body>
 </html>

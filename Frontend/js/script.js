@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function logout() {
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
-  window.location.href = "auth/login.html";
+  window.location.href = "../pages/login.html";
 }
 
 /* ===========================
