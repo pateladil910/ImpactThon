@@ -16,9 +16,9 @@
   <nav class="navbar">
     <div class="logo">AI Safety</div>
     <ul class="nav-links">
-      <li>Home</li>
-      <li>Solution</li>
-      <li>Contact</li>
+      <li onclick="location.href='index.html'">Home</li>
+      <li onclick="location.href='chart.html'">Analytics</li>
+      <li onclick="location.href='contact.html'">Contact</li>
     </ul>
   </nav>
 
@@ -67,11 +67,12 @@
         </div>
       </div>
 
-        <div class="last-detection-card">
-            <h4>🕒 Last Detection</h4>
-            <h2 id="lastTime">--</h2>
-            <p>Most recent safety event</p>
+        <div class="box">
+          <h4>🕒 Last Detection</h4>
+          <h2 id="lastDetectionTime">--</h2>
+          <p id="lastDetectionStatus">Waiting for detection...</p>
         </div>
+
 
       <!-- 🚨 SYSTEM ACTION -->
       <div class="box safe" id="action-box">
@@ -189,22 +190,32 @@ async function updateLastDetection() {
     const res = await fetch(LAST_URL, { cache: "no-store" });
     const data = await res.json();
 
-    const lastTimeEl = document.getElementById("lastTime");
+    const lastTimeEl = document.getElementById("lastDetectionTime");
+    const lastStatusText = document.getElementById("lastDetectionStatus");
+
+    if (!lastTimeEl || !lastStatusText) return;
 
     if (data.time) {
       lastTimeEl.innerText = data.time;
 
-      // optional color change
       if (data.status === "DANGER") {
         lastTimeEl.style.color = "#ff4c4c";
+        lastStatusText.innerText = "⚠ Human Detected";
+        lastStatusText.style.color = "#ff4c4c";
       } else {
         lastTimeEl.style.color = "#4cffb0";
+        lastStatusText.innerText = "✅ Safe Distance";
+        lastStatusText.style.color = "#4cffb0";
       }
+    } else {
+      lastTimeEl.innerText = "--";
+      lastStatusText.innerText = "Waiting for detection...";
     }
   } catch (err) {
     console.error("❌ Last detection error:", err);
   }
 }
+
 
 setInterval(updateLastDetection, 1000);
 updateLastDetection();

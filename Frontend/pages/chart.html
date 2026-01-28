@@ -16,7 +16,6 @@
 
 .chart-header {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
@@ -26,18 +25,15 @@
   color: #00ff9c;
 }
 
-input[type="date"] {
-  background: #0f172a;
-  color: #00ff9c;
-  border: 1px solid #00ff9c;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-
 .chart-box {
   background: rgba(255,255,255,0.05);
   border-radius: 14px;
   padding: 20px;
+  min-height: 400px;
+}
+
+canvas {
+  min-height: 350px;
 }
 
 .download-btn {
@@ -49,22 +45,11 @@ input[type="date"] {
   cursor: pointer;
 }
 
-.blink {
-  color: red;
-  font-weight: bold;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  0%,50%,100% { opacity: 1; }
-  25%,75% { opacity: 0; }
-}
-
-/* 📱 Mobile responsive */
-@media(max-width:768px){
-  canvas {
-    max-height: 300px;
-  }
+.history-btn {
+  display: inline-block;
+  margin-top: 15px;
+  color: #00ff9c;
+  text-decoration: none;
 }
 </style>
 </head>
@@ -76,8 +61,10 @@ input[type="date"] {
 <nav class="navbar">
   <div class="logo">AI Safety</div>
   <ul class="nav-links">
+    <li onclick="location.href='index.html'">Home</li>
     <li onclick="location.href='dashboard.html'">Dashboard</li>
-    <li onclick="location.href='history.html'">History</li>  </ul>
+    <li onclick="location.href='history.html'">History</li>
+  </ul>
 </nav>
 
 <main class="main">
@@ -85,16 +72,10 @@ input[type="date"] {
 
 <div class="chart-header">
   <h2>📊 Hour-Wise Danger Analytics</h2>
-  <input type="date" id="dateFilter">
-</div>
-
-<div style="margin-bottom:10px;">
-  🚨 Current Status:
-  <span id="liveStatus" class="blink">WAITING...</span>
 </div>
 
 <div class="chart-box">
-  <canvas id="dangerChart"></canvas>
+  <canvas id="dangerChart" height="350"></canvas>
 </div>
 
 <div style="margin-top:15px; text-align:right;">
@@ -103,7 +84,7 @@ input[type="date"] {
   </button>
 </div>
 
-<a href="dashboard.html" class="history-btn">⬅ Back</a>
+<a href="history.html" class="history-btn">⬅ Back</a>
 
 </div>
 </main>
@@ -118,59 +99,60 @@ input[type="date"] {
 let chart;
 
 async function loadChart() {
-  const date = document.getElementById("dateFilter").value;
-  const res = await fetch("http://127.0.0.1:5001/history");
-  const data = await res.json();
+  try {
+    const res = await fetch("http://127.0.0.1:5001/api/analytics/hourly");
 
-  const hours = Array(24).fill(0);
-  let liveDanger = false;
+    if (!res.ok) throw new Error("API not reachable");
 
-  data.forEach(item => {
-    if (date && item.date !== date) return;
+    const data = await res.json();
+    // Example: { "20": 6 }
 
-    if (item.status === "DANGER") {
-      const hour = parseInt(item.time.split(":")[0]);
-      hours[hour]++;
-      liveDanger = true;
-    }
-  });
+    // Create 24-hour labels
+    const labels = [...Array(24).keys()].map(h => h + ":00");
 
-  document.getElementById("liveStatus").innerText =
-    liveDanger ? "DANGER ⚠️" : "SAFE ✅";
+    // Fill values, default 0 if hour missing
+    const values = labels.map(label => {
+      const hour = label.split(":")[0];
+      return data[hour] || 0;
+    });
 
-  if (chart) chart.destroy();
+    if (chart) chart.destroy();
 
-  chart = new Chart(document.getElementById("dangerChart"), {
-    type: "bar",
-    data: {
-      labels: [...Array(24).keys()].map(h => h + ":00"),
-      datasets: [{
-        label: "Danger Count",
-        data: hours,
-        backgroundColor: "#ff4d4d"
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: "#00ff9c" } }
+    chart = new Chart(document.getElementById("dangerChart"), {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Danger Count",
+          data: values,
+          backgroundColor: "#ff4d4d"
+        }]
       },
-      scales: {
-        x: { ticks: { color: "#e5e5e5" } },
-        y: { ticks: { color: "#e5e5e5" } }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          }
+        }
       }
-    }
-  });
+    });
+
+  } catch (err) {
+    console.error("Chart load error:", err);
+  }
 }
 
 function downloadChart() {
+  if (!chart) return;
   const link = document.createElement("a");
   link.download = "danger-chart.png";
   link.href = chart.toBase64Image();
   link.click();
 }
 
-document.getElementById("dateFilter").addEventListener("change", loadChart);
 loadChart();
 setInterval(loadChart, 5000);
 </script>

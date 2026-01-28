@@ -31,8 +31,7 @@ except:
 # ===============================
 app = Flask(__name__)
 CORS(app)
-app.register_blueprint(history_bp)
-
+app.register_blueprint(history_bp, url_prefix="/api")
 last_logged_state = None
 
 # ===============================
@@ -48,20 +47,16 @@ def video_feed():
 # ===============================
 # 🛡 STATUS + SERIAL + DB
 # ===============================
+# global variable (already present)
+last_logged_state = None
+
 @app.route("/status")
 def status():
     global last_logged_state
 
-    state = get_safety_state()   # SAFE or DANGER
+    state = get_safety_state()
 
-    # 🔌 SEND TO ESP32 (SERIAL)
-    if esp:
-        if state == "DANGER":
-            esp.write(b"DANGER\n")
-        else:
-            esp.write(b"SAFE\n")
-
-    # 🧾 LOG ONLY WHEN DANGER APPEARS
+    # 🔴 Log DANGER (once)
     if state == "DANGER" and last_logged_state != "DANGER":
         history_collection.insert_one({
             "event": "Human detected inside danger zone",
@@ -70,6 +65,16 @@ def status():
         })
         print("🧾 DB LOGGED: DANGER")
 
+    # 🟢 Log SAFE (only after danger)
+    elif state == "SAFE" and last_logged_state == "DANGER":
+        history_collection.insert_one({
+            "event": "Area clear",
+            "status": "SAFE",
+            "timestamp": datetime.now(IST)
+        })
+        print("🧾 DB LOGGED: SAFE")
+
+    # update state memory
     last_logged_state = state
 
     return jsonify({
@@ -81,24 +86,13 @@ def status():
 # ===============================
 # 📜 HISTORY API
 # ===============================
-@app.route("/history")
-def history():
-    records = []
+# @app.route("/clear_history", methods=["POST"])
+# def clear_history():
+#     global last_logged_state
+#     history_collection.delete_many({})
+#     last_logged_state = None   # 🔑 reset state
+#     return jsonify({"success": True})
 
-    for i, doc in enumerate(
-        history_collection.find().sort("timestamp", -1)
-    ):
-        ts = doc["timestamp"].astimezone(IST)
-
-        records.append({
-            "id": i + 1,
-            "event": doc["event"],
-            "status": doc["status"],
-            "date": ts.strftime("%d-%m-%Y"),
-            "time": ts.strftime("%H:%M:%S")
-        })
-
-    return jsonify(records)
 
 # ===============================
 # 🕒 LAST DETECTION
