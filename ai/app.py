@@ -9,9 +9,11 @@ from flask_cors import CORS
 from datetime import datetime
 
 from ai.mailer import send_alert_email
-from ai.danger_zone_detection import generate_frames, get_safety_state
+from ai.danger_zone_detection import generate_frames, get_safety_state, get_current_confidence, get_latest_frame
 from ai.db import history_collection
 from ai.routes.history_routes import history_bp
+import cv2
+import base64
 
 # ===============================
 # 🌍 TIMEZONE
@@ -26,7 +28,8 @@ email_sent_for_current_danger = False
 
 # 🧠 Detection stability
 danger_start_time = None
-DANGER_CONFIRM_SECONDS = 1.0   # must stay danger for 1 sec
+DANGER_CONFIRM_SECONDS = 0.0   # Instant trigger (was 1.0)
+system_override_stop = False # FORCE STOP FLAG
 
 # 🔌 Relay debounce
 last_relay_state = None
@@ -59,9 +62,9 @@ def video_feed():
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 
-def send_email_async():
+def send_email_async(custom_message=None, image_base64=None):
     try:
-        send_alert_email()
+        send_alert_email(custom_message=custom_message, image_base64=image_base64)
         print("✅ EMAIL SENT (ASYNC)")
     except Exception as e:
         print("❌ EMAIL FAILED:", e)
@@ -75,6 +78,17 @@ def status():
     global email_sent_for_current_danger
     global danger_start_time
     global last_relay_state
+    global system_override_stop
+
+    # 🚨 FORCE STOP CHECK
+    if system_override_stop:
+        return jsonify({
+            "safety": "DANGER",
+            "danger": True,
+            "action": "STOP",
+            "confidence": 100,
+            "message": "TIMER EXPIRED - FORCE STOP"
+        })
 
     state = get_safety_state()
     now = time.time()
@@ -91,9 +105,17 @@ def status():
 
             # 📧 EMAIL (ONCE PER DANGER)
             if not email_sent_for_current_danger:
+                # Capture Photo
+                img_b64 = None
+                frame = get_latest_frame()
+                if frame is not None:
+                    _, buffer = cv2.imencode(".jpg", frame)
+                    img_b64 = base64.b64encode(buffer).decode("utf-8")
+
                 try:
                     threading.Thread(
                         target=send_email_async,
+                        args=(None, img_b64),
                         daemon=True
                     ).start()
                     email_sent_for_current_danger = True
@@ -104,7 +126,9 @@ def status():
                 history_collection.insert_one({
                     "event": "Human detected inside danger zone",
                     "status": "DANGER",
-                    "timestamp": datetime.now(IST)
+                    "timestamp": datetime.now(IST),
+                    "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
+                    "photo_base64": img_b64
                 })
                 print("🧾 DB LOGGED: DANGER")
 
@@ -132,7 +156,8 @@ def status():
             history_collection.insert_one({
                 "event": "Area clear",
                 "status": "SAFE",
-                "timestamp": datetime.now(IST)
+                "timestamp": datetime.now(IST),
+                "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
             })
             print("🧾 DB LOGGED: SAFE")
 
@@ -142,7 +167,8 @@ def status():
     return jsonify({
         "safety": last_logged_state,
         "danger": last_logged_state == "DANGER",
-        "action": "STOP" if last_logged_state == "DANGER" else "RUN"
+        "action": "STOP" if last_logged_state == "DANGER" else "RUN",
+        "confidence": get_current_confidence()
     })
 
 # ===============================
@@ -157,12 +183,46 @@ def last_detection():
     if not last:
         return jsonify({"time": None})
 
-    ts = last["timestamp"].astimezone(IST)
+    ts = last["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST)
 
     return jsonify({
         "time": ts.strftime("%H:%M:%S"),
         "status": last["status"]
     })
+
+# ===============================
+# 🛑 FORCE STOP API
+# ===============================
+@app.route("/api/force_stop", methods=["POST"])
+def force_stop():
+    global system_override_stop
+    
+    if not system_override_stop:
+        system_override_stop = True
+        
+        # Log to DB
+        history_collection.insert_one({
+            "event": "Scheduled Time Completed - System Stopped",
+            "status": "DANGER",
+            "timestamp": datetime.now(IST),
+            "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+        # Send Email
+        try:
+            threading.Thread(
+                target=send_alert_email,
+                args=("⏰ Scheduled Time Completed. Machine Stopped.",),
+                daemon=True
+            ).start()
+        except Exception as e:
+            print(f"❌ Email Error: {e}")
+
+        # Stop Relay
+        if esp:
+            esp.write(b"DANGER\n")
+    
+    return jsonify({"status": "stopped"})
 
 # ===============================
 # ▶ RUN SERVER

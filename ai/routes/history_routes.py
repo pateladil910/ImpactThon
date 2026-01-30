@@ -1,12 +1,13 @@
 from flask import Blueprint, jsonify, send_file
 from ai.db import history_collection
-from zoneinfo import ZoneInfo
+import pytz
+from datetime import datetime
 import pandas as pd
 import os
 from flask import request
 from collections import defaultdict
 
-IST = ZoneInfo("Asia/Kolkata")
+IST = pytz.timezone("Asia/Kolkata")
 
 history_bp = Blueprint("history", __name__)
 
@@ -21,8 +22,9 @@ def get_history():
         records.append({
             "Event": doc["event"],
             "Status": doc["status"],
-            "Date": doc["timestamp"].astimezone(IST).strftime("%d-%m-%Y"),
-            "Time": doc["timestamp"].astimezone(IST).strftime("%H:%M:%S")
+            "Date": doc["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST).strftime("%d-%m-%Y"),
+            "Time": doc["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST).strftime("%H:%M:%S"),
+            "Photo": doc.get("photo_base64")
         })
 
     return jsonify(records)
@@ -38,22 +40,26 @@ def download_history_excel():
         data.append({
             "Event": doc["event"],
             "Status": doc["status"],
-            "Date": doc["timestamp"].astimezone(IST).strftime("%d-%m-%Y"),
-            "Time": doc["timestamp"].astimezone(IST).strftime("%H:%M:%S")
+            "Date": doc["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST).strftime("%d-%m-%Y"),
+            "Time": doc["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST).strftime("%H:%M:%S")
         })
 
-    df = pd.DataFrame(data)
+    try:
+        df = pd.DataFrame(data)
 
-    file_name = "human_detection_history.xlsx"
-    file_path = os.path.join(os.getcwd(), file_name)
+        file_name = "human_detection_history.xlsx"
+        file_path = os.path.join(os.getcwd(), file_name)
 
-    df.to_excel(file_path, index=False)
+        df.to_excel(file_path, index=False)
 
-    return send_file(
-        file_path,
-        as_attachment=True,
-        download_name=file_name
-    )
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=file_name
+        )
+    except Exception as e:
+        print(f"❌ EXCEL DOWNLOAD ERROR: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # ===============================
 # 🗑 CLEAR ALL HISTORY
@@ -68,7 +74,7 @@ def analytics_hourly():
     hours = defaultdict(int)
 
     for doc in history_collection.find({"status": "DANGER"}):
-        hour = doc["timestamp"].astimezone(IST).hour
+        hour = doc["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST).hour
         hours[str(hour)] += 1
 
     return jsonify(dict(hours))
