@@ -1,26 +1,40 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+require("dotenv").config();
+
 const detectionRoutes = require("./routes/detection");
+const sendAlertEmail = require("./utils/sendEmail");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// ✅ SERVE PUBLIC FOLDER (THIS LINE IS CRITICAL)
+// Serve public folder
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/detection", detectionRoutes);
+// app.use("/api", require("./routes/alert").router);
 
-// ✅ TEST STATUS API
+// Test API
 app.get("/api/status", (req, res) => {
   res.json({
-    danger: true,   // change true / false
+    danger: true,
     confidence: 92
   });
 });
 
-// ✅ START SERVER
+// Start server
 app.listen(5000, () => {
   console.log("✅ Server running on http://localhost:5000");
 });
+
+// 🔥 EMAIL TEST (auto after 3 sec)
+setTimeout(async () => {
+  try {
+    await sendAlertEmail("✅ Test mail: Email system is working");
+    console.log("✅ MAIL SENT SUCCESSFULLY");
+  } catch (err) {
+    console.error("❌ MAIL ERROR:", err);
+  }
+}, 3000);

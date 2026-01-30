@@ -1,11 +1,14 @@
 import pytz
 import serial
 import time
+import threading
+
 
 from flask import Flask, Response, jsonify
 from flask_cors import CORS
 from datetime import datetime
 
+from ai.mailer import send_alert_email
 from ai.danger_zone_detection import generate_frames, get_safety_state
 from ai.db import history_collection
 from ai.routes.history_routes import history_bp
@@ -16,10 +19,23 @@ from ai.routes.history_routes import history_bp
 IST = pytz.timezone("Asia/Kolkata")
 
 # ===============================
+# 🔑 STATE + LOCKS
+# ===============================
+last_logged_state = "SAFE"
+email_sent_for_current_danger = False
+
+# 🧠 Detection stability
+danger_start_time = None
+DANGER_CONFIRM_SECONDS = 1.0   # must stay danger for 1 sec
+
+# 🔌 Relay debounce
+last_relay_state = None
+
+# ===============================
 # 🔌 ESP32 SERIAL CONNECTION
 # ===============================
 try:
-    esp = serial.Serial("COM3", 115200, timeout=1)  # CHANGE COM if needed
+    esp = serial.Serial("COM3", 115200, timeout=1)
     time.sleep(2)
     print("✅ ESP32 connected via Serial")
 except:
@@ -32,7 +48,6 @@ except:
 app = Flask(__name__)
 CORS(app)
 app.register_blueprint(history_bp, url_prefix="/api")
-last_logged_state = None
 
 # ===============================
 # 🎥 CAMERA STREAM
@@ -44,55 +59,91 @@ def video_feed():
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 
-# ===============================
-# 🛡 STATUS + SERIAL + DB
-# ===============================
-# global variable (already present)
-last_logged_state = None
+def send_email_async():
+    try:
+        send_alert_email()
+        print("✅ EMAIL SENT (ASYNC)")
+    except Exception as e:
+        print("❌ EMAIL FAILED:", e)
 
+# ===============================
+# 🛡 STATUS + SERIAL + DB + EMAIL
+# ===============================
 @app.route("/status")
 def status():
     global last_logged_state
+    global email_sent_for_current_danger
+    global danger_start_time
+    global last_relay_state
 
     state = get_safety_state()
+    now = time.time()
 
-    # 🔴 Log DANGER (once)
-    if state == "DANGER" and last_logged_state != "DANGER":
-        history_collection.insert_one({
-            "event": "Human detected inside danger zone",
-            "status": "DANGER",
-            "timestamp": datetime.now(IST)
-        })
-        print("🧾 DB LOGGED: DANGER")
+    # ===============================
+    # 🔴 DANGER (STABLE CHECK)
+    # ===============================
+    if state == "DANGER":
 
-    # 🟢 Log SAFE (only after danger)
-    elif state == "SAFE" and last_logged_state == "DANGER":
-        history_collection.insert_one({
-            "event": "Area clear",
-            "status": "SAFE",
-            "timestamp": datetime.now(IST)
-        })
-        print("🧾 DB LOGGED: SAFE")
+        if danger_start_time is None:
+            danger_start_time = now
 
-    # update state memory
-    last_logged_state = state
+        if now - danger_start_time >= DANGER_CONFIRM_SECONDS:
+
+            # 📧 EMAIL (ONCE PER DANGER)
+            if not email_sent_for_current_danger:
+                try:
+                    threading.Thread(
+                        target=send_email_async,
+                        daemon=True
+                    ).start()
+                    email_sent_for_current_danger = True
+                    print("✅ EMAIL SENT (LOCKED)")
+                except Exception as e:
+                    print("❌ EMAIL FAILED:", e)
+
+                history_collection.insert_one({
+                    "event": "Human detected inside danger zone",
+                    "status": "DANGER",
+                    "timestamp": datetime.now(IST)
+                })
+                print("🧾 DB LOGGED: DANGER")
+
+            # 🔌 RELAY DEBOUNCE
+            if esp and last_relay_state != "DANGER":
+                esp.write(b"DANGER\n")
+                last_relay_state = "DANGER"
+                print("📡 ESP32 -> DANGER")
+
+            last_logged_state = "DANGER"
+
+    # ===============================
+    # 🟢 SAFE (RESET)
+    # ===============================
+    else:
+        danger_start_time = None
+
+        if last_logged_state == "DANGER":
+
+            if esp and last_relay_state != "SAFE":
+                esp.write(b"SAFE\n")
+                last_relay_state = "SAFE"
+                print("📡 ESP32 -> SAFE")
+
+            history_collection.insert_one({
+                "event": "Area clear",
+                "status": "SAFE",
+                "timestamp": datetime.now(IST)
+            })
+            print("🧾 DB LOGGED: SAFE")
+
+        email_sent_for_current_danger = False
+        last_logged_state = "SAFE"
 
     return jsonify({
-        "safety": state,
-        "danger": state == "DANGER",
-        "action": "STOP" if state == "DANGER" else "RUN"
+        "safety": last_logged_state,
+        "danger": last_logged_state == "DANGER",
+        "action": "STOP" if last_logged_state == "DANGER" else "RUN"
     })
-
-# ===============================
-# 📜 HISTORY API
-# ===============================
-# @app.route("/clear_history", methods=["POST"])
-# def clear_history():
-#     global last_logged_state
-#     history_collection.delete_many({})
-#     last_logged_state = None   # 🔑 reset state
-#     return jsonify({"success": True})
-
 
 # ===============================
 # 🕒 LAST DETECTION

@@ -33,7 +33,7 @@ async function updateStatus() {
 
     if (!safetyBox || !actionBox) return;
 
-    /* ===== SAFETY ZONE ===== */
+    /* ===== SAFETY UI ===== */
     if (data.safety !== lastSafety) {
       if (data.safety === "DANGER") {
         safetyStatus.innerText = "DANGER";
@@ -76,5 +76,9 @@ async function updateStatus() {
   }
 }
 
-setInterval(updateStatus, 300);
+/* ==========================
+   ⏱ AUTO UPDATE
+========================== */
+
+setInterval(updateStatus, 1000);
 updateStatus();
