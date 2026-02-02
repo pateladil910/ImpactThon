@@ -40,5 +40,12 @@ void loop() {
       digitalWrite(BUZZER_PIN, LOW);   // Buzzer OFF
       Serial.println("SAFE: Motor ON | Buzzer OFF");
     }
+
+    // 🛑 TIMEOUT / MANUAL STOP
+    else if (strcmp(buffer, "TIMEOUT") == 0) {
+      digitalWrite(RELAY_PIN, HIGH);   // Motor OFF
+      digitalWrite(BUZZER_PIN, LOW);   // Buzzer OFF
+      Serial.println("TIMEOUT: Motor OFF | Buzzer OFF");
+    }
   }
 }

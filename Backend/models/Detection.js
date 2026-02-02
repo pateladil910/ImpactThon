@@ -7,9 +7,15 @@ const DetectionSchema = new mongoose.Schema(
       enum: ["SAFE", "DANGER"],
       required: true
     },
-    message: String
+    message: String,
+    timestamp: {
+      type: Date,
+      required: true
+    },
+    event: String,
+    timestamp_ist: String
   },
-  { timestamps: true } // 👈 VERY IMPORTANT
+  { collection: 'history' }
 );
 
 module.exports = mongoose.model("Detection", DetectionSchema);

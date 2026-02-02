@@ -11,10 +11,10 @@ model = YOLO("yolov8n.pt")
 # =========================
 # CAMERA
 # =========================
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(2)
 
 if not cap.isOpened():
-    print("❌ ERROR: Could not open camera (Index 0). Trying Index 1...")
+    print("❌ ERROR: Could not open camera (Index 2). Trying Index 1...")
     cap = cv2.VideoCapture(1)
 
 # =========================

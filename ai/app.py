@@ -220,7 +220,7 @@ def force_stop():
 
         # Stop Relay
         if esp:
-            esp.write(b"DANGER\n")
+            esp.write(b"TIMEOUT\n")
     
     return jsonify({"status": "stopped"})
 

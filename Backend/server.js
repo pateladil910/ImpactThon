@@ -4,9 +4,14 @@ const path = require("path");
 require("dotenv").config();
 
 const detectionRoutes = require("./routes/detection");
+const analyticsRoutes = require("./routes/analytics");
 const sendAlertEmail = require("./utils/sendEmail");
+const connectDB = require("./config/db");
 
 const app = express();
+
+// Connect to Database
+connectDB();
 
 app.use(cors());
 app.use(express.json());
@@ -14,6 +19,7 @@ app.use(express.json());
 // Serve public folder
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/detection", detectionRoutes);
+app.use("/api/analytics", analyticsRoutes);
 // app.use("/api", require("./routes/alert").router);
 
 // Test API

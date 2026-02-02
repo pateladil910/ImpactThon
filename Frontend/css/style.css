@@ -272,10 +272,64 @@ footer {
     color: #cfdcdc;
 }
 
+/* DEMO VIDEO SECTION */
+.demo-video-section {
+    padding: 80px 20px;
+    text-align: center;
+    background: #020617;
+}
+
+.demo-video-section h2 {
+    font-size: 36px;
+    color: #00ffd5;
+    margin-bottom: 30px;
+}
+
+.video-container {
+    max-width: 900px;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0, 255, 213, 0.2);
+    border: 1px solid rgba(0, 255, 213, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+}
+
+.video-container video {
+    width: 100%;
+    display: block;
+}
+
 /* ===== CTA ===== */
 .setup-cta {
     margin-top: 60px;
     text-align: center;
+}
+
+.solution-cta {
+  padding: 80px 20px;
+  text-align: center;
+  background: #020617;
+}
+
+.solution-cta h2 {
+  color: #fff;
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+.solution-cta p {
+  color: #b8c1cc;
+  margin-bottom: 20px;
+}
+
+.cta-btn {
+  padding: 12px 30px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #00ffd5, #00bfa6);
+  color: #000;
+  font-weight: 600;
 }
 
 /* ===== System Configuration Grid ===== */
@@ -329,6 +383,18 @@ footer {
     .config-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  padding: 20px 20px 50px;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Right side profile section */

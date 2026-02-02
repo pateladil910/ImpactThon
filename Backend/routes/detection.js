@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const Detection = require("../models/Detection");
 const sendAlertEmail = require("../utils/sendEmail");
 
 // flag to avoid multiple mails
@@ -12,12 +13,25 @@ router.post("/", async (req, res) => {
     // example: danger = true when human detected
 
     // 🔥 EMAIL TRIGGER LOGIC
-    if (danger === true && !mailSent) {
-      await sendAlertEmail(
-        `🚨 ALERT: Human detected near machine!\nConfidence: ${confidence}%`
-      );
-      mailSent = true;
-      console.log("📧 Alert email sent");
+    if (danger === true) {
+      // Save to Database
+      try {
+        await Detection.create({
+          status: "DANGER",
+          message: "Human detected"
+        });
+        console.log("💾 Danger stored to DB");
+      } catch (dbError) {
+        console.error("❌ DB Save Error:", dbError);
+      }
+
+      if (!mailSent) {
+        await sendAlertEmail(
+          `🚨 ALERT: Human detected near machine!\nConfidence: ${confidence}%`
+        );
+        mailSent = true;
+        console.log("📧 Alert email sent");
+      }
     }
 
     // reset when danger clears
