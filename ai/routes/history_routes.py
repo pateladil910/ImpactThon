@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, send_file
-from ai.db import history_collection
+from db import history_collection
+# from ai.db import history_collection
 import pytz
 from datetime import datetime
 import pandas as pd
