@@ -8,7 +8,8 @@ from flask import Flask, Response, jsonify
 from flask_cors import CORS
 from datetime import datetime
 
-from ai.mailer import send_alert_email
+# from ai.mailer import send_alert_email
+from mailer import send_alert_email
 from ai.danger_zone_detection import generate_frames, get_safety_state, get_current_confidence, get_latest_frame
 from ai.db import history_collection
 from ai.routes.history_routes import history_bp
