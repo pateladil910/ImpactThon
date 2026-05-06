@@ -10,12 +10,15 @@ from datetime import datetime
 
 # from ai.mailer import send_alert_email
 from mailer import send_alert_email
-from ai.danger_zone_detection import generate_frames, get_safety_state, get_current_confidence, get_latest_frame
-from ai.db import history_collection
-from ai.routes.history_routes import history_bp
+from danger_zone_detection import generate_frames, get_safety_state, get_current_confidence, get_latest_frame
+from db import history_collection
+from routes.history_routes import history_bp
+# from ai.danger_zone_detection import generate_frames, get_safety_state, get_current_confidence, get_latest_frame
+# from ai.db import history_collection
+# from ai.routes.history_routes import history_bp
 import cv2
 import base64
-
+import os
 # ===============================
 # 🌍 TIMEZONE
 # ===============================
@@ -229,4 +232,7 @@ def force_stop():
 # ▶ RUN SERVER
 # ===============================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=False)
+    # Render provides a PORT environment variable. If it's not there, use 10000.
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False)
+    # app.run(host="0.0.0.0", port=5001, debug=False)
