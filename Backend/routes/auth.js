@@ -10,10 +10,11 @@ router.post("/signup", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    // 1. Check if user already exists BEFORE trying to save
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      // return is CRITICAL to stop the code here
-      return res.status(400).json({ message: "Email already exists" });
+      // Send 400 (Bad Request) instead of crashing with 500
+      return res.status(400).json({ message: "This email is already registered. Please login." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -26,15 +27,13 @@ router.post("/signup", async (req, res) => {
 
     await user.save();
     
-    // Status 201 means "Created"
-    return res.status(201).json({ message: "User registered" });
+    // 2. Success response
+    return res.status(201).json({ message: "User registered successfully" });
 
   } catch (error) {
-    console.error(error);
-    // Only send this if the code actually crashes
-    if (!res.headersSent) {
-      return res.status(500).json({ message: "Server error during registration" });
-    }
+    console.error("Signup Error:", error);
+    // 3. Only send 500 if it's a real server crash (like database is down)
+    res.status(500).json({ message: "Server error. Please try again later." });
   }
 });
 
