@@ -33,6 +33,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/history", analyticsRoutes);
 // app.use("/api", require("./routes/alert").router);
+app.use(express.static(path.join(__dirname, "..", "Frontend")));
 
 app.get("/", (req, res) => {
   // This assumes your file is named login.html inside the 'public' folder
