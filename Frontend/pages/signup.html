@@ -10,12 +10,13 @@
   <div class="auth-card">
     <h2>Create Account</h2>
 
-    <form id="signupForm">
-      <input id="signup-username" type="text" placeholder="Username" required>
-      <input id="signup-password" type="password" placeholder="Password" required>
-
-      <button type="submit">Sign Up</button>
-    </form>
+    <form id="signupForm" onsubmit="signup(event)">
+  <input type="text" id="signup-name" placeholder="Full Name" required>
+  <input type="email" id="signup-email" placeholder="Email" required>
+  <input type="password" id="signup-password" placeholder="Password" required>
+  
+  <button type="submit">Sign Up</button>
+</form>
 
     <p>
       Already have an account?

@@ -129,30 +129,35 @@ function checkAuthUI() {
 async function signup(event) {
   event.preventDefault();
 
-  // 1. Get ALL fields from your HTML
-  const name = document.getElementById("signup-name").value; // Make sure this ID exists in HTML
-  const email = document.getElementById("signup-email").value; // Make sure this ID exists in HTML
-  const password = document.getElementById("signup-password").value;
-  const role = "viewer"; // Or get from a dropdown
+  // Get elements
+  const nameEl = document.getElementById("signup-name");
+  const emailEl = document.getElementById("signup-email");
+  const passwordEl = document.getElementById("signup-password");
 
-  if (!name || !email || !password) {
-    alert("All fields (Name, Email, Password) are required");
+  // Check if elements exist before getting values to prevent the "null" error
+  if (!nameEl || !emailEl || !passwordEl) {
+    alert("System Error: Form inputs not found.");
     return;
   }
+
+  const name = nameEl.value;
+  const email = emailEl.value;
+  const password = passwordEl.value;
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // 2. SEND ALL FIELDS to match backend
-      body: JSON.stringify({ name, email, password, role }) 
+      // Send these 4 fields to match your Backend User Model
+      body: JSON.stringify({ name, email, password, role: "viewer" })
     });
+
+    const data = await response.json();
 
     if (response.ok) {
       alert("Signup successful! Please login.");
       window.location.href = "login.html";
     } else {
-      const data = await response.json();
       alert(data.message || "Signup failed");
     }
   } catch (error) {
