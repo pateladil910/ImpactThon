@@ -7,19 +7,22 @@ const router = express.Router();
 
 // REGISTER
 router.post("/signup", async (req, res) => {
-  const { name, email, password, role } = req.body;
+  try {
+    const { name, email, password, role } = req.body;
+    
+    // Check if email already exists before saving
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "Email already exists" });
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ name, email, password: hashedPassword, role: role || "viewer" });
 
-  const user = new User({
-    name,
-    email,
-    password: hashedPassword,
-    role
-  });
-
-  await user.save();
-  res.json({ message: "User registered" });
+    await user.save();
+    res.json({ message: "User registered" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error during registration" });
+  }
 });
 
 // LOGIN
