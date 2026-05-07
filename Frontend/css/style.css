@@ -942,40 +942,6 @@ footer {
 /* ================= COMPREHENSIVE MOBILE RESPONSIVE ================= */
 @media (max-width: 768px) {
 
-  /* Elegant Navbar */
-  .navbar {
-    padding: 12px 20px;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    position: static;
-  }
-
-  .logo {
-    font-size: 20px;
-  }
-
-  .auth-buttons {
-    margin-top: 0;
-    gap: 8px;
-  }
-  
-  .auth-buttons a {
-    padding: 6px 12px;
-    font-size: 13px;
-  }
-
-  .nav-links {
-    width: 100%;
-    order: 3;
-    margin-top: 15px;
-    justify-content: center;
-    gap: 20px;
-    font-size: 14px;
-    border-top: 1px solid rgba(0, 255, 213, 0.15);
-    padding-top: 15px;
-=======
   /* Navbar */
   .navbar {
     padding: 15px 20px;
@@ -993,7 +959,6 @@ footer {
 
   .auth-buttons {
     margin-top: 10px;
->>>>>>> 72d85d912380b784ba9a401ce8cd51158de1b124
   }
 
   /* Hero Sections */
@@ -1006,17 +971,6 @@ footer {
 
   .hero-text h1 {
     font-size: 32px;
-    line-height: 1.3;
-  }
-
-  /* Attractive Side-by-Side Buttons */
-  .hero-actions {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 30px;
   }
 
   .hero-actions {
@@ -1025,21 +979,7 @@ footer {
     margin-top: 30px;
     width: 100%;
   }
-  .btn-primary,
-  .btn-outline {
-    flex: 1;
-    min-width: 140px;
-    padding: 12px 10px;
-    font-size: 14px;
-    margin: 0;
-  }
 
-  .btn-secondary {
-    width: 100%;
-    margin-top: 5px;
-    padding: 16px;
-    font-size: 16px;
-    }
   .hero-buttons {
     display: flex;
     flex-direction: column;
@@ -1052,20 +992,12 @@ footer {
   .btn-primary {
     width: 100%;
     margin: 0;
->>>>>>> 72d85d912380b784ba9a401ce8cd51158de1b124
   }
 
   .hero-card {
     width: 100%;
-<<<<<<< HEAD
-    max-width: 320px;
-    transform: translateY(0);
-    margin: 10px auto 0;
-    padding: 20px;
-=======
     transform: translateY(0);
     margin: 0 auto;
->>>>>>> 72d85d912380b784ba9a401ce8cd51158de1b124
   }
 
   /* General Padding Adjustments */
@@ -1080,11 +1012,7 @@ footer {
   .learn-section,
   .learn-cta,
   .news-section {
-<<<<<<< HEAD
-    padding: 50px 20px;
-=======
     padding: 40px 20px;
->>>>>>> 72d85d912380b784ba9a401ce8cd51158de1b124
   }
 
   /* Grids */
@@ -1093,14 +1021,6 @@ footer {
   .steps,
   .news-grid {
     grid-template-columns: 1fr;
-<<<<<<< HEAD
-    gap: 20px;
-  }
-
-  .card, .setup-card, .feature-card, .step, .news-card {
-    padding: 20px;
-=======
->>>>>>> 72d85d912380b784ba9a401ce8cd51158de1b124
   }
 
   /* Specific Pages */
@@ -1109,10 +1029,6 @@ footer {
   .learn-hero h1 {
     font-size: 28px;
     text-align: center;
-<<<<<<< HEAD
-    margin-bottom: 25px;
-=======
->>>>>>> 72d85d912380b784ba9a401ce8cd51158de1b124
   }
 
   .demo-video-section h2,
@@ -1123,20 +1039,12 @@ footer {
   }
 
   .contact-container {
-<<<<<<< HEAD
-    padding: 25px 20px;
-=======
     padding: 20px;
->>>>>>> 72d85d912380b784ba9a401ce8cd51158de1b124
   }
 
   /* Config grid override */
   .config-grid {
     margin: 20px auto 40px;
-<<<<<<< HEAD
-    gap: 15px;
-  }
-=======
   }
 }
 
@@ -1223,5 +1131,4 @@ footer {
     .dashboard-row {
         flex-direction: column;
     }
->>>>>>> 72d85d912380b784ba9a401ce8cd51158de1b124
 }
