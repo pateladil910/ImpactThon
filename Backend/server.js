@@ -29,7 +29,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/detection", detectionRoutes);
 app.use("/api/analytics", analyticsRoutes);
-app.use("/api", require("./routes/auth"));
+app.use("/api/auth", require("./routes/auth"));
 // app.use("/api", require("./routes/alert").router);
 
 // Test API
