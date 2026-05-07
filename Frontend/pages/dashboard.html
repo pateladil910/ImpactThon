@@ -112,14 +112,13 @@
     document.addEventListener("DOMContentLoaded", () => {
       const cameraImg = document.getElementById("ai-camera");
       if (cameraImg) {
-        cameraImg.src = "http://127.0.0.1:5001/video_feed";
-      }
+      cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";      }
     });
 
     /* ==========================
        🛡 AI STATUS
     ========================== */
-    const STATUS_URL = "http://127.0.0.1:5001/status";
+    const STATUS_URL = "https://impactthon-ai.onrender.com/status";
 
     let lastSafety = null;
     let lastAction = null;
@@ -188,7 +187,7 @@
     setInterval(updateStatus, 300);
     updateStatus();
 
-    const LAST_URL = "http://127.0.0.1:5001/last_detection";
+    const LAST_URL = "https://impactthon-ai.onrender.com/last_detection";
 
     async function updateLastDetection() {
       try {

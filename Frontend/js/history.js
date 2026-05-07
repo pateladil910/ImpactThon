@@ -1,4 +1,4 @@
-fetch("http://127.0.0.1:5001/api/history")
+fetch("https://impactthon-wjut.onrender.com/api/history")
   .then(res => res.json())
   .then(data => {
     const table = document.getElementById("historyBody");

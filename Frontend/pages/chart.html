@@ -346,7 +346,8 @@
 
       try {
         // Adjust URL to point to backend port 5000
-        const response = await fetch(`http://localhost:5000/api/analytics/data?type=${type}&date=${dateValue}`);
+        // Change 'http://localhost:5000' to your live Render URL
+        const response = await fetch(`https://impactthon-wjut.onrender.com/api/analytics/data?type=${type}&date=${dateValue}`);    
         const result = await response.json();
 
         if (result.success) {

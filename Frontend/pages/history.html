@@ -291,7 +291,7 @@
       const tbody = document.getElementById("historyBody");
 
       try {
-        const res = await fetch("http://127.0.0.1:5001/api/history");
+        const res = await fetch("https://impactthon-wjut.onrender.com/api/history");
 
         // ❗ backend not ready / route missing
         if (!res.ok) {
@@ -361,7 +361,7 @@
     function clearHistory() {
       if (!confirm("Are you sure you want to clear all detection history?")) return;
 
-      fetch("http://127.0.0.1:5001/api/clear_history", {
+      fetch("https://impactthon-wjut.onrender.com/api/clear_history", {
         method: "POST"
       })
         .then(() => location.reload())
@@ -369,7 +369,7 @@
     }
 
     function downloadExcel() {
-      window.location.href = "http://127.0.0.1:5001/api/history/download";
+      window.location.href = "https://impactthon-wjut.onrender.com/api/history/download";
     }
 
     setInterval(loadHistory, 5000);

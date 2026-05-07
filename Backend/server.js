@@ -32,7 +32,7 @@ app.get("/api/status", (req, res) => {
 
 // Start server
 app.listen(5000, () => {
-  console.log("✅ Server running on http://localhost:5000");
+  console.log("✅ Server running on https://impactthon-wjut.onrender.com");
 });
 
 // 🔥 EMAIL TEST (auto after 3 sec)

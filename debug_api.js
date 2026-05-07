@@ -1,6 +1,6 @@
 const http = require('http');
 
-const url = 'http://localhost:5000/api/analytics/data?type=day&date=2026-01-31';
+const url = 'https://impactthon-wjut.onrender.com/api/analytics/data?type=day&date=2026-01-31';
 
 http.get(url, (res) => {
     let data = '';

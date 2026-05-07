@@ -111,8 +111,7 @@
     document.addEventListener("DOMContentLoaded", () => {
       const cameraImg = document.getElementById("ai-camera");
       if (cameraImg) {
-        cameraImg.src = "http://127.0.0.1:5001/video_feed";
-      }
+      cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";      }
     });
 
     // ==========================================
@@ -196,7 +195,7 @@
       if (stopTriggered) return;
       stopTriggered = true;
       try {
-        await fetch("http://127.0.0.1:5001/api/force_stop", { method: "POST" });
+await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST" });
       } catch (e) {
         console.error(e);
       }
@@ -219,7 +218,7 @@
     // I should probably REMOVE the old updateStatus call that overwrites box 5.
 
     // Re-implementing a simpler updateStatus for Manual Dash that doesn't touch Box 5
-    const STATUS_URL = "http://127.0.0.1:5001/status";
+    const STATUS_URL = "https://impactthon-ai.onrender.com/status";
     async function updateSafetyOnly() {
       try {
         const res = await fetch(STATUS_URL);
@@ -282,7 +281,7 @@
     document.addEventListener("DOMContentLoaded", () => {
       const cameraImg = document.getElementById("ai-camera");
       if (cameraImg) {
-        cameraImg.src = "http://127.0.0.1:5001/video_feed";
+        cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";
       }
     });
   </script>

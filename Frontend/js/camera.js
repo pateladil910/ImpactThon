@@ -6,7 +6,7 @@ const SYSTEM_ACTION = document.querySelector(".box.red .box-value");
 
 async function fetchAIStatus() {
   try {
-    const response = await fetch("http://127.0.0.1:5001/status");
+    const response = await fetch("https://impactthon-wjut.onrender.com/api/status");
     const data = await response.json();
 
     // Update Safety Zone

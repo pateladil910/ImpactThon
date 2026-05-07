@@ -5,7 +5,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const cameraImg = document.getElementById("ai-camera");
   if (cameraImg) {
-    cameraImg.src = "http://127.0.0.1:5001/video_feed";
+    cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";
   }
 });
 
@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
    🛡 AI STATUS
 ========================== */
 
-const STATUS_URL = "http://127.0.0.1:5001/status";
+const STATUS_URL = "https://impactthon-wjut.onrender.com/api/status";
 
 let lastSafety = null;
 let lastAction = null;
