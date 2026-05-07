@@ -130,40 +130,32 @@ function checkAuthUI() {
 }
 
 async function signup(event) {
-  event.preventDefault();
+    event.preventDefault();
 
-  // Get elements
-  const nameEl = document.getElementById("signup-name");
-  const emailEl = document.getElementById("signup-email");
-  const passwordEl = document.getElementById("signup-password");
+    const name = document.getElementById("signup-name").value;
+    const email = document.getElementById("signup-email").value;
+    const password = document.getElementById("signup-password").value;
 
-  // Check if elements exist before getting values to prevent the "null" error
-  if (!nameEl || !emailEl || !passwordEl) {
-    alert("System Error: Form inputs not found.");
-    return;
-  }
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password, role: "viewer" })
+        });
 
-  const name = nameEl.value;
-  const email = emailEl.value;
-  const password = passwordEl.value;
+        const data = await response.json();
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // Send these 4 fields to match your Backend User Model
-      body: JSON.stringify({ name, email, password, role: "viewer" })
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alert("Signup successful! Please login.");
-      window.location.href = "login.html";
-    } else {
-      alert(data.message || "Signup failed");
+        if (response.ok) {
+            // ONLY show success if response is 200 OK
+            alert("Signup successful! Redirecting to login...");
+            window.location.href = "login.html";
+        } else {
+            // Show the actual error from backend (like "Email already exists")
+            // This prevents the generic "Server Error" popup
+            alert(data.message || "Signup failed. Please try again.");
+        }
+    } catch (error) {
+        // This ONLY runs if the server is offline or the URL is wrong
+        console.error("Network Error:", error);
     }
-  } catch (error) {
-    alert("Error connecting to server.");
-  }
 }
