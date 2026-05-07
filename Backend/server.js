@@ -36,7 +36,7 @@ app.use("/api/history", analyticsRoutes);
 
 app.get("/", (req, res) => {
   // This assumes your file is named login.html inside the 'public' folder
-  res.sendFile(path.join(__dirname, "Frontend","pages", "login.html"));
+  res.sendFile(path.join(__dirname,"..", "Frontend","pages", "login.html"));
 });
 
 // Test API
