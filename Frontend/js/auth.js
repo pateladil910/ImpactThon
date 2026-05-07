@@ -151,13 +151,13 @@ async function signup(event) {
       window.location.href = "login.html";
       return; // Stop the function here
     } 
-
-    // ERROR CASE (Server responded with an error message)
-    alert(data.message || "Registration failed. Please try again.");
+    else {
+      alert(data.message || "Signup failed");
+      return; // 👈 Stops the code
+    }
     
   } catch (error) {
     // NETWORK CASE (Server is down or no internet)
-    console.error("Connection Error:", error);
-    alert("Could not connect to server. Check your internet.");
+    alert("Connection error. Please try again later.");
   }
 }
