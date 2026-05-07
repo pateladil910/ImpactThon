@@ -1,0 +1,13 @@
+# Ignore dependency folders
+node_modules/
+__pycache__/
+venv/
+.env
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore large data/Excel files if you don't want them on GitHub
+*.xlsx
+*.zip

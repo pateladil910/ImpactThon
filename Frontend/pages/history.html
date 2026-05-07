@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detection History | AI Safety</title>
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <style>
+    body {
+      background: linear-gradient(180deg, #061a1f, #020c0f);
+      color: #eafaf4;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    .history-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: auto;
+      padding: 30px 20px;
+    }
+
+    /* HEADER */
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      gap: 15px;
+    }
+
+    .history-header h2 {
+      font-size: 26px;
+      color: #00ff9c;
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .back-clean {
+      position: fixed;
+      left: 24px;
+      bottom: px;
+
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      background: rgba(0, 255, 156, 0.12);
+      border: 1px solid rgba(0, 255, 156, 0.45);
+      color: #00ff9c;
+
+      padding: 10px 22px;
+      border-radius: 28px;
+
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 18px rgba(0, 255, 156, 0.25);
+
+      transition: all 0.25s ease;
+      z-index: 999;
+    }
+
+    .back-clean:hover {
+      background: rgba(0, 255, 156, 0.22);
+      box-shadow: 0 0 28px rgba(0, 255, 156, 0.45);
+      transform: translateY(-2px);
+    }
+
+    .back-clean:active {
+      transform: scale(0.96);
+    }
+
+    /* TABLE CARD */
+    .table-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 18px;
+      padding: 10px 0;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 35px rgba(0, 255, 156, 0.07);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      padding: 16px;
+      text-align: left;
+      color: #00ff9c;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    td {
+      padding: 15px 16px;
+      font-size: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    tbody tr {
+      transition: 0.25s;
+    }
+
+    tbody tr:hover {
+      background: rgba(0, 255, 156, 0.08);
+    }
+
+    /* STATUS BADGES */
+    .badge-safe {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(0, 255, 156, 0.15);
+      color: #00ff9c;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .badge-danger {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(255, 77, 77, 0.15);
+      color: #ff4d4d;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    /* NAV TIME */
+    .nav-time {
+      background: rgba(0, 255, 156, 0.12);
+      border: 1px solid rgba(0, 255, 156, 0.35);
+      padding: 6px 16px;
+      border-radius: 22px;
+      color: #00ff9c;
+      font-size: 13px;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      opacity: 0.6;
+      font-size: 13px;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      /* time ane clear button vachche gap */
+    }
+
+    .clear-btn {
+      padding: 10px 22px;
+      border-radius: 26px;
+      border: 1px solid rgba(255, 77, 77, 0.6);
+      background: linear-gradient(135deg, #ff4d4d, #ff1f1f);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 18px rgba(255, 77, 77, 0.35);
+      transition: all 0.25s ease;
+    }
+
+    .clear-btn:hover {
+      transform: translateY(-1px) scale(1.03);
+      box-shadow: 0 0 28px rgba(255, 77, 77, 0.6);
+      background: linear-gradient(135deg, #ff6a6a, #ff2d2d);
+    }
+
+    .download-btn {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      background: rgba(0, 255, 156, 0.12);
+      border: 1px solid rgba(0, 255, 156, 0.45);
+      color: #00ff9c;
+
+      padding: 10px 22px;
+      border-radius: 28px;
+
+      font-size: 14px;
+      font-weight: 600;
+
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 18px rgba(0, 255, 156, 0.25);
+
+      transition: all 0.25s ease;
+      z-index: 999;
+    }
+
+    .download-btn:hover {
+      background: rgba(0, 255, 156, 0.22);
+      box-shadow: 0 0 30px rgba(0, 255, 156, 0.45);
+    }
+
+    .table-box {
+      overflow-x: auto;
+    }
+
+    @media (max-width: 768px) {
+      .history-header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .nav-right {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .clear-btn,
+      .download-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <div class="logo">AI Safety</div>
+
+      <ul class="nav-links">
+        <li onclick="location.href='dashboard.html'">Dashboard</li>
+        <li onclick="location.href='chart.html'">Analytics</li>
+        <li onclick="location.href='contact.html'">Contact</li>
+      </ul>
+
+      <div class="nav-right">
+        <div class="nav-time">
+          ⏱ <span id="liveTime">09:49:48 pm</span>
+        </div>
+
+        <button class="clear-btn" onclick="clearHistory()">
+          🗑 Clear All Data
+        </button>
+      </div>
+
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="history-container">
+
+        <div class="history-header">
+          <h2>📜 Human Detection History</h2>
+
+
+
+          <button class="download-btn" onclick="downloadExcel()">
+            ⬇ Download Excel
+          </button>
+        </div>
+
+
+
+        <div class="table-box">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Event</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Photos</th>
+              </tr>
+            </thead>
+
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <button class="back-clean" onclick="location.href='dashboard.html'">
+        ⬅ Back
+      </button>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      © 2025 AI Smart Safety System | Detection Logs
+    </footer>
+
+  </div>
+
+  <script>
+    async function loadHistory() {
+      const tbody = document.getElementById("historyBody");
+
+      try {
+        const res = await fetch("https://impactthon-wjut.onrender.com/api/history");
+
+        // ❗ backend not ready / route missing
+        if (!res.ok) {
+          throw new Error("History API not available");
+        }
+
+        const data = await res.json();
+        tbody.innerHTML = "";
+
+        // ✅ EMPTY DATA HANDLING
+        if (data.length === 0) {
+          tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; opacity:0.7;">
+            No detection history available
+          </td>
+        </tr>
+      `;
+          return;
+        }
+
+        // ✅ NORMAL DATA RENDER
+        data.forEach((item, index) => {
+          tbody.innerHTML += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${item.Event}</td>
+          <td class="${item.Status === 'DANGER' ? 'badge-danger' : 'badge-safe'}">
+            ${item.Status}
+          </td>
+          <td>${item.Date}</td>
+          <td>${item.Time}</td>
+          <td>
+            ${item.Photo ? `<img src="data:image/jpeg;base64,${item.Photo}" style="width: 80px; height: auto; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,255,156,0.3);" onclick="window.open(this.src)" />` : '--'}
+          </td>
+        </tr>
+      `;
+        });
+
+      } catch (err) {
+        // ✅ graceful fallback (NO console spam)
+        tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; opacity:0.6;">
+          History service not available
+        </td>
+      </tr>
+    `;
+      }
+    }
+
+    /* 🔹 LIVE CLOCK (CURRENT TIME) */
+    function updateLiveTime() {
+      const now = new Date();
+      const options = {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      };
+      document.getElementById("liveTime").innerText =
+        now.toLocaleTimeString("en-IN", options);
+    }
+
+
+
+    function clearHistory() {
+      if (!confirm("Are you sure you want to clear all detection history?")) return;
+
+      fetch("https://impactthon-wjut.onrender.com/api/clear_history", {
+        method: "POST"
+      })
+        .then(() => location.reload())
+        .catch(err => console.error(err));
+    }
+
+    function downloadExcel() {
+      window.location.href = "https://impactthon-wjut.onrender.com/api/history/download";
+    }
+
+    setInterval(loadHistory, 5000);
+    setInterval(updateLiveTime, 1000);
+
+    loadHistory();
+    updateLiveTime();
+  </script>
+
+
+</body>
+
+</html>

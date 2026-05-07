@@ -1,0 +1,228 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        a {
+            color: white;
+            text-decoration: none;
+            padding-right: 20px;
+
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .setup-dropdown {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            width: 100%;
+            font-family: inherit;
+            margin-top: 5px;
+        }
+
+        .setup-dropdown option {
+            background: #0f172a;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .navbar nav {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+                margin-top: 15px;
+            }
+
+            .navbar nav a {
+                padding-right: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="logo">AI Safety</div>
+        <nav>
+            <a href="index.html">Home</a>
+            <a onclick="location.href='contact.html'">Contact</a>
+            <a onclick="location.href='solution.html'">Solution</a>
+
+            <link rel="stylesheet" href="../css/style.css">
+        </nav>
+    </header>
+
+    <section class="hero setup-hero">
+        <div class="setup-container">
+            <h1>System Configuration</h1>
+
+            <div class="config-grid">
+
+                <div class="config-card" id="system-mode-card">
+                    <h3>System Mode</h3>
+
+                    <!-- Mode Select -->
+                    <select id="modeSelect" class="setup-dropdown" onchange="updateTimeSlots()">
+                        <option value="AUTO">AUTO</option>
+                        <option value="MANUAL">MANUAL</option>
+                    </select>
+
+                    <!-- Dynamic Time Slot Container -->
+                    <div id="timeSlotContainer" style="margin-top: 10px;"></div>
+                </div>
+
+                <div class="config-card">
+                    <h3>Safety Thresholds</h3>
+                    <p>Safe • Warning • Danger</p>
+                </div>
+
+                <div class="config-card">
+                    <h3>Device Status</h3>
+                    <p>Camera ✅ &nbsp; Sensor ✅</p>
+                </div>
+
+                <div class="config-card">
+                    <h3>Alerts</h3>
+                    <p>Auto Stop • Buzzer • Notification</p>
+                </div>
+
+            </div>
+
+
+            <div class="setup-cta">
+                <a onclick="startMonitoring()" class="get-started-btn" style="cursor: pointer;">Start Monitoring</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        © 2025 AI Smart Safety System
+    </footer>
+    <script>
+        const modeSelect = document.getElementById("modeSelect");
+        consttimeSelect = document.getElementById("timeSelect");
+
+        function updateTimeSlots() {
+            const mode = modeSelect.value;
+            const container = document.getElementById("timeSlotContainer");
+
+            container.innerHTML = ""; // Clear container
+
+            if (mode === "AUTO") {
+                // Create Select Dropdown
+                const sel = document.createElement("select");
+                sel.id = "timeSelect";
+                sel.className = "setup-dropdown";
+
+                const slots = [
+                    "Morning to Afternoon (06:00 - 12:00)",
+                    "Afternoon to Evening (12:00 - 17:00)",
+                    "Evening to Night (17:00 - 22:00)",
+                    "Night to Morning (22:00 - 06:00)"
+                ];
+                slots.forEach(slot => {
+                    const opt = document.createElement("option");
+                    opt.value = slot;
+                    opt.innerText = slot;
+                    sel.appendChild(opt);
+                });
+
+                sel.addEventListener("change", saveConfig);
+                container.appendChild(sel);
+
+            } else {
+                // Create Time Inputs
+                container.innerHTML = `
+                    <div style="display: flex; gap: 10px;">
+                        <input type="time" id="startTime" class="setup-dropdown" onchange="saveConfig()">
+                        <span style="align-self: center; color: white;">to</span>
+                        <input type="time" id="endTime" class="setup-dropdown" onchange="saveConfig()">
+                    </div>
+                `;
+            }
+            saveConfig();
+        }
+
+        // Save to LocalStorage
+        function saveConfig() {
+            const mode = modeSelect.value;
+            let timeVal = "";
+
+            if (mode === "AUTO") {
+                const sel = document.getElementById("timeSelect");
+                if (sel) timeVal = sel.value;
+            } else {
+                const start = document.getElementById("startTime");
+                const end = document.getElementById("endTime");
+                if (start && end) {
+                    timeVal = `${start.value} - ${end.value}`;
+                }
+            }
+
+            const config = {
+                mode: mode,
+                timeSlot: timeVal
+            };
+            localStorage.setItem("systemConfig", JSON.stringify(config));
+        }
+
+        // Load from LocalStorage
+        function loadConfig() {
+            const saved = localStorage.getItem("systemConfig");
+            if (saved) {
+                const config = JSON.parse(saved);
+                modeSelect.value = config.mode;
+                updateTimeSlots(); // Re-render UI based on mode
+
+                if (config.mode === "AUTO") {
+                    const sel = document.getElementById("timeSelect");
+                    if (sel) sel.value = config.timeSlot;
+                } else {
+                    // Parse "HH:MM - HH:MM"
+                    if (config.timeSlot && config.timeSlot.includes(" - ")) {
+                        const [s, e] = config.timeSlot.split(" - ");
+                        const startInput = document.getElementById("startTime");
+                        const endInput = document.getElementById("endTime");
+                        if (startInput) startInput.value = s;
+                        if (endInput) endInput.value = e;
+                    }
+                }
+            } else {
+                updateTimeSlots(); // Default init
+            }
+        }
+
+        // Listeners
+        modeSelect.addEventListener("change", updateTimeSlots);
+
+
+        // Start Monitoring Redirect
+        function startMonitoring() {
+            const saved = localStorage.getItem("systemConfig");
+            if (saved) {
+                const config = JSON.parse(saved);
+                if (config.mode === "MANUAL") {
+                    location.href = "dashboard2.html";
+                } else {
+                    location.href = "dashboard.html";
+                }
+            } else {
+                // Default to dashboard if no config
+                location.href = "dashboard.html";
+            }
+        }
+
+        // Init
+        loadConfig();
+    </script>
+</body>
+
+</html>

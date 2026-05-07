@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Danger Analytics | AI Safety</title>
+
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      background: linear-gradient(180deg, #061a1f, #020c0f);
+      color: #eafaf4;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    .analytics-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .analytics-title {
+      font-size: 26px;
+      color: #00ff9c;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chart-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 70px 20px 30px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 35px rgba(0, 255, 156, 0.08);
+    }
+
+    .chart-container {
+      width: 100%;
+      max-width: 1200px;
+      height: 420px;
+    }
+
+    .chart-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      width: 100%;
+      max-width: 1200px;
+      height: 100% !important;
+      max-width: 1200px;
+      margin: auto;
+      display: block;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 18px rgba(0, 255, 156, 0.25);
+    }
+
+    /* ===== TOP RIGHT CONTROLS ===== */
+    .chart-controls {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    /* ===== MONTH FILTER – BRIGHT FIX ===== */
+    .month-filter {
+      background: rgba(0, 255, 156, 0.15);
+      border: 1px solid rgba(0, 255, 156, 0.45);
+      color: #00ff9c;
+
+      padding: 9px 16px;
+      border-radius: 22px;
+
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+
+      box-shadow:
+        0 0 12px rgba(0, 255, 156, 0.65),
+        inset 0 0 6px rgba(255, 255, 255, 0.25);
+
+      transition: all 0.25s ease;
+    }
+
+    .month-filter:hover {
+      box-shadow:
+        0 0 18px rgba(0, 255, 156, 0.9),
+        inset 0 0 10px rgba(255, 255, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
+    /* Dropdown list */
+    .month-filter option {
+      background: #062c28;
+      color: #00ff9c;
+      font-weight: 600;
+    }
+
+
+    /* ===== FILTER GROUP ===== */
+    .filter-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: rgba(0, 255, 156, 0.1);
+      padding: 5px 10px;
+      border-radius: 30px;
+      border: 1px solid rgba(0, 255, 156, 0.3);
+    }
+
+    /* Toggle Switch */
+    .toggle-container {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 20px;
+      padding: 2px;
+      overflow: hidden;
+    }
+
+    .toggle-container input {
+      width: 100%;
+      max-width: 1200px;
+      display: none;
+    }
+
+    .toggle-container label {
+      width: 100%;
+      max-width: 1200px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #00ff9c;
+      transition: all 0.3s ease;
+      border-radius: 18px;
+    }
+
+    .toggle-container input:checked+label {
+      width: 100%;
+      max-width: 1200px;
+      background: #00ff9c;
+      color: #000;
+    }
+
+    /* Date Input */
+    .date-input {
+      background: transparent;
+      border: none;
+      color: #00ff9c;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Calendar icon color fix */
+    .date-input::-webkit-calendar-picker-indicator {
+      filter: invert(1) sepia(100%) saturate(500%) hue-rotate(90deg) brightness(120%);
+      cursor: pointer;
+    }
+
+    .download-chart-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 255, 156, 0.15);
+      border: 1px solid rgba(0, 255, 156, 0.45);
+      color: #00ff9c;
+      padding: 8px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 18px rgba(0, 255, 156, 0.25);
+      transition: all 0.25s ease;
+    }
+
+    .download-chart-btn:hover {
+      background: rgba(0, 255, 156, 0.25);
+      box-shadow: 0 0 30px rgba(0, 255, 156, 0.45);
+      transform: translateY(-2px);
+    }
+
+    .back-clean {
+      position: fixed;
+      left: 24px;
+      bottom: 24px;
+      background: rgba(0, 255, 156, 0.18);
+      border: 1px solid rgba(0, 255, 156, 0.45);
+      color: #00ff9c;
+      padding: 10px 22px;
+      border-radius: 28px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 22px rgba(0, 255, 156, 0.35);
+    }
+
+    @media (max-width: 768px) {
+      .chart-controls {
+        position: static;
+        flex-direction: column;
+        margin-bottom: 20px;
+      }
+
+      .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .chart-card {
+        padding: 30px 15px 30px;
+      }
+
+      .analytics-title {
+        font-size: 20px;
+        justify-content: center;
+      }
+
+      .download-chart-btn {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <div class="logo">AI Safety</div>
+    <ul class="nav-links">
+      <li onclick="location.href='dashboard.html'">Dashboard</li>
+      <li onclick="location.href='history.html'">History</li>
+      <li onclick="location.href='chart.html'">Analytics</li>
+    </ul>
+  </nav>
+
+  <main class="main">
+    <div class="analytics-container">
+
+      <div class="analytics-title">
+        📊 Hour-Wise Danger Analytics
+      </div>
+
+      <div class="chart-card">
+
+        <!-- TOP RIGHT FILTER + DOWNLOAD -->
+        <!-- TOP RIGHT FILTER + DOWNLOAD -->
+        <div class="chart-controls">
+
+          <div class="filter-group">
+            <!-- Type Toggle -->
+            <div class="toggle-container">
+              <input type="radio" id="typeDay" name="filterType" value="day" checked onchange="toggleFilterType()">
+              <label for="typeDay">Day</label>
+              <input type="radio" id="typeMonth" name="filterType" value="month" onchange="toggleFilterType()">
+              <label for="typeMonth">Month</label>
+            </div>
+
+            <!-- Date Input -->
+            <input type="date" id="dateFilter" class="date-input" onchange="fetchData()">
+
+            <!-- Month Input (Hidden by default) -->
+            <input type="month" id="monthFilter" class="date-input" style="display:none;" onchange="fetchData()">
+          </div>
+
+          <button class="download-chart-btn" onclick="downloadExcel()">
+            ⬇ Download Chart
+          </button>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="dangerChart"></canvas>
+        </div>
+
+      </div>
+    </div>
+
+    <button class="back-clean" onclick="location.href='dashboard.html'">
+      ⬅ Back
+    </button>
+  </main>
+
+  <script>
+    const ctx = document.getElementById("dangerChart").getContext("2d");
+
+    // Initialize Chart with empty data (will be filled by API)
+    const dangerChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: [], // To be populated
+        datasets: [{
+          label: "Danger Count",
+          data: [], // To be populated
+          backgroundColor: "#ff4d4d"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Hours',
+              color: '#00ff9c',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            },
+            ticks: {
+              color: "#fff"
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Danger Counts',
+              color: '#00ff9c',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            },
+            beginAtZero: true,
+            ticks: {
+              color: "#fff"
+            }
+          }
+        }
+      }
+    });
+
+    // Toggle Input Fields based on selection
+    function toggleFilterType() {
+      const type = document.querySelector('input[name="filterType"]:checked').value;
+      const dateInput = document.getElementById("dateFilter");
+      const monthInput = document.getElementById("monthFilter");
+
+      if (type === "day") {
+        dateInput.style.display = "inline-block";
+        monthInput.style.display = "none";
+
+        // Default to today if empty
+        if (!dateInput.value) {
+          dateInput.valueAsDate = new Date();
+        }
+      } else {
+        dateInput.style.display = "none";
+        monthInput.style.display = "inline-block";
+
+        // Default to current month if empty
+        if (!monthInput.value) {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = (now.getMonth() + 1).toString().padStart(2, '0');
+          monthInput.value = `${year}-${month}`;
+        }
+      }
+
+      // Auto-fetch data when toggling
+      fetchData();
+    }
+
+    // Fetch Data from Backend
+    async function fetchData() {
+      const type = document.querySelector('input[name="filterType"]:checked').value;
+      let dateValue = "";
+
+      if (type === "day") {
+        dateValue = document.getElementById("dateFilter").value;
+      } else {
+        dateValue = document.getElementById("monthFilter").value;
+      }
+
+      if (!dateValue) return;
+
+      try {
+        // Adjust URL to point to backend port 5000
+        // Change 'http://localhost:5000' to your live Render URL
+        const response = await fetch(`https://impactthon-wjut.onrender.com/api/analytics/data?type=${type}&date=${dateValue}`);
+        const result = await response.json();
+
+        if (result.success) {
+          updateChart(result.labels, result.data);
+        } else {
+          console.error("Failed to fetch data:", result.message);
+          // Optional: Clear chart or show error
+          updateChart([], []);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+
+    function updateChart(labels, data) {
+      dangerChart.data.labels = labels;
+      dangerChart.data.datasets[0].data = data;
+      dangerChart.update();
+    }
+
+    // Download Chart Data as CSV
+    function downloadExcel() {
+      const labels = dangerChart.data.labels;
+      const data = dangerChart.data.datasets[0].data;
+
+      if (!labels || labels.length === 0) {
+        alert("No data to download");
+        return;
+      }
+
+      let csvContent = "Time/Day,Danger Count\n";
+      labels.forEach((label, index) => {
+        csvContent += `${label},${data[index]}\n`;
+      });
+
+      const blob = new Blob([csvContent], {
+        type: "application/vnd.ms-excel"
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "danger_analytics.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
+
+    // Initialize on load
+    window.onload = function () {
+      // Set default date to today
+      document.getElementById("dateFilter").valueAsDate = new Date();
+      toggleFilterType(); // specific call to set initial state correctly
+
+      // Auto-refresh every 5 seconds
+      setInterval(fetchData, 5000);
+    };
+  </script>
+
+</body>
+
+</html>

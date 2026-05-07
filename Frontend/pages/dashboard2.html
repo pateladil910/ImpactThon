@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Safety Dashboard</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/dashboard.css" />
+
+</head>
+
+<body>
+
+  <div class="page">
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar">
+      <div class="logo">AI Safety</div>
+      <ul class="nav-links">
+        <li onclick="location.href='index.html'">Home</li>
+        <li onclick="location.href='chart.html'">Analytics</li>
+        <li onclick="location.href='contact.html'">Contact</li>
+        <li onclick="location.href='setup.html'">Configuration</li>
+      </ul>
+    </nav>
+
+    <!-- ================= MAIN ================= -->
+    <main class="main">
+
+      <h1>Manual Operation Dashboard</h1>
+      <p class="subtitle">
+        Real-time monitoring of human proximity, machine status, and AI-based safety decisions.
+      </p>
+
+      <!-- ================= GRID ================= -->
+      <div class="dashboard-grid">
+
+        <!-- 🎥 CAMERA -->
+        <div class="box camera">
+          <div class="box-title">Camera Detection Live</div>
+
+          <div class="camera-box">
+            <img id="ai-camera" alt="AI Camera Stream" />
+          </div>
+
+          <div class="camera-status">
+            LIVE – Real-time Monitoring
+          </div>
+        </div>
+
+        <!-- 🛡 SAFETY ZONE -->
+        <div class="box safe" id="safety-box">
+          <div class="box-title">🛡 Safety Zone</div>
+          <div class="box-value" id="safety-status">SAFE</div>
+          <div class="box-desc" id="safety-desc">
+            Human distance above threshold
+          </div>
+        </div>
+
+        <!-- 🧠 AI CONFIDENCE -->
+        <div class="box">
+          <div class="box-title">🧠 AI Confidence</div>
+          <div class="box-value" id="confidence-value">92%</div>
+          <div class="box-desc">
+            YOLO detection accuracy
+          </div>
+        </div>
+
+        <div class="box" id="manual-schedule-box">
+          <h4>🕒 Manual Schedule</h4>
+          <h2 id="manual-time-display">--</h2>
+          <p id="manual-timer-status">Waiting for config...</p>
+        </div>
+
+        <!-- 🚨 SYSTEM ACTION (REACTS TO BOTH) -->
+        <div class="box safe" id="action-box">
+          <div class="box-title">🚨 System Action</div>
+          <div class="box-value" id="machine-action">RUN</div>
+          <div class="box-desc" id="machine-desc">
+            System running normally
+          </div>
+        </div>
+
+      </div>
+
+
+  </div>
+
+  <div class="history-btn-wrapper">
+    <a href="history.html" class="history-btn">
+      📊 View Detection History →
+    </a>
+  </div>
+
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    © 2025 AI Smart Safety System | Live Industrial Monitoring
+  </footer>
+
+  </div>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    /* ==========================
+       🎥 CAMERA STREAM
+    ========================== */
+    document.addEventListener("DOMContentLoaded", () => {
+      const cameraImg = document.getElementById("ai-camera");
+      if (cameraImg) {
+      cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";      }
+    });
+
+    // ==========================================
+    // 🕰 MANUAL MODE LOGIC
+    // ==========================================
+    function initManualDashboard() {
+      const configStr = localStorage.getItem("systemConfig");
+      if (configStr) {
+        try {
+          const config = JSON.parse(configStr);
+
+          // Validate Config
+          if (!config.timeSlot || !config.timeSlot.includes(" - ")) {
+            document.getElementById("manual-time-display").innerText = "Not Configured";
+            document.getElementById("manual-timer-status").innerText = "Please go to Setup";
+            return;
+          }
+
+          document.getElementById("manual-time-display").innerText = config.timeSlot;
+          startManualTimer(config.timeSlot);
+        } catch (e) {
+          console.error("Config Error", e);
+        }
+      }
+    }
+
+    function startManualTimer(timeRange) {
+      if (!timeRange) return;
+      const [startStr, endStr] = timeRange.split(" - ");
+
+      setInterval(() => {
+        const now = new Date();
+        const end = new Date();
+        const [endH, endM] = endStr.split(":").map(Number);
+        end.setHours(endH, endM, 0, 0);
+
+        // Handle overnight logic (e.g. 23:00 - 02:00)
+        const [startH, startM] = startStr.split(":").map(Number);
+        // If the start-time is "later" than end-time (e.g. 22:00 vs 02:00), 
+        // and we are currently in the "start" part (e.g. 23:00), 
+        // then end is tomorrow.
+        if (endH < startH && now.getHours() >= startH) {
+          end.setDate(end.getDate() + 1);
+        }
+        // If we are in the "early morning" part (e.g. 01:00), end is today. 
+        // The default `new Date()` handles today correctly.
+
+        if (now >= end) {
+          // EXPIRED
+          document.getElementById("manual-timer-status").innerText = "⚠️ TIME EXPIRED";
+          document.getElementById("manual-timer-status").style.color = "red";
+
+          // Update System Action Box
+          const machAct = document.getElementById("machine-action");
+          const machDesc = document.getElementById("machine-desc");
+          const actionBox = document.getElementById("action-box");
+
+          if (machAct) machAct.innerText = "STOP";
+          if (machDesc) machDesc.innerText = "Schedule Completed";
+          if (actionBox) {
+            actionBox.classList.add("danger");
+            actionBox.classList.remove("safe");
+          }
+
+          triggerForceStop();
+        } else {
+          // RUNNING
+          const diff = end - now;
+          const hours = Math.floor(diff / 3600000);
+          const mins = Math.floor((diff % 3600000) / 60000);
+          const secs = Math.floor((diff % 60000) / 1000);
+
+          document.getElementById("manual-timer-status").innerText = `Ends in ${hours}h ${mins}m ${secs}s`;
+          document.getElementById("manual-timer-status").style.color = "#00ff88";
+        }
+      }, 1000);
+    }
+
+    let stopTriggered = false;
+    async function triggerForceStop() {
+      if (stopTriggered) return;
+      stopTriggered = true;
+      try {
+await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST" });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Start
+    initManualDashboard();
+
+    // Standard Status Updates (Keep basic stuff or reduce)
+    // We basically just need camera and maybe safety zone status
+    // But System Action is now controlled by Timer in this view? 
+    // Or do we still want "Safety Stop" separately?
+    // Let's keep data updates but ignore System Action overwriting our Timer box
+
+    // ... (Old updateStatus code omitted or simplified?)
+    // Actually, updateStatus writes to "action-box", "system-action". 
+    // I renamed them in HTML above to "timer-action" etc?
+    // Wait, I reused id="action-box", id="timer-action" (was system-action).
+    // The old script references "system-action". So collision.
+    // I should probably REMOVE the old updateStatus call that overwrites box 5.
+
+    // Re-implementing a simpler updateStatus for Manual Dash that doesn't touch Box 5
+    const STATUS_URL = "https://impactthon-ai.onrender.com/status";
+    async function updateSafetyOnly() {
+      try {
+        const res = await fetch(STATUS_URL);
+        const data = await res.json();
+
+        // 🛡 Safety Zone
+        const safetyBox = document.getElementById("safety-box");
+        const machAct = document.getElementById("machine-action");
+
+        if (data.safety === "DANGER") {
+          document.getElementById("safety-status").innerText = "DANGER";
+          document.getElementById("safety-desc").innerText = "Human detected!";
+          safetyBox.classList.replace("safe", "danger");
+
+          // Also Stop Machine UI (unless timer already stopped it)
+          if (machAct && machAct.innerText !== "STOP") {
+            machAct.innerText = "STOP";
+            machAct.style.color = "red";
+          }
+          const actionBox = document.getElementById("action-box");
+          const actionDesc = document.getElementById("machine-desc");
+          if (actionBox) {
+            actionBox.classList.add("danger");
+            actionBox.classList.remove("safe");
+          }
+          if (actionDesc && machAct && machAct.innerText === "STOP") {
+            actionDesc.innerText = "Emergency Stop - Human Detected";
+          }
+        } else {
+          document.getElementById("safety-status").innerText = "SAFE";
+          document.getElementById("safety-desc").innerText = "Area clear";
+          safetyBox.classList.replace("danger", "safe");
+
+          // Only RUN if not forced STOP by timer
+          if (machAct && !stopTriggered) {
+            machAct.innerText = "RUN";
+            machAct.style.color = "#00ff88";
+            const actionBox = document.getElementById("action-box");
+            const actionDesc = document.getElementById("machine-desc");
+            if (actionBox) {
+              actionBox.classList.add("safe");
+              actionBox.classList.remove("danger");
+            }
+            if (actionDesc) actionDesc.innerText = "System running normally";
+          }
+        }
+
+        // 🧠 Confidence
+        if (data.confidence) {
+          document.getElementById("confidence-value").innerText = data.confidence + "%";
+        }
+
+      } catch (e) { }
+    }
+    setInterval(updateSafetyOnly, 500);
+
+    /* ==========================
+       🎥 CAMERA STREAM
+    ========================== */
+    document.addEventListener("DOMContentLoaded", () => {
+      const cameraImg = document.getElementById("ai-camera");
+      if (cameraImg) {
+        cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";
+      }
+    });
+  </script>
+
+</body>
+
+</html>

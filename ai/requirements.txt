@@ -1,0 +1,18 @@
+# pytz
+# flask
+# flask-cors
+# opencv-python
+# pymongo
+# python-dotenv
+# pandas
+# openpyxl
+pytz
+pyserial
+flask
+flask-cors
+opencv-python-headless
+pymongo
+python-dotenv
+pandas
+openpyxl
+ultralytics
