@@ -8,32 +8,30 @@ const router = express.Router();
 // REGISTER
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
-    // 1. Check if user already exists BEFORE trying to save
+    // 1. Manually check if email exists
     const existingUser = await User.findOne({ email });
+    
     if (existingUser) {
-      // Send 400 (Bad Request) instead of crashing with 500
-      return res.status(400).json({ message: "This email is already registered. Please login." });
+      // Send 400 (Client Error) instead of 500 (Server Crash)
+      return res.status(400).json({ message: "Email is already registered. Please login." });
     }
 
+    // 2. If no duplicate, proceed to hash and save
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || "viewer"
-    });
-
+    const user = new User({ name, email, password: hashedPassword });
     await user.save();
-    
-    // 2. Success response
-    return res.status(201).json({ message: "User registered successfully" });
+
+    // 3. Send 201 (Created)
+    return res.status(201).json({ message: "Account created successfully!" });
 
   } catch (error) {
-    console.error("Signup Error:", error);
-    // 3. Only send 500 if it's a real server crash (like database is down)
-    res.status(500).json({ message: "Server error. Please try again later." });
+    console.error("Signup Crash:", error);
+    // Only happens if the database is actually disconnected
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Server error. Please try again later." });
+    }
   }
 });
 
