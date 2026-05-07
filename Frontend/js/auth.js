@@ -80,15 +80,15 @@ document.addEventListener("DOMContentLoaded", () => {
 async function login(event) {
   event.preventDefault();
 
-  const username = document.getElementById("username").value;
+  const username = document.getElementById("username").value; // This is the user's email
   const password = document.getElementById("password").value;
 
   try {
-    // Logic changed: Fetch from Server instead of LocalStorage
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
+      // CHANGE THIS LINE: Send 'email' instead of 'username'
+      body: JSON.stringify({ email: username, password }) 
     });
 
     const data = await response.json();
@@ -96,18 +96,21 @@ async function login(event) {
     if (response.ok) {
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
+      localStorage.setItem("token", data.token); // Store the JWT token for later
       window.location.href = "index.html";
     } else {
-      alert(data.message || "Wrong username or password");
+      // This will now show the actual error message like "User not found"
+      alert(data.msg || "Login failed"); 
     }
   } catch (error) {
-    alert("Connection error. Is the server waking up?");
+    alert("Connection error.");
   }
 }
 
 function logout() {
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
+  localStorage.removeItem("token");
   window.location.href = "login.html";
 }
 
