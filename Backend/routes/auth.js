@@ -10,17 +10,34 @@ router.post("/signup", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
     
-    // Check if email already exists before saving
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "Email already exists" });
+    // 1. Validate input exists
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
 
+    // 2. Check if email already exists to avoid the 11000 Mongo Error
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    // 3. Hash and Save
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashedPassword, role: role || "viewer" });
+    const user = new User({ 
+      name, 
+      email, 
+      password: hashedPassword, 
+      role: role || "viewer" 
+    });
 
     await user.save();
-    res.json({ message: "User registered" });
+
+    // 4. Send a clean success response
+    res.status(201).json({ message: "User registered successfully" });
+
   } catch (error) {
-    console.error(error);
+    console.error("Signup Error Log:", error);
+    // This sends the "Server error" message ONLY when a real crash happens
     res.status(500).json({ message: "Server error during registration" });
   }
 });

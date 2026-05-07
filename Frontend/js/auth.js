@@ -132,6 +132,7 @@ function checkAuthUI() {
 async function signup(event) {
     event.preventDefault();
 
+    // 1. Get values
     const name = document.getElementById("signup-name").value;
     const email = document.getElementById("signup-email").value;
     const password = document.getElementById("signup-password").value;
@@ -145,17 +146,23 @@ async function signup(event) {
 
         const data = await response.json();
 
+        // 2. CHECK SUCCESS FIRST
         if (response.ok) {
-            // ONLY show success if response is 200 OK
-            alert("Signup successful! Redirecting to login...");
+            alert("Success! Account created successfully.");
             window.location.href = "login.html";
-        } else {
-            // Show the actual error from backend (like "Email already exists")
-            // This prevents the generic "Server Error" popup
-            alert(data.message || "Signup failed. Please try again.");
+        } 
+        // 3. CHECK FOR KNOWN ERRORS (like duplicate email)
+        else if (response.status === 400) {
+            alert(data.message || "This email is already registered.");
         }
+        // 4. ONLY SHOW SERVER ERROR IF STATUS IS 500
+        else {
+            alert("Server error during registration. Please check your connection.");
+        }
+
     } catch (error) {
-        // This ONLY runs if the server is offline or the URL is wrong
-        console.error("Network Error:", error);
+        // This only triggers if the internet is down or server is offline
+        console.error("Fetch error:", error);
+        alert("Could not connect to the server. Please try again later.");
     }
 }
