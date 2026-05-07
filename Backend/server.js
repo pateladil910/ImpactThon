@@ -34,6 +34,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/history", analyticsRoutes);
 // app.use("/api", require("./routes/alert").router);
 
+app.get("/", (req, res) => {
+  // This assumes your file is named login.html inside the 'public' folder
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
 // Test API
 app.get("/api/status", (req, res) => {
   res.json({
