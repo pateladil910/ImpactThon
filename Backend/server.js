@@ -22,6 +22,7 @@ app.use(express.json());
 
 // Connect to Database
 connectDB();
+app.use(express.static(path.join(__dirname, "..", "Frontend")));
 
 // Serve the login page on root URL
 app.get("/", (req, res) => {
@@ -29,7 +30,6 @@ app.get("/", (req, res) => {
 });
 
 // Serve public folder
-app.use(express.static(path.join(__dirname, "..", "Frontend")));
 app.use(express.static(path.join(__dirname, "..", "Frontend", "pages")));
 
 app.use("/api/detection", detectionRoutes);
