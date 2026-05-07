@@ -32,12 +32,12 @@ app.use("/api/history", analyticsRoutes);
 // app.use("/api", require("./routes/alert").router);
 
 app.get("/", (req, res) => { 
-  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "index.html"));
+  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
 });
 
 // 2. This keeps the /login link working too
 app.get("/login", (req, res) => { 
-  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "index.html"));
+  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
 });
 // Test API
 app.get("/api/status", (req, res) => {
