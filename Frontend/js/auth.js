@@ -129,20 +129,23 @@ function checkAuthUI() {
 async function signup(event) {
   event.preventDefault();
 
-  const username = document.getElementById("signup-username").value;
+  // 1. Get ALL fields from your HTML
+  const name = document.getElementById("signup-name").value; // Make sure this ID exists in HTML
+  const email = document.getElementById("signup-email").value; // Make sure this ID exists in HTML
   const password = document.getElementById("signup-password").value;
+  const role = "viewer"; // Or get from a dropdown
 
-  if (!username || !password) {
-    alert("All fields are required");
+  if (!name || !email || !password) {
+    alert("All fields (Name, Email, Password) are required");
     return;
   }
 
   try {
-    // Logic changed: Send to Server instead of saving locally
     const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
+      // 2. SEND ALL FIELDS to match backend
+      body: JSON.stringify({ name, email, password, role }) 
     });
 
     if (response.ok) {
