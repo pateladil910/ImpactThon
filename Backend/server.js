@@ -102,8 +102,8 @@ app.use(express.json());
 connectDB();
 
 // 3. Static Files (Tell Express where your CSS/JS/Images are)
-app.use(express.static(path.join(__dirname, "..", "Frontend")));
-app.use(express.static(path.join(__dirname, "..", "Frontend", "pages")));
+app.use(express.static(path.join(__dirname, "Frontend")));
+app.use(express.static(path.join(__dirname, "Frontend", "pages")));
 
 // 4. API Routes
 app.use("/api/detection", detectionRoutes);
@@ -121,7 +121,7 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next(); 
   }
-  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
+  res.sendFile(path.join(__dirname, "Frontend", "pages", "login.html"));
 });
 
 // 6. Start Server
