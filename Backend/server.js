@@ -41,7 +41,7 @@ app.use("/api/history", analyticsRoutes);
 
 
 // 2. This keeps the /login link working too
-app.get("*", (req, res) => {
+app.get("(.*)", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
 });
 // Test API
