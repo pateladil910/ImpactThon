@@ -23,6 +23,11 @@ app.use(express.json());
 // Connect to Database
 connectDB();
 
+// Serve the login page on root URL
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
+});
+
 // Serve public folder
 app.use(express.static(path.join(__dirname, "..", "Frontend")));
 app.use(express.static(path.join(__dirname, "..", "Frontend", "pages")));
@@ -33,9 +38,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/history", analyticsRoutes);
 // app.use("/api", require("./routes/alert").router);
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
-});
+
 
 // 2. This keeps the /login link working too
 app.get("/login", (req, res) => {
