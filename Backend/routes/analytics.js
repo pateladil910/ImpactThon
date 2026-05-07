@@ -129,4 +129,23 @@ router.get("/data", async (req, res) => {
     }
 });
 
+    // NEW ROUTE: Download Excel
+router.get("/download", async (req, res) => {
+    try {
+        const detections = await Detection.find({ status: "DANGER" }).sort({ timestamp: -1 });
+
+        // If you don't have an excel library installed yet, you can send a CSV for now
+        let csv = "ID,Date,Time,Status\n";
+        detections.forEach((d) => {
+            csv += `${d._id},${d.timestamp.toLocaleDateString()},${d.timestamp.toLocaleTimeString()},${d.status}\n`;
+        });
+
+        res.setHeader("Content-Type", "text/csv");
+        res.attachment("history_report.csv");
+        return res.status(200).send(csv);
+    } catch (err) {
+        console.error("Download Error:", err);
+        res.status(500).json({ success: false, message: "Download failed" });
+    }
+});
 module.exports = router;
