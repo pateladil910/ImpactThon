@@ -27,7 +27,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve public folder
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "Frontend")));
 app.use("/api/detection", detectionRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
@@ -36,7 +36,7 @@ app.use("/api/history", analyticsRoutes);
 
 app.get("/", (req, res) => {
   // This assumes your file is named login.html inside the 'public' folder
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+  res.sendFile(path.join(__dirname, "Frontend","pages", "login.html"));
 });
 
 // Test API
@@ -48,8 +48,9 @@ app.get("/api/status", (req, res) => {
 });
 
 // Start server
-app.listen(5000, () => {
-  console.log("✅ Server running on https://impactthon-wjut.onrender.com");
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
 
 // 🔥 EMAIL TEST (auto after 3 sec)
