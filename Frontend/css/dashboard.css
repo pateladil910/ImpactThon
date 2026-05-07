@@ -317,4 +317,88 @@ td {
   color: #9fb7b1;
 }
 
+
+/* =========================
+   MOBILE RESPONSIVE DESIGN
+========================= */
+
+@media screen and (max-width: 768px) {
+
+    body {
+        overflow-x: hidden;
+    }
+
+    .container,
+    .dashboard-container,
+    .main-content,
+    .card-container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    /* Cards */
+    .card,
+    .action-box,
+    .history-card {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    /* Buttons */
+    button,
+    .history-btn,
+    .btn {
+        width: 100%;
+        font-size: 15px;
+        padding: 12px;
+    }
+
+    /* Table Responsive */
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    th,
+    td {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    /* Images & Video */
+    img,
+    video,
+    canvas {
+        width: 100%;
+        height: auto;
+    }
+
+    /* Navbar */
+    .navbar,
+    .header {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Text */
+    h1 {
+        font-size: 24px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    p {
+        font-size: 14px;
+    }
+
+    /* Fix flex layout */
+    .row,
+    .flex,
+    .dashboard-row {
+        flex-direction: column;
+    }
+  }
 /* ================= END OF FILE ================= */
