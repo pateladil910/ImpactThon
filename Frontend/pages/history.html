@@ -14,8 +14,8 @@
     }
 
     .history-container {
-       width: 100%;
-   max-width: 1200px;
+      width: 100%;
+      max-width: 1200px;
       margin: auto;
       padding: 30px 20px;
     }
@@ -211,6 +211,28 @@
     .download-btn:hover {
       background: rgba(0, 255, 156, 0.22);
       box-shadow: 0 0 30px rgba(0, 255, 156, 0.45);
+    }
+
+    .table-box {
+      overflow-x: auto;
+    }
+
+    @media (max-width: 768px) {
+      .history-header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .nav-right {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .clear-btn,
+      .download-btn {
+        width: 100%;
+        justify-content: center;
+      }
     }
   </style>
 </head>

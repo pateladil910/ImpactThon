@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +21,7 @@
     .hero {
       height: 100vh;
       background:
-        linear-gradient(120deg, rgba(0,229,255,0.25), rgba(0,0,0,0.85)),
+        linear-gradient(120deg, rgba(0, 229, 255, 0.25), rgba(0, 0, 0, 0.85)),
         url("ai-bg.jpg");
       background-size: 200% 200%, cover;
       background-position: center;
@@ -35,9 +36,11 @@
       0% {
         background-position: 0% 50%, center;
       }
+
       50% {
         background-position: 100% 50%, center;
       }
+
       100% {
         background-position: 0% 50%, center;
       }
@@ -52,7 +55,7 @@
     .content h1 {
       font-size: 48px;
       margin-bottom: 15px;
-      text-shadow: 0 0 10px rgba(0,229,255,0.5);
+      text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
     }
 
     .content p {
@@ -76,9 +79,16 @@
       background: #00bcd4;
       transform: scale(1.05);
     }
+
+    @media (max-width: 768px) {
+      .content h1 {
+        font-size: 36px;
+      }
+    }
   </style>
 
 </head>
+
 <body>
 
   <section class="hero">
@@ -90,4 +100,5 @@
   </section>
 
 </body>
+
 </html>
