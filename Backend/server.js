@@ -23,24 +23,22 @@ app.use(express.json());
 // Connect to Database
 connectDB();
 
-app.use(cors());
-app.use(express.json());
-
 // Serve public folder
-app.use(express.static(path.join(__dirname,"..", "Frontend")));
+app.use(express.static(path.join(__dirname, "..", "Frontend")));
 app.use("/api/detection", detectionRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/history", analyticsRoutes);
 // app.use("/api", require("./routes/alert").router);
-app.use(express.static(path.join(__dirname, "..", "Frontend")));
 
-app.get("/", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "..", "Frontend", "pages", "login.html")
-  );
+app.get("/", (req, res) => { 
+  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
 });
 
+// 2. This keeps the /login link working too
+app.get("/login", (req, res) => { 
+  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
+});
 // Test API
 app.get("/api/status", (req, res) => {
   res.json({
