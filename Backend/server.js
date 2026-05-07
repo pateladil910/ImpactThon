@@ -27,7 +27,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve public folder
-app.use(express.static(path.join(__dirname, "Frontend")));
+app.use(express.static(path.join(__dirname,"..", "Frontend")));
 app.use("/api/detection", detectionRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
