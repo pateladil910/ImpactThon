@@ -98,7 +98,7 @@ async function login(event) {
       localStorage.setItem("username", username);
       localStorage.setItem("token", data.token); // Store the JWT token for later
       // window.location.href = "index.html";
-      window.location.href = "./index.html";
+      window.location.href = "/";
 
     } else {
       // This will now show the actual error message like "User not found"
