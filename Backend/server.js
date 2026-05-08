@@ -79,7 +79,8 @@ const app = express();
 
 // 1. Middleware
 app.use(cors({
-  origin: "*",
+  origin: "https://codevortex.in",
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
