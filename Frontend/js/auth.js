@@ -95,7 +95,11 @@
 //     alert("Connection error. Please try again later.");
 //   }
 
-const API_BASE_URL = "https://impactthon-wjut.onrender.com";
+
+
+
+
+/*const API_BASE_URL = "https://impactthon-wjut.onrender.com";
 
 document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
@@ -175,8 +179,8 @@ function logout() {
   // Clear local storage for the UI
    /*localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
-  localStorage.removeItem("token") */
-  
+  localStorage.removeItem("token") 
+
   localStorage.removeItem("isLoggedIn", "true");
   localStorage.removeItem("username", username);
   localStorage.removeItem("token", data.token);
@@ -210,6 +214,164 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (loginForm) loginForm.addEventListener("submit", login);
   if (signupForm) signupForm.addEventListener("submit", signup);
+
+  checkAuthUI();
+});
+
+*/
+
+const API_BASE_URL = "https://impactthon-wjut.onrender.com";
+
+// ---------------- LOGIN ----------------
+
+async function login(event) {
+  event.preventDefault();
+
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  try {
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        email: username,
+        password: password
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+
+      // UI session only
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("username", username);
+
+      // redirect
+      window.location.replace("/index.html");
+
+    } else {
+
+      alert(data.msg || "Login failed");
+    }
+
+  } catch (error) {
+
+    console.error(error);
+    alert("Connection error");
+  }
+}
+
+// ---------------- SIGNUP ----------------
+
+async function signup(event) {
+
+  event.preventDefault();
+
+  const name = document.getElementById("signup-name").value;
+  const email = document.getElementById("signup-email").value;
+  const password = document.getElementById("signup-password").value;
+
+  try {
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        name,
+        email,
+        password
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+
+      alert("Signup successful");
+      window.location.replace("login.html");
+
+    } else {
+
+      alert(data.message || "Signup failed");
+    }
+
+  } catch (error) {
+
+    console.error(error);
+    alert("Connection error");
+  }
+}
+
+// ---------------- LOGOUT ----------------
+
+function logout() {
+
+  localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("username");
+
+  window.location.replace("login.html");
+}
+
+// ---------------- UI ----------------
+
+function checkAuthUI() {
+
+  const isLoggedIn = localStorage.getItem("isLoggedIn");
+  const username = localStorage.getItem("username");
+
+  const authButtons = document.getElementById("auth-buttons");
+  const profileSection = document.getElementById("profile-section");
+  const profileName = document.getElementById("profile-name");
+
+  if (isLoggedIn === "true") {
+
+    if (authButtons) {
+      authButtons.style.display = "none";
+    }
+
+    if (profileSection) {
+      profileSection.style.display = "flex";
+    }
+
+    if (profileName) {
+      profileName.textContent = username;
+    }
+
+  } else {
+
+    if (authButtons) {
+      authButtons.style.display = "flex";
+    }
+
+    if (profileSection) {
+      profileSection.style.display = "none";
+    }
+  }
+}
+
+// ---------------- INIT ----------------
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const loginForm = document.getElementById("loginForm");
+  const signupForm = document.getElementById("signupForm");
+
+  if (loginForm) {
+    loginForm.addEventListener("submit", login);
+  }
+
+  if (signupForm) {
+    signupForm.addEventListener("submit", signup);
+  }
 
   checkAuthUI();
 });
