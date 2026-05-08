@@ -87,7 +87,7 @@ async function login(event) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // CHANGE THIS LINE: Send 'email' instead of 'username'
-      body: JSON.stringify({ email: username, password }) 
+      body: JSON.stringify({ email: username, password })
     });
 
     const data = await response.json();
@@ -96,10 +96,12 @@ async function login(event) {
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
       localStorage.setItem("token", data.token); // Store the JWT token for later
-      window.location.href = "index.html";
+      // window.location.href = "index.html";
+      window.location.href = "./index.html";
+
     } else {
       // This will now show the actual error message like "User not found"
-      alert(data.msg || "Login failed"); 
+      alert(data.msg || "Login failed");
     }
   } catch (error) {
     alert("Connection error.");
@@ -149,12 +151,12 @@ async function signup(event) {
       alert("Account created successfully!");
       window.location.href = "login.html";
       return; // Stop the function here
-    } 
+    }
     else {
       alert(data.message || "Signup failed");
       return; // 👈 Stops the code
     }
-    
+
   } catch (error) {
     // NETWORK CASE (Server is down or no internet)
     alert("Connection error. Please try again later.");
