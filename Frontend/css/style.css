@@ -109,7 +109,7 @@ body {
   backdrop-filter: blur(15px);
   padding: 25px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
   border-radius: 14px;
   width: 280px;
 }
@@ -962,7 +962,8 @@ footer {
     flex-direction: column;
     height: auto;
     gap: 15px;
-    position: relative; /* Not fixed on mobile to prevent overlap */
+    position: relative;
+    /* Not fixed on mobile to prevent overlap */
     background: rgba(10, 30, 40, 0.98);
     backdrop-filter: blur(15px);
   }
@@ -981,7 +982,7 @@ footer {
     width: 100%;
     justify-content: center;
   }
-  
+
   .auth-buttons a {
     width: auto;
     flex: 1;
@@ -1003,8 +1004,11 @@ footer {
     line-height: 1.2;
     background: linear-gradient(to right, #fff, #94a3b8);
     -webkit-background-clip: text;
+    background-clip: text;
+    /* Added standard property */
     -webkit-text-fill-color: transparent;
   }
+
 
   .hero-actions {
     flex-direction: column;
@@ -1064,10 +1068,10 @@ footer {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .contact-container {
-      width: 100%;
-      padding: 25px;
+    width: 100%;
+    padding: 25px;
   }
 
   /* Specific Pages */
@@ -1095,44 +1099,44 @@ footer {
     grid-template-columns: 1fr;
     margin: 20px auto 40px;
   }
-  
+
   /* Utilities */
   .container,
   .dashboard-container,
   .main-content,
   .card-container {
-      width: 100%;
-      padding: 15px;
+    width: 100%;
+    padding: 15px;
   }
 
   /* Cards */
   .card,
   .action-box,
   .history-card {
-      width: 100%;
-      margin-bottom: 15px;
+    width: 100%;
+    margin-bottom: 15px;
   }
 
   /* Table Responsive */
   table {
-      display: block;
-      overflow-x: auto;
-      white-space: nowrap;
-      width: 100%;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    width: 100%;
   }
 
   th,
   td {
-      font-size: 14px;
-      padding: 12px;
+    font-size: 14px;
+    padding: 12px;
   }
 
   /* Images & Video */
   img,
   video,
   canvas {
-      width: 100%;
-      height: auto;
-      border-radius: 12px;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
   }
 }
