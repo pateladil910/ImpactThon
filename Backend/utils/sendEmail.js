@@ -1,24 +1,24 @@
 const axios = require("axios");
 
-// We set default values so it doesn't break if called with only one argument
 const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User") => {
-  console.log(`📧 sendAlertEmail triggered for: ${userName}`);
+  console.log(`📧 sendAlertEmail triggering for: ${userName}`);
 
   const options = {
     method: 'POST',
-    url: 'https://api.mailercloud.com/v1/transactional/send',
+    // FIXED URL: The correct endpoint for Mailercloud v1
+    url: 'https://api.mailercloud.com/v1/send/trans', 
     headers: {
       'Content-Type': 'application/json',
       'Authorization': process.env.MAILER_API_KEY 
     },
     data: {
-      "from": process.env.EMAIL_USER, // Your verified Mailercloud email
-      "from_name": userName,           // Fallback to "System User" if not provided
-      "reply_to": userEmail,          // Fallback to your domain email if not provided
+      "from": process.env.EMAIL_USER, 
+      "from_name": userName,           
+      "reply_to": userEmail,          
       "to": process.env.ADMIN_EMAIL,
       "subject": "🚨 Danger Alert Detected",
       "content": `
-        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee;">
+        <div style="font-family: sans-serif; padding: 20px;">
           <h2 style="color: #d9534f;">Security Notification</h2>
           <p><strong>Reported By:</strong> ${userName} (${userEmail})</p>
           <hr>
@@ -33,9 +33,12 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
     const response = await axios.request(options);
     console.log("✅ Mail response:", response.data);
   } catch (error) {
-    const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
-    console.error("❌ API MAIL ERROR:", errorMsg);
-    // We don't want to crash the whole server if the mail fails
+    // Detailed error logging to see exactly why it failed
+    if (error.response) {
+      console.error("❌ API MAIL ERROR:", error.response.status, error.response.data);
+    } else {
+      console.error("❌ API MAIL ERROR:", error.message);
+    }
   }
 };
 
