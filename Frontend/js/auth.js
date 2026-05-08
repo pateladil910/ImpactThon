@@ -1,35 +1,49 @@
-// document.addEventListener("DOMContentLoaded", () => {
-//   const loginForm = document.getElementById("loginForm");
 
-//   if (loginForm) {
-//     loginForm.addEventListener("submit", login);
+// const API_BASE_URL = "https://impactthon-wjut.onrender.com";
+
+// document.addEventListener('DOMContentLoaded', () => {
+//   const session = localStorage.getItem('userToken'); // or whatever key you use
+//   if (session) {
+//     window.location.href = '/index.html';
 //   }
-
-//   checkAuthUI();
 // });
 
-// function login(event) {
+// async function login(event) {
 //   event.preventDefault();
 
-//   const username = document.getElementById("username").value;
+//   const username = document.getElementById("username").value; // This is the user's email
 //   const password = document.getElementById("password").value;
 
-//   const savedUsername = localStorage.getItem("savedUsername");
-//   const savedPassword = localStorage.getItem("savedPassword");
+//   try {
+//     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       // CHANGE THIS LINE: Send 'email' instead of 'username'
+//       body: JSON.stringify({ email: username, password })
+//     });
 
-//   if (username === savedUsername && password === savedPassword) {
-//     localStorage.setItem("isLoggedIn", "true");
-//     localStorage.setItem("username", username);
-//     window.location.href = "index.html";
-//   } else {
-//     alert("Wrong username or password");
+//     const data = await response.json();
+
+//     if (response.ok) {
+//       localStorage.setItem("isLoggedIn", "true");
+//       localStorage.setItem("username", username);
+//       localStorage.setItem("token", data.token); // Store the JWT token for later
+//       // window.location.href = "index.html";
+//       window.location.href = "/";
+
+//     } else {
+//       // This will now show the actual error message like "User not found"
+//       alert(data.msg || "Login failed");
+//     }
+//   } catch (error) {
+//     alert("Connection error.");
 //   }
 // }
-
 
 // function logout() {
 //   localStorage.removeItem("isLoggedIn");
 //   localStorage.removeItem("username");
+//   localStorage.removeItem("token");
 //   window.location.href = "login.html";
 // }
 
@@ -48,70 +62,128 @@
 //   }
 // }
 
-// function signup(event) {
+// async function signup(event) {
 //   event.preventDefault();
 
-//   const username = document.getElementById("signup-username").value;
+//   const name = document.getElementById("signup-name").value;
+//   const email = document.getElementById("signup-email").value;
 //   const password = document.getElementById("signup-password").value;
 
-//   if (!username || !password) {
-//     alert("All fields are required");
-//     return;
+//   try {
+//     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ email, password }), // Removed name/role for login
+//       credentials: 'include' // 👈 IMPORTANT: Allows browser to save the cookie
+//     });
+
+//     const data = await response.json();
+
+//     if (response.ok) {
+//       // 1. Change this alert
+//       alert("Login successful!");
+
+//       // 2. CHANGE THIS LINE: Redirect to index, not login.html
+//       window.location.href = "index.html";
+//       return;
+//     } else {
+//       alert(data.msg || "Login failed"); // Note: your backend used 'msg' for errors
+//       return;
+//     }
+
+//   } catch (error) {
+//     alert("Connection error. Please try again later.");
 //   }
 
-//   // Save user (demo purpose)
-//   localStorage.setItem("savedUsername", username);
-//   localStorage.setItem("savedPassword", password);
-
-//   alert("Signup successful! Please login.");
-//   window.location.href = "login.html";
-// }
-// Change this at the top of your auth.js
 const API_BASE_URL = "https://impactthon-wjut.onrender.com";
 
+<<<<<<< HEAD
 document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     if (isLoggedIn === "true") {
         window.location.href = "index.html";
     }
 });
+=======
+// --- AUTHENTICATION LOGIC ---
+>>>>>>> 6ee300c563a956e60c5b80187ff0a8c0558c4d4d
 
 async function login(event) {
   event.preventDefault();
 
-  const username = document.getElementById("username").value; // This is the user's email
+  const username = document.getElementById("username").value; // The email input
   const password = document.getElementById("password").value;
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // CHANGE THIS LINE: Send 'email' instead of 'username'
-      body: JSON.stringify({ email: username, password })
+      body: JSON.stringify({ email: username, password }),
+      credentials: 'include' // 👈 This allows the browser to save the cookie
     });
 
     const data = await response.json();
 
     if (response.ok) {
+      // Keep your UI state safe
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
+<<<<<<< HEAD
       localStorage.setItem("token", data.token); // Store the JWT token for later
       window.location.href = "index.html";
+=======
+
+      // Navigate to root - the server will now see the cookie and allow access
+      window.location.href = "/index.html";
+>>>>>>> 6ee300c563a956e60c5b80187ff0a8c0558c4d4d
     } else {
-      // This will now show the actual error message like "User not found"
       alert(data.msg || "Login failed");
     }
   } catch (error) {
+    console.error("Login error:", error);
     alert("Connection error.");
   }
 }
 
+async function signup(event) {
+  event.preventDefault();
+
+  const name = document.getElementById("signup-name").value;
+  const email = document.getElementById("signup-email").value;
+  const password = document.getElementById("signup-password").value;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("Account created successfully! Please login.");
+      window.location.href = "login.html";
+    } else {
+      alert(data.message || "Signup failed");
+    }
+  } catch (error) {
+    alert("Connection error. Please try again later.");
+  }
+}
+
 function logout() {
+  // Clear local storage for the UI
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
   localStorage.removeItem("token");
+
+  // Note: For a full logout, you'd ideally call a backend /logout 
+  // to clear the cookie, but this will get the user back to login.
   window.location.href = "login.html";
 }
+
+// --- UI UPDATES (Your existing logic kept safe) ---
 
 function checkAuthUI() {
   const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -128,35 +200,13 @@ function checkAuthUI() {
   }
 }
 
-async function signup(event) {
-  event.preventDefault();
+// Initialize UI on page load
+document.addEventListener("DOMContentLoaded", () => {
+  const loginForm = document.getElementById("loginForm");
+  const signupForm = document.getElementById("signupForm");
 
-  const name = document.getElementById("signup-name").value;
-  const email = document.getElementById("signup-email").value;
-  const password = document.getElementById("signup-password").value;
+  if (loginForm) loginForm.addEventListener("submit", login);
+  if (signupForm) signupForm.addEventListener("submit", signup);
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role: "viewer" })
-    });
-
-    const data = await response.json();
-
-    // SUCCESS CASE
-    if (response.ok) {
-      alert("Account created successfully!");
-      window.location.href = "login.html";
-      return; // Stop the function here
-    }
-    else {
-      alert(data.message || "Signup failed");
-      return; // 👈 Stops the code
-    }
-
-  } catch (error) {
-    // NETWORK CASE (Server is down or no internet)
-    alert("Connection error. Please try again later.");
-  }
-}
+  checkAuthUI();
+});
