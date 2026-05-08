@@ -9,8 +9,8 @@
 /* ================= BODY ================= */
 body {
   min-height: 100vh;
-  background: radial-gradient(circle at top, #0f2a33, #071b22);
-  color: #eafcff;
+  background: radial-gradient(circle at top, #1e293b, #0f172a);
+  color: #f8fafc;
 }
 
 /* ================= PAGE ================= */
@@ -31,7 +31,7 @@ body {
 .logo {
   font-size: 22px;
   font-weight: 700;
-  color: #2aff9a;
+  color: #38bdf8;
 }
 
 .nav-links {
@@ -47,7 +47,7 @@ body {
 
 .nav-links li:hover {
   opacity: 1;
-  color: #2aff9a;
+  color: #38bdf8;
 }
 
 /* ================= MAIN ================= */
@@ -75,8 +75,9 @@ body {
 
 /* ================= CARD ================= */
 .box {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -109,7 +110,7 @@ body {
   height: 280px;
   border-radius: 16px;
   overflow: hidden;
-  border: 2px solid #2aff9a;
+  border: 2px solid #38bdf8;
   background: #000;
 }
 
@@ -123,7 +124,7 @@ body {
   margin-top: 10px;
   font-size: 13px;
   text-align: center;
-  color: #2aff9a;
+  color: #38bdf8;
 }
 
 /* ================= SAFETY ================= */
@@ -132,28 +133,28 @@ body {
 }
 
 #safety-box.safe {
-  border-left: 6px solid #2aff9a;
+  border-left: 6px solid #10b981;
 }
 
 #safety-box.safe .box-value {
-  color: #2aff9a;
+  color: #10b981;
 }
 
 #safety-box.danger {
-  border-left: 6px solid #ff4d4d;
+  border-left: 6px solid #ef4444;
 }
 
 #safety-box.danger .box-value {
-  color: #ff4d4d;
+  color: #ef4444;
 }
 
 /* ================= ACTION ================= */
 .box.red {
-  border-left: 6px solid #ff4d4d;
+  border-left: 6px solid #ef4444;
 }
 
 .box.red .box-value {
-  color: #ff4d4d;
+  color: #ef4444;
 }
 
 /* ================= FOOTER ================= */
@@ -222,19 +223,19 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 #action-box.safe {
-  border-left: 6px solid #2aff9a;
+  border-left: 6px solid #10b981;
 }
 
 #action-box.safe .box-value {
-  color: #2aff9a;
+  color: #10b981;
 }
 
 #action-box.danger {
-  border-left: 6px solid #ff4d4d;
+  border-left: 6px solid #ef4444;
 }
 
 #action-box.danger .box-value {
-  color: #ff4d4d;
+  color: #ef4444;
 }
 
 .history-btn-wrapper {
@@ -248,17 +249,17 @@ body::-webkit-scrollbar-thumb:hover {
   padding: 14px 32px;
   font-size: 16px;
   font-weight: 600;
-  color: #021f1a;
-  background: linear-gradient(135deg, #00ffb2, #00d4ff);
+  color: #fff;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
   border-radius: 30px;
   text-decoration: none;
-  box-shadow: 0 10px 25px rgba(0, 255, 178, 0.25);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
   transition: all 0.3s ease;
 }
 
 .history-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 15px 35px rgba(0, 255, 178, 0.45);
+  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.5);
 }
 
 table {
@@ -283,12 +284,12 @@ td {
 
 /* Last Detection Card */
 .last-detection-card {
-  background: rgba(22, 40, 46, 0.9);
+  background: rgba(30, 41, 59, 0.9);
   border-radius: 18px;
   padding: 22px 26px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  border-left: 4px solid #21f3b3;
-  color: #e9fffa;
+  border-left: 4px solid #38bdf8;
+  color: #f8fafc;
   min-height: 120px;
 }
 
@@ -297,7 +298,7 @@ td {
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 10px;
-  color: #a9ffe3;
+  color: #bae6fd;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -307,14 +308,14 @@ td {
 .last-detection-card h2 {
   font-size: 28px;
   font-weight: 700;
-  color: #21f3b3;
+  color: #38bdf8;
   margin: 4px 0 6px 0;
 }
 
 /* Description */
 .last-detection-card p {
   font-size: 13px;
-  color: #9fb7b1;
+  color: #94a3b8;
 }
 
 
