@@ -97,16 +97,14 @@
 
 const API_BASE_URL = "https://impactthon-wjut.onrender.com";
 
-<<<<<<< HEAD
+
 document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     if (isLoggedIn === "true") {
         window.location.href = "index.html";
     }
 });
-=======
 // --- AUTHENTICATION LOGIC ---
->>>>>>> 6ee300c563a956e60c5b80187ff0a8c0558c4d4d
 
 async function login(event) {
   event.preventDefault();
@@ -128,14 +126,12 @@ async function login(event) {
       // Keep your UI state safe
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
-<<<<<<< HEAD
+
       localStorage.setItem("token", data.token); // Store the JWT token for later
       window.location.href = "index.html";
-=======
 
       // Navigate to root - the server will now see the cookie and allow access
       window.location.href = "/index.html";
->>>>>>> 6ee300c563a956e60c5b80187ff0a8c0558c4d4d
     } else {
       alert(data.msg || "Login failed");
     }
