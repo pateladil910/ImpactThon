@@ -69,12 +69,11 @@
 // Change this at the top of your auth.js
 const API_BASE_URL = "https://impactthon-wjut.onrender.com";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const loginForm = document.getElementById("loginForm");
-  if (loginForm) {
-    loginForm.addEventListener("submit", login);
-  }
-  checkAuthUI();
+document.addEventListener('DOMContentLoaded', () => {
+    const session = localStorage.getItem('userToken'); // or whatever key you use
+    if (session) {
+        window.location.href = '/index.html';
+    }
 });
 
 async function login(event) {
