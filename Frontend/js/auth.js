@@ -97,16 +97,15 @@
 
 const API_BASE_URL = "https://impactthon-wjut.onrender.com";
 
-<<<<<<< HEAD
 document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     if (isLoggedIn === "true") {
         window.location.href = "index.html";
     }
 });
-=======
-// --- AUTHENTICATION LOGIC ---
->>>>>>> 6ee300c563a956e60c5b80187ff0a8c0558c4d4d
+
+// --- AUTHENTICATION LOGIC --
+
 
 async function login(event) {
   event.preventDefault();
@@ -128,14 +127,14 @@ async function login(event) {
       // Keep your UI state safe
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
-<<<<<<< HEAD
+
       localStorage.setItem("token", data.token); // Store the JWT token for later
       window.location.href = "index.html";
-=======
+
 
       // Navigate to root - the server will now see the cookie and allow access
       window.location.href = "/index.html";
->>>>>>> 6ee300c563a956e60c5b80187ff0a8c0558c4d4d
+
     } else {
       alert(data.msg || "Login failed");
     }
@@ -174,13 +173,17 @@ async function signup(event) {
 
 function logout() {
   // Clear local storage for the UI
-  localStorage.removeItem("isLoggedIn");
+   /*localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
-  localStorage.removeItem("token");
+  localStorage.removeItem("token") */
+  
+  localStorage.removeItem("isLoggedIn", "true");
+  localStorage.removeItem("username", username);
+  localStorage.removeItem("token", data.token);
 
   // Note: For a full logout, you'd ideally call a backend /logout 
   // to clear the cookie, but this will get the user back to login.
-  window.location.href = "login.html";
+  window.location.href = "/index.html";
 }
 
 // --- UI UPDATES (Your existing logic kept safe) ---
