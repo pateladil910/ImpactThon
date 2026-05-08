@@ -70,9 +70,9 @@
 const API_BASE_URL = "https://impactthon-wjut.onrender.com";
 
 document.addEventListener('DOMContentLoaded', () => {
-    const session = localStorage.getItem('userToken'); // or whatever key you use
-    if (session) {
-        window.location.href = '/index.html';
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    if (isLoggedIn === "true") {
+        window.location.href = "index.html";
     }
 });
 
@@ -96,9 +96,7 @@ async function login(event) {
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
       localStorage.setItem("token", data.token); // Store the JWT token for later
-      // window.location.href = "index.html";
-      window.location.href = "/";
-
+      window.location.href = "index.html";
     } else {
       // This will now show the actual error message like "User not found"
       alert(data.msg || "Login failed");
