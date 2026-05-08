@@ -139,6 +139,10 @@ async function login(event) {
       // Navigate to root - the server will now see the cookie and allow access
       window.location.href = "/index.html";
 
+
+      // Navigate to root - the server will now see the cookie and allow access
+      window.location.href = "/index.html";
+
     } else {
       alert(data.msg || "Login failed");
     }
