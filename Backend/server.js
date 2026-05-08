@@ -153,9 +153,9 @@ app.listen(PORT, () => {
 // 🔥 EMAIL TEST
 setTimeout(async () => {
   try {
-    await sendAlertEmail("✅ Test mail: Email system is working");
-    console.log("✅ MAIL SENT SUCCESSFULLY");
+    await sendAlertEmail("✅ Test mail: API system is working", "testuser@gmail.com", "Test Admin");
+    console.log("✅ MAILCLOUD API SENT SUCCESSFULLY");
   } catch (err) {
-    console.error("❌ MAIL ERROR:", err);
+    console.error("❌ MAILCLOUD API ERROR:", err.message);
   }
 }, 3000);
