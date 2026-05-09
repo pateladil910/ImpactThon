@@ -133,7 +133,7 @@
       const container = document.getElementById("camera-selector");
       if (!container) return;
       container.innerHTML = "";
-      
+
       // Render fetched cameras
       cameras.forEach((cam, index) => {
         const btn = document.createElement("button");
@@ -153,7 +153,7 @@
         btn.innerText = "Cam 1";
         container.appendChild(btn);
       }
-      
+
       // "Add Camera" button -> Redirects to setup page
       const addBtn = document.createElement("button");
       addBtn.className = "cam-btn add-cam-btn";
@@ -170,17 +170,17 @@
     function switchCamera(cam) {
       const cameraImg = document.getElementById("ai-camera");
       if (!cameraImg) return;
-      
+
       // Update active button
       document.querySelectorAll('.camera-selector .cam-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById('btn-cam-' + cam._id);
       if (activeBtn) activeBtn.classList.add('active');
-      
+
       // For a real integration, the backend edge agent handles the RTSP stream.
       // If public HTTP, we could set src = cam.url
       // For now, assume Edge Agent proxies it through a query param
       cameraImg.src = `https://impactthon-ai.onrender.com/video_feed?camId=${cam._id}`;
-      
+
       // Update status text
       const statusText = document.getElementById('camera-status-text');
       if (statusText) statusText.innerText = `LIVE – Real-time Monitoring (${cam.name || 'Camera'})`;
@@ -190,6 +190,10 @@
       fetchCameras();
     });
 
+    function resetCamera() {
+      // This takes you back to setup so you can enter a new IP
+      window.location.href = "camera_setup.html?mode=edit";
+    }
     /* ==========================
        🛡 AI STATUS
     ========================== */
