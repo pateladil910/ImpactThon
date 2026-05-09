@@ -1,7 +1,16 @@
 const axios = require("axios");
 
-const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User") => {
+const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null) => {
   console.log(`📧 sendAlertEmail triggering for: ${userName}`);
+
+  // Create image HTML if an image was provided
+  const imageHtml = imageBase64 
+    ? `<div style="margin-top: 20px; text-align: center;">
+         <img src="${imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`}" 
+              alt="Detection Snapshot" 
+              style="max-width: 100%; border-radius: 5px; border: 2px solid #d9534f;" />
+       </div>` 
+    : '';
 
   const options = {
     method: 'POST',
@@ -18,12 +27,12 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
       "to": process.env.ADMIN_EMAIL,
       "subject": "🚨 Danger Alert Detected",
       "content": `
-        <div style="font-family: sans-serif; padding: 20px;">
-          <h2 style="color: #d9534f;">Security Notification</h2>
+        <div style="font-family: sans-serif; padding: 20px; background: #f4f4f4; border-radius: 8px; max-width: 600px; margin: auto;">
+          <h2 style="color: #d9534f; border-bottom: 2px solid #d9534f; padding-bottom: 10px;">Security Notification</h2>
           <p><strong>Reported By:</strong> ${userName} (${userEmail})</p>
-          <hr>
           <p><strong>Alert Message:</strong></p>
-          <p style="background: #f9f9f9; padding: 10px;">${message}</p>
+          <p style="background: white; padding: 15px; border-left: 4px solid #d9534f; font-size: 16px;">${message}</p>
+          ${imageHtml}
         </div>`,
       "type": "html"
     }

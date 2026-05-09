@@ -9,7 +9,7 @@ let mailSent = false;
 // AI / Detection API
 router.post("/", async (req, res) => {
   try {
-    const { danger, confidence, userId } = req.body; // NEW: receive userId
+    const { danger, confidence, userId, image } = req.body; // NEW: receive userId and image
     // example: danger = true when human detected
 
     // 🔥 EMAIL TRIGGER LOGIC
@@ -30,10 +30,13 @@ router.post("/", async (req, res) => {
 
       if (!mailSent) {
         await sendAlertEmail(
-          `🚨 ALERT: Human detected near machine!\nConfidence: ${confidence}%`
+          `🚨 ALERT: Human detected near machine!\nConfidence: ${confidence}%`,
+          "system@codevortex.in",
+          userId || "System Detection",
+          image // Pass the optional base64 image
         );
         mailSent = true;
-        console.log("📧 Alert email sent");
+        console.log("📧 Alert email sent with image");
       }
     }
 
