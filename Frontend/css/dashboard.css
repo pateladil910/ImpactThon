@@ -398,6 +398,17 @@ td {
     height: 220px;
   }
 
+  /* Camera Selector on Mobile */
+  .camera-selector {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .cam-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
   /* Buttons */
   .history-btn {
     width: 100%;
