@@ -3,7 +3,7 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 const Contact = require("../models/Contact");
 
-// ONLY CHANGE: Switched to Gmail service to stop Render timeouts
+// ONLY CHANGE: Switched to Gmail service to bypass Render's network blocks
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ success: false, msg: "Please fill all fields" });
     }
 
-    // 1. Save to Database for Admin Panel
+    // 1. Save to Database for Admin Panel (Unchanged)
     const newContact = await Contact.create({
       name,
       email,
@@ -29,10 +29,10 @@ router.post("/", async (req, res) => {
 
     // 2. Send Email via SMTP
     const mailOptions = {
-      // ONLY CHANGE: from address must match the Gmail user to prevent errors
+      // ONLY CHANGE: from must match the authenticated Gmail user
       from: `"CodeVortex Contact Form" <${process.env.SMTP_USER}>`,
       replyTo: email,
-      to: "codevortex131594@gmail.com", // Hardcoded per user request
+      to: "codevortex131594@gmail.com",
       subject: `New Contact Message from ${name}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f4f4f4; border-radius: 8px;">
@@ -51,7 +51,6 @@ router.post("/", async (req, res) => {
       await transporter.sendMail(mailOptions);
       console.log("✅ Contact email sent successfully");
 
-      // Stop here and tell the frontend it worked
       return res.status(200).json({
         success: true,
         msg: "Message sent successfully!"
@@ -60,8 +59,7 @@ router.post("/", async (req, res) => {
     } catch (mailError) {
       console.error("❌ SMTP Error:", mailError.message);
 
-      // We still return 200 because the data IS saved in MongoDB for the Admin,
-      // but we warn the user that the email notification had a hiccup.
+      // Return 200 because DB save worked, but warn about email delay
       return res.status(200).json({
         success: true,
         msg: "Message saved to Admin Panel (Email notification delayed)."
@@ -69,7 +67,6 @@ router.post("/", async (req, res) => {
     }
 
   } catch (error) {
-    // This catches errors from the Database save (Contact.create)
     console.error("❌ Contact Route Database Error:", error);
     return res.status(500).json({
       success: false,
