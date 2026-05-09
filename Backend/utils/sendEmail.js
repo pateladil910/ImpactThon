@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
   family: 4 // This forces IPv4 and fixes the ENETUNREACH error
 });
 
-const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null) => {
+const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null, recipientEmail = null) => {
   console.log(`📧 sendAlertEmail triggering for: ${userName}`);
 
   // Create image HTML if an image was provided (UNTOUCHED)
@@ -28,7 +28,7 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
     // ONLY CHANGE: "from" must match the authenticated Gmail user
     from: `"AI Safety System" <${process.env.SMTP_USER}>`,
     replyTo: userEmail,
-    to: process.env.ADMIN_EMAIL || "codevortex131594@gmail.com",
+    to: recipientEmail || process.env.ADMIN_EMAIL || "codevortex131594@gmail.com",
     subject: "🚨 Danger Alert Detected",
     html: `
       <div style="font-family: sans-serif; padding: 20px; background: #f4f4f4; border-radius: 8px; max-width: 600px; margin: auto;">

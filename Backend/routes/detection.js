@@ -29,14 +29,32 @@ router.post("/", async (req, res) => {
       }
 
       if (!mailSent) {
+        // Fetch User to get their email
+        let targetEmail = null;
+        let targetName = userId || "System Detection";
+        
+        try {
+          if (userId && userId !== "system") {
+            const User = require("../models/User");
+            const userDoc = await User.findById(userId);
+            if (userDoc) {
+              targetEmail = userDoc.email;
+              targetName = userDoc.name || targetName;
+            }
+          }
+        } catch (err) {
+          console.error("❌ Could not fetch user email for alert:", err.message);
+        }
+
         await sendAlertEmail(
           `🚨 ALERT: Human detected near machine!\nConfidence: ${confidence}%`,
           "system@codevortex.in",
-          userId || "System Detection",
-          image // Pass the optional base64 image
+          targetName,
+          image, // Pass the optional base64 image
+          targetEmail // Send to the specific user if found
         );
         mailSent = true;
-        console.log("📧 Alert email sent with image");
+        console.log(`📧 Alert email sent to ${targetEmail || "Admin"}`);
       }
     }
 
