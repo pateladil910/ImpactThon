@@ -13,6 +13,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ... existing variable declarations (btnTest, btnConnect, etc.)
 
   async function checkExistingCamera() {
+    // NEW: Check if the user specifically wants to EDIT (by looking at the URL)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('edit') === 'true') {
+      console.log("Edit mode active. Showing form.");
+      document.body.classList.add('show-form');
+      const formElement = document.getElementById('cameraForm');
+      if (formElement) formElement.style.display = 'block';
+      return false; // Do NOT redirect
+    }
+
     try {
       const response = await fetch('/api/camera/latest');
       const data = await response.json();
@@ -21,21 +31,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("Persistent camera found. Jumping to Dashboard.");
         window.location.href = "dashboard.html";
         return true;
-      } else {
-        // If the request succeeds but there's no camera data
-        console.log("No camera data in DB, showing form.");
-        document.body.classList.add('show-form');
       }
     } catch (err) {
       console.log("No previous camera found, showing setup form.");
       document.body.classList.add('show-form');
-
-      // Safety fallback if CSS fails
       const formElement = document.getElementById('cameraForm');
       if (formElement) formElement.style.display = 'block';
-
-      return false;
     }
+    return false;
   }
   // Run the check. If a camera is found, stop the script here.
   const hasCamera = await checkExistingCamera();
