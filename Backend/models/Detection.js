@@ -15,8 +15,9 @@ const DetectionSchema = new mongoose.Schema(
     event: String,
     timestamp_ist: String,
     userId: {
-      type: String,
-      default: "system"
+      type: mongoose.Schema.Types.ObjectId, // Connects to the actual ID
+      ref: 'User',                          // Refers to your User collection
+      required: true
     }
   },
   { collection: 'history' }
