@@ -11,6 +11,18 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ["admin", "operator", "viewer"],
     default: "viewer"
+  },
+  cameraUrl: {
+    type: String,
+    default: ""
+  },
+  cameraUser: {
+    type: String,
+    default: ""
+  },
+  cameraPass: {
+    type: String,
+    default: ""
   }
 });
 

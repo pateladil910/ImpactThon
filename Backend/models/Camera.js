@@ -4,7 +4,7 @@ const CameraSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false // Optional for testing, set to true in strict production
+    required: true   // Optional for testing, set to true in strict production
   },
   name: { type: String, required: true },
   type: { type: String, enum: ['WEBCAM', 'IP_CAMERA', 'RTSP', 'CCTV'], required: true },
