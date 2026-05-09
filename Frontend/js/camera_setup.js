@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (data.success && data.camera) {
         console.log("Persistent camera found. Jumping to Dashboard.");
-        window.location.href = "/dashboard.html";
+        window.location.href = "dashboard.html";
         return true;
       } else {
         // If the request succeeds but there's no camera data
