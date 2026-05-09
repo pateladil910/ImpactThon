@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cameraForm = document.getElementById('cameraForm');
 
   // 2. AUTO-REDIRECT LOGIC (Check if camera exists in DB)
+  // ... existing variable declarations (btnTest, btnConnect, etc.)
+
   async function checkExistingCamera() {
     try {
       const response = await fetch('/api/camera/latest');
@@ -17,12 +19,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (data.success && data.camera) {
         console.log("Persistent camera found. Jumping to Dashboard.");
-        const target = localStorage.getItem("targetDashboard") || "dashboard.html";
-        window.location.href = target;
+        window.location.href = "dashboard.html";
         return true;
+      } else {
+        // If the request succeeds but there's no camera data
+        console.log("No camera data in DB, showing form.");
+        document.body.classList.add('show-form');
       }
     } catch (err) {
-      console.log("No previous camera found, proceeding with setup.");
+      // --- ADD THE LOGIC HERE ---
+      console.log("No previous camera found, showing setup form.");
+      document.body.classList.add('show-form'); // This reveals the form only if needed
+      // ---------------------------
     }
     return false;
   }

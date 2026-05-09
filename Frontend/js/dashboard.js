@@ -1,16 +1,17 @@
 /* ==========================
-   🎥 CAMERA LIVE STREAM
+    🎥 CAMERA LIVE STREAM
 ========================== */
 
 document.addEventListener("DOMContentLoaded", () => {
   const cameraImg = document.getElementById("ai-camera");
   if (cameraImg) {
-    cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";
+    // CHANGE: We moved the .src assignment inside startLiveSurveillance 
+    // to use the persistent database URL.
   }
 });
 
 /* ==========================
-   🛡 AI STATUS
+    🛡 AI STATUS
 ========================== */
 
 const STATUS_URL = "https://impactthon-wjut.onrender.com/api/status";
@@ -63,7 +64,7 @@ async function updateStatus() {
         actionBox.classList.remove("safe");
       } else {
         actionStatus.innerText = "RUN";
-        actionDesc.innerText = "System running normally";
+        actionDesc.innerText = "System normally";
 
         actionBox.classList.add("safe");
         actionBox.classList.remove("danger");
@@ -76,8 +77,34 @@ async function updateStatus() {
   }
 }
 
+async function startLiveSurveillance() {
+  try {
+    // Fetch the 'Life-Long' saved camera from MongoDB
+    const response = await fetch('/api/camera/latest');
+    const data = await response.json();
+
+    if (data.success && data.camera) {
+      const cam = data.camera;
+      console.log(`🚀 Starting stream for: ${cam.name}`);
+
+      // REQUIRED CHANGE: Apply the saved URL to the camera image
+      const cameraImg = document.getElementById("ai-camera");
+      if (cameraImg) {
+        // We pass the cam.url to your AI service as a parameter
+        cameraImg.src = `https://impactthon-ai.onrender.com/video_feed?source=${encodeURIComponent(cam.url)}`;
+      }
+    } else {
+      // If no camera found, send them back to setup
+      window.location.href = "camera_setup.html";
+    }
+  } catch (err) {
+    console.error("Failed to load saved camera settings.");
+  }
+}
+
+document.addEventListener('DOMContentLoaded', startLiveSurveillance);
 /* ==========================
-   ⏱ AUTO UPDATE
+    ⏱ AUTO UPDATE
 ========================== */
 
 setInterval(updateStatus, 1000);
