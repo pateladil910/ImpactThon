@@ -21,7 +21,14 @@ router.post("/signup", async (req, res) => {
 
     // 2. If no duplicate, proceed to hash and save
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashedPassword });
+
+    // Automatically assign 'admin' role to this specific email
+    let role = "viewer";
+    if (email === "admin@codevortex.in") {
+      role = "admin";
+    }
+
+    const user = new User({ name, email, password: hashedPassword, role });
     await user.save();
 
     // 3. Send 201 (Created)
@@ -76,7 +83,7 @@ router.get("/me", authMiddleware, async (req, res) => {
     // req.user has the payload from the token (id, role)
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ msg: "User not found" });
-    
+
     res.json({
       success: true,
       user: {
