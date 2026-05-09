@@ -5,13 +5,13 @@ const Contact = require("../models/Contact");
 
 const transporter = nodemailer.createTransport({
   host: 'smtp-prod.mailrcld.com',
-  port: 587,
+  port: 2525,
   secure: false,
   auth: {
     user: process.env.SMTP_USER || 'adilp4534@gmail.com',
     pass: process.env.SMTP_PASS || '6ddbb671738858bb3e89bae40fac1cdc'
   },
-  connectionTimeout: 10000, // 10 seconds timeout
+  connectionTimeout: 20000, // 20 seconds timeout
   greetingTimeout: 10000,
   socketTimeout: 15000
 });
