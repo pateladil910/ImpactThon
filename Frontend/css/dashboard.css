@@ -398,36 +398,21 @@ td {
     height: 220px;
   }
 
-  /* Camera Selector on Mobile */
+  /* Camera Selector on Mobile - Vertical Stack */
   .camera-selector {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
     margin-top: 15px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    justify-content: flex-start;
-    padding-bottom: 8px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .camera-selector::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  .camera-selector::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-  }
-
-  .camera-selector::-webkit-scrollbar-thumb {
-    background: rgba(56, 189, 248, 0.5);
-    border-radius: 4px;
+    width: 100%;
   }
 
   .cam-btn {
-    padding: 8px 20px;
-    font-size: 13px;
-    flex: 0 0 auto;
-    border-radius: 25px; /* Modern pill shape for mobile */
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 14px;
+    border-radius: 12px;
+    text-align: center;
   }
 
   /* Buttons */
