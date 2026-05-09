@@ -81,7 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         showStatus('success', 'Camera successfully connected!');
         setTimeout(() => {
-          location.href = 'dashboard.html';
+          const target = localStorage.getItem("targetDashboard") || "dashboard.html";
+          location.href = target;
         }, 1500);
       } else {
         showStatus('error', 'Failed to save camera.');

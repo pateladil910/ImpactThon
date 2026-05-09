@@ -202,14 +202,16 @@
             if (saved) {
                 const config = JSON.parse(saved);
                 if (config.mode === "MANUAL") {
-                    location.href = "dashboard2.html";
+                    localStorage.setItem("targetDashboard", "dashboard2.html");
                 } else {
-                    location.href = "dashboard.html";
+                    localStorage.setItem("targetDashboard", "dashboard.html");
                 }
             } else {
-                // Default to dashboard if no config
-                location.href = "dashboard.html";
+                localStorage.setItem("targetDashboard", "dashboard.html");
             }
+            
+            // Redirect to Camera Setup before entering the dashboard
+            location.href = "camera_setup.html";
         }
 
         // Init
