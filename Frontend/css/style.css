@@ -959,35 +959,47 @@ footer {
   /* Navbar */
   .navbar {
     padding: 15px 20px;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
     height: auto;
-    gap: 15px;
+    gap: 0;
     position: relative;
-    /* Not fixed on mobile to prevent overlap */
     background: rgba(10, 30, 40, 0.98);
     backdrop-filter: blur(15px);
   }
 
-  .nav-links {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
+  .navbar > .logo {
+    order: 1;
+    font-size: 20px;
   }
 
   .auth-buttons {
-    margin-top: 10px;
+    order: 2;
+    margin-top: 0;
     display: flex;
     flex-direction: row;
-    gap: 12px;
+    gap: 10px;
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .nav-links {
+    order: 3;
     width: 100%;
+    margin-top: 15px;
+    flex-wrap: wrap;
     justify-content: center;
+    gap: 15px;
   }
 
   .auth-buttons a {
     width: auto;
-    flex: 1;
+    flex: none;
     text-align: center;
-    max-width: 150px;
+    padding: 6px 12px;
+    font-size: 14px;
   }
 
   /* Hero Sections */
@@ -1138,5 +1150,12 @@ footer {
     width: 100%;
     height: auto;
     border-radius: 12px;
+  }
+
+  /* Footer */
+  footer {
+    padding: 25px 15px;
+    font-size: 13px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
   }
 }
