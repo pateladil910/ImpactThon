@@ -44,27 +44,38 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-// 2. Get all users with detection counts
+// 2. Get all users with DANGER detection counts
 router.get("/users", async (req, res) => {
   try {
     const users = await User.aggregate([
       {
         $lookup: {
-          from: "history", // Detection collection
-          localField: "email",
-          foreignField: "userId",
+          from: "history", // Ensure this matches the collection name in MongoDB
+          localField: "_id", // CHANGED: Use _id for more reliable linking
+          foreignField: "userId", // Ensure this matches the field in your Detection schema
           as: "userDetections"
         }
       },
       {
         $addFields: {
-          detectionCount: { $size: "$userDetections" }
+          // NEW: Filter only the 'DANGER' status detections before counting
+          dangerCount: {
+            $size: {
+              $filter: {
+                input: "$userDetections",
+                as: "d",
+                cond: { $eq: ["$$d.status", "DANGER"] }
+              }
+            }
+          },
+          // Keep total count if you still want it
+          totalDetections: { $size: "$userDetections" }
         }
       },
       {
         $project: {
           password: 0,
-          userDetections: 0 // Hide the raw array
+          userDetections: 0
         }
       }
     ]);
@@ -74,7 +85,6 @@ router.get("/users", async (req, res) => {
     res.status(500).json({ msg: "Server error retrieving users" });
   }
 });
-
 // 2.5 Get contact messages
 router.get("/contacts", async (req, res) => {
   try {

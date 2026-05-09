@@ -6,11 +6,14 @@ const Contact = require("../models/Contact");
 const transporter = nodemailer.createTransport({
   host: 'smtp-prod.mailrcld.com',
   port: 587,
-  secure: false, // true for 465, false for other ports
+  secure: false,
   auth: {
-    user: 'adilp4534@gmail.com',
-    pass: '6ddbb671738858bb3e89bae40fac1cdc'
-  }
+    user: process.env.SMTP_USER || 'adilp4534@gmail.com',
+    pass: process.env.SMTP_PASS || '6ddbb671738858bb3e89bae40fac1cdc'
+  },
+  connectionTimeout: 10000, // 10 seconds timeout
+  greetingTimeout: 10000,
+  socketTimeout: 15000
 });
 
 router.post("/", async (req, res) => {
@@ -30,7 +33,7 @@ router.post("/", async (req, res) => {
 
     // 2. Send Email via Mailcloud SMTP
     const mailOptions = {
-      from: `"CodeVortex Contact Form" <adilp4534@gmail.com>`, // Must be authenticated sender
+      from: `"CodeVortex Contact Form" <info@codevortex.in>`, // Must be authenticated sender
       replyTo: email,
       to: "codevortex131594@gmail.com", // Hardcoded per user request
       subject: `New Contact Message from ${name}`,
@@ -47,18 +50,34 @@ router.post("/", async (req, res) => {
     };
 
     try {
+      // Attempt to send the email
       await transporter.sendMail(mailOptions);
-      console.log("✅ Contact email sent successfully via Mailcloud SMTP");
+      console.log("✅ Contact email sent successfully");
+
+      // Stop here and tell the frontend it worked
+      return res.status(200).json({
+        success: true,
+        msg: "Message sent successfully!"
+      });
+
     } catch (mailError) {
-      // Log but do not fail the request completely if mail fails, because DB save succeeded
-      console.error("❌ Mailcloud Error in Contact Route:", mailError.message);
+      console.error("❌ SMTP Error:", mailError.message);
+
+      // We still return 200 because the data IS saved in MongoDB for the Admin,
+      // but we warn the user that the email notification had a hiccup.
+      return res.status(200).json({
+        success: true,
+        msg: "Message saved to Admin Panel (Email notification delayed)."
+      });
     }
 
-    res.status(200).json({ success: true, msg: "Message sent successfully" });
-
   } catch (error) {
-    console.error("❌ Contact Route Error:", error);
-    res.status(500).json({ success: false, msg: "Server error while sending message" });
+    // This catches errors from the Database save (Contact.create)
+    console.error("❌ Contact Route Database Error:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Server error: Could not save message."
+    });
   }
 });
 
