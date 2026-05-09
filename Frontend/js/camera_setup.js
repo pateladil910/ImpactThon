@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (data.success && data.camera) {
         console.log("Persistent camera found. Jumping to Dashboard.");
-        window.location.href = "dashboard.html";
+        window.location.href = "/dashboard.html";
         return true;
       } else {
         // If the request succeeds but there's no camera data
@@ -27,14 +27,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.body.classList.add('show-form');
       }
     } catch (err) {
-      // --- ADD THE LOGIC HERE ---
       console.log("No previous camera found, showing setup form.");
-      document.body.classList.add('show-form'); // This reveals the form only if needed
-      // ---------------------------
-    }
-    return false;
-  }
+      document.body.classList.add('show-form');
 
+      // Safety fallback if CSS fails
+      const formElement = document.getElementById('cameraForm');
+      if (formElement) formElement.style.display = 'block';
+
+      return false;
+    }
+  }
   // Run the check. If a camera is found, stop the script here.
   const hasCamera = await checkExistingCamera();
   if (hasCamera) return;

@@ -259,12 +259,14 @@ select:focus {
   }
 }
 
-/* Hide the form by default so it doesn't 'flicker' during redirect */
+
+
+/* Initial state: Hide the form container */
 #cameraForm {
   display: none;
 }
 
-/* Only show it if the JS determines no camera is saved */
+/* State when no camera is found: Show the form container */
 .show-form #cameraForm {
-  display: block;
+  display: block !important;
 }
