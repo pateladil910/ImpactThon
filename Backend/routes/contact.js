@@ -4,15 +4,13 @@ const nodemailer = require("nodemailer");
 const Contact = require("../models/Contact");
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp-prod.mailrcld.com',
-  port: 2525,
-  secure: false,
+  service: 'gmail',
   auth: {
-    user: process.env.SMTP_USER || 'adilp4534@gmail.com',
-    pass: process.env.SMTP_PASS || '6ddbb671738858bb3e89bae40fac1cdc'
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
   },
   family: 4,
-  
+
   connectionTimeout: 20000, // 20 seconds timeout
   greetingTimeout: 10000,
   socketTimeout: 15000
