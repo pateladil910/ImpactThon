@@ -3,17 +3,13 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 const Contact = require("../models/Contact");
 
+// ONLY CHANGE: Switched to Gmail service to stop Render timeouts
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS
-  },
-  family: 4,
-
-  connectionTimeout: 20000, // 20 seconds timeout
-  greetingTimeout: 10000,
-  socketTimeout: 15000
+  }
 });
 
 router.post("/", async (req, res) => {
@@ -31,9 +27,10 @@ router.post("/", async (req, res) => {
       message
     });
 
-    // 2. Send Email via Mailcloud SMTP
+    // 2. Send Email via SMTP
     const mailOptions = {
-      from: `"CodeVortex Contact Form" <info@codevortex.in>`, // Must be authenticated sender
+      // ONLY CHANGE: from address must match the Gmail user to prevent errors
+      from: `"CodeVortex Contact Form" <${process.env.SMTP_USER}>`,
       replyTo: email,
       to: "codevortex131594@gmail.com", // Hardcoded per user request
       subject: `New Contact Message from ${name}`,
