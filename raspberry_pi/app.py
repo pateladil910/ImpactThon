@@ -4,6 +4,8 @@ import time
 import requests
 import base64
 import threading
+import argparse
+import os
 from flask import Flask, Response, jsonify
 from flask_cors import CORS
 from ultralytics import YOLO
@@ -15,11 +17,19 @@ CORS(app)
 # Replace with your production backend URL or local IP
 BACKEND_API_URL = "https://codevortex.in/api/detection"
 
+# Parse command-line arguments for dynamic camera URL
+parser = argparse.ArgumentParser(description="AI Edge Agent for Camera Monitoring")
+parser.add_argument('--camera', type=str, default='0', help='Camera URL (RTSP/HTTP) or Webcam ID (0)')
+args = parser.parse_args()
+
 # Load YOLOv8 model (yolov8n is fastest for Raspberry Pi)
 model = YOLO('yolov8n.pt') 
 
-# Initialize camera (0 is default USB/analog capture card)
-camera = cv2.VideoCapture(0)
+# Initialize camera (Dynamic input: Webcam OR IP Camera/RTSP)
+# If digit, it's a webcam ID. Otherwise, it's an IP URL.
+cam_source = int(args.camera) if args.camera.isdigit() else args.camera
+print(f"📡 Connecting to camera source: {cam_source}")
+camera = cv2.VideoCapture(cam_source)
 
 # Optimize for Raspberry Pi (Reduce resolution for better FPS)
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)

@@ -114,56 +114,80 @@
     /* ==========================
        🎥 CAMERA STREAM
     ========================== */
-    let cameraCount = 4; // Starting with 4 cameras
+    let cameras = [];
+
+    async function fetchCameras() {
+      try {
+        const res = await fetch('/api/camera/all');
+        const data = await res.json();
+        if (data.success && data.cameras) {
+          cameras = data.cameras;
+        }
+      } catch (err) {
+        console.error('Failed to fetch cameras', err);
+      }
+      renderCameras();
+    }
 
     function renderCameras() {
       const container = document.getElementById("camera-selector");
       if (!container) return;
       container.innerHTML = "";
       
-      for (let i = 1; i <= cameraCount; i++) {
+      // Render fetched cameras
+      cameras.forEach((cam, index) => {
         const btn = document.createElement("button");
-        btn.id = "btn-cam-" + i;
+        btn.id = "btn-cam-" + cam._id;
         btn.className = "cam-btn";
-        btn.onclick = () => switchCamera(i);
-        btn.innerText = "Cam " + i;
+        btn.onclick = () => switchCamera(cam);
+        btn.innerText = cam.name || `Cam ${index + 1}`;
+        container.appendChild(btn);
+      });
+
+      // Default local camera fallback if empty
+      if (cameras.length === 0) {
+        const btn = document.createElement("button");
+        btn.id = "btn-cam-default";
+        btn.className = "cam-btn active";
+        btn.onclick = () => switchCamera({ _id: 'default', name: 'Local Cam 1', url: 'https://impactthon-ai.onrender.com/video_feed' });
+        btn.innerText = "Cam 1";
         container.appendChild(btn);
       }
       
-      // "Add Camera" button
+      // "Add Camera" button -> Redirects to setup page
       const addBtn = document.createElement("button");
       addBtn.className = "cam-btn add-cam-btn";
-      addBtn.onclick = addNewCamera;
+      addBtn.onclick = () => { location.href = 'camera_setup.html'; };
       addBtn.innerText = "+ Add";
       container.appendChild(addBtn);
+
+      // Select first camera by default
+      if (cameras.length > 0) {
+        switchCamera(cameras[0]);
+      }
     }
 
-    function addNewCamera() {
-      cameraCount++;
-      renderCameras();
-      switchCamera(cameraCount); // Automatically switch to the new camera
-    }
-
-    function switchCamera(camId) {
+    function switchCamera(cam) {
       const cameraImg = document.getElementById("ai-camera");
       if (!cameraImg) return;
       
       // Update active button
       document.querySelectorAll('.camera-selector .cam-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = document.getElementById('btn-cam-' + camId);
+      const activeBtn = document.getElementById('btn-cam-' + cam._id);
       if (activeBtn) activeBtn.classList.add('active');
       
-      // Update video source (appending cam parameter)
-      cameraImg.src = "https://impactthon-ai.onrender.com/video_feed?cam=" + camId;
+      // For a real integration, the backend edge agent handles the RTSP stream.
+      // If public HTTP, we could set src = cam.url
+      // For now, assume Edge Agent proxies it through a query param
+      cameraImg.src = `https://impactthon-ai.onrender.com/video_feed?camId=${cam._id}`;
       
       // Update status text
       const statusText = document.getElementById('camera-status-text');
-      if (statusText) statusText.innerText = `LIVE – Real-time Monitoring (Camera ${camId})`;
+      if (statusText) statusText.innerText = `LIVE – Real-time Monitoring (${cam.name || 'Camera'})`;
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      renderCameras();
-      switchCamera(1);
+      fetchCameras();
     });
 
     /* ==========================

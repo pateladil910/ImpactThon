@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add IP Camera - AI Safety</title>
+  <link rel="stylesheet" href="../css/camera_setup.css" />
+</head>
+<body>
+  <div class="page">
+    <nav class="navbar">
+      <div class="logo">AI Safety</div>
+      <ul class="nav-links">
+        <li onclick="location.href='index.html'">Home</li>
+        <li onclick="location.href='dashboard.html'">Dashboard</li>
+        <li onclick="location.href='setup.html'">Config</li>
+      </ul>
+    </nav>
+
+    <main class="main">
+      <div class="setup-container glass-card">
+        <h1>Connect New Camera</h1>
+        <p class="subtitle">Add IP, RTSP, or CCTV cameras to your surveillance network.</p>
+
+        <form id="cameraForm" class="setup-form">
+          <div class="form-group">
+            <label>Camera Name</label>
+            <input type="text" id="camName" placeholder="e.g. Factory Entrance" required />
+          </div>
+
+          <div class="form-group">
+            <label>Camera Type</label>
+            <select id="camType" required>
+              <option value="RTSP">RTSP Camera</option>
+              <option value="IP_CAMERA">IP Camera (HTTP)</option>
+              <option value="CCTV">DVR/NVR</option>
+              <option value="WEBCAM">Local Webcam (USB)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Stream URL / IP Address</label>
+            <input type="text" id="camUrl" placeholder="rtsp://192.168.1.100/stream" required />
+            <small id="urlWarning" class="warning-text hidden"></small>
+          </div>
+
+          <div class="form-group half-width">
+            <div>
+              <label>Username (Optional)</label>
+              <input type="text" id="camUser" placeholder="admin" />
+            </div>
+            <div>
+              <label>Password (Optional)</label>
+              <input type="password" id="camPass" placeholder="••••••••" />
+            </div>
+          </div>
+
+          <div class="status-box hidden" id="statusBox">
+            <div class="spinner hidden" id="spinner"></div>
+            <span id="statusMessage"></span>
+          </div>
+
+          <div class="button-group">
+            <button type="button" class="btn btn-outline" id="btnTest">Test Connection</button>
+            <button type="submit" class="btn btn-primary" id="btnConnect" disabled>Connect Camera</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/camera_setup.js"></script>
+</body>
+</html>
