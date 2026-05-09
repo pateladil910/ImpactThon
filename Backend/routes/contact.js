@@ -24,7 +24,7 @@ router.post("/", async (req, res) => {
     // 2. Send Email via Resend API
     try {
       const { data, error } = await resend.emails.send({
-        from: 'CodeVortex Contact Form <onboarding@resend.dev>',
+        from: 'CodeVortex System <notifications@codevortex.in>', // Using Verified Domain
         replyTo: email,
         to: "codevortex131594@gmail.com",
         subject: `New Contact Message from ${name}`,
