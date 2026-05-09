@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@pipedream/mailercloud": "^0.1.0",
     "cookie-parser": "^1.4.7",
     "nodemailer": "^7.0.13"
   }
