@@ -45,11 +45,8 @@
             <img id="ai-camera" alt="AI Camera Stream" />
           </div>
 
-          <div class="camera-selector">
-            <button id="btn-cam-1" class="cam-btn active" onclick="switchCamera(1)">Cam 1</button>
-            <button id="btn-cam-2" class="cam-btn" onclick="switchCamera(2)">Cam 2</button>
-            <button id="btn-cam-3" class="cam-btn" onclick="switchCamera(3)">Cam 3</button>
-            <button id="btn-cam-4" class="cam-btn" onclick="switchCamera(4)">Cam 4</button>
+          <div class="camera-selector" id="camera-selector">
+            <!-- Dynamically populated by JS -->
           </div>
 
           <div class="camera-status" id="camera-status-text">
@@ -117,12 +114,42 @@
     /* ==========================
        🎥 CAMERA STREAM
     ========================== */
+    let cameraCount = 4; // Starting with 4 cameras
+
+    function renderCameras() {
+      const container = document.getElementById("camera-selector");
+      if (!container) return;
+      container.innerHTML = "";
+      
+      for (let i = 1; i <= cameraCount; i++) {
+        const btn = document.createElement("button");
+        btn.id = "btn-cam-" + i;
+        btn.className = "cam-btn";
+        btn.onclick = () => switchCamera(i);
+        btn.innerText = "Cam " + i;
+        container.appendChild(btn);
+      }
+      
+      // "Add Camera" button
+      const addBtn = document.createElement("button");
+      addBtn.className = "cam-btn add-cam-btn";
+      addBtn.onclick = addNewCamera;
+      addBtn.innerText = "+ Add";
+      container.appendChild(addBtn);
+    }
+
+    function addNewCamera() {
+      cameraCount++;
+      renderCameras();
+      switchCamera(cameraCount); // Automatically switch to the new camera
+    }
+
     function switchCamera(camId) {
       const cameraImg = document.getElementById("ai-camera");
       if (!cameraImg) return;
       
       // Update active button
-      document.querySelectorAll('.cam-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.camera-selector .cam-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById('btn-cam-' + camId);
       if (activeBtn) activeBtn.classList.add('active');
       
@@ -135,6 +162,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      renderCameras();
       switchCamera(1);
     });
 

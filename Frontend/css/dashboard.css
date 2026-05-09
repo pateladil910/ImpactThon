@@ -125,6 +125,7 @@ body {
 .camera-selector {
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 15px;
 }
@@ -150,6 +151,17 @@ body {
   background: rgba(56, 189, 248, 0.2);
   border-color: #38bdf8;
   color: #38bdf8;
+}
+
+.add-cam-btn {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.add-cam-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
 }
 
 .camera-status {
