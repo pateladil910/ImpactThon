@@ -41,12 +41,14 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
   try {
     const response = await axios.request(options);
     console.log("✅ Mail response:", response.data);
+    return true;
   } catch (error) {
-    // Detailed error logging to see exactly why it failed
     if (error.response) {
       console.error("❌ API MAIL ERROR:", error.response.status, error.response.data);
+      throw new Error(`API returned ${error.response.status}`);
     } else {
       console.error("❌ API MAIL ERROR:", error.message);
+      throw new Error(error.message);
     }
   }
 };
