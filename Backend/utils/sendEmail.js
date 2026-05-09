@@ -16,7 +16,7 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
   try {
     const { data, error } = await resend.emails.send({
       // Resend free tier requires the From address to be onboarding@resend.dev
-      from: 'AI Safety System <notifications@codevortex.in>', // Using Verified Domain
+      from: 'AI Safety System <notifications@codevortex.in>',
       replyTo: userEmail,
       to: recipientEmail || process.env.ADMIN_EMAIL || "codevortex131594@gmail.com",
       subject: "🚨 Danger Alert Detected",
