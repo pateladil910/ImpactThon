@@ -1,19 +1,18 @@
 const nodemailer = require("nodemailer");
 
+// ONLY CHANGE: Switched to Gmail service and using Environment Variables
 const transporter = nodemailer.createTransport({
-  host: 'smtp-prod.mailrcld.com',
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  service: 'gmail',
   auth: {
-    user: 'adilp4534@gmail.com',
-    pass: '6ddbb671738858bb3e89bae40fac1cdc'
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
   }
 });
 
 const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null) => {
   console.log(`📧 sendAlertEmail triggering for: ${userName}`);
 
-  // Create image HTML if an image was provided
+  // Create image HTML if an image was provided (UNTOUCHED)
   const imageHtml = imageBase64
     ? `<div style="margin-top: 20px; text-align: center;">
          <img src="${imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`}" 
@@ -23,7 +22,8 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
     : '';
 
   const mailOptions = {
-    from: `"AI Safety System" <adilp4534@gmail.com>`, // Must be an authenticated sender in Mailercloud
+    // ONLY CHANGE: "from" must match the authenticated Gmail user
+    from: `"AI Safety System" <${process.env.SMTP_USER}>`,
     replyTo: userEmail,
     to: process.env.ADMIN_EMAIL || "codevortex131594@gmail.com",
     subject: "🚨 Danger Alert Detected",
@@ -42,7 +42,8 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
     console.log("✅ Mail response:", info.messageId);
     return true;
   } catch (error) {
-    console.error("❌ API MAIL ERROR:", error.message);
+    // ONLY CHANGE: Log label changed to GMAIL for clarity
+    console.error("❌ GMAIL ALERT ERROR:", error.message);
     throw new Error(error.message);
   }
 };
