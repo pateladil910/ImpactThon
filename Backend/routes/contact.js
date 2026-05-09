@@ -21,7 +21,7 @@ router.post("/", async (req, res) => {
     // 2. Send Email via Mailcloud API
     const options = {
       method: 'POST',
-      url: 'https://api.mailercloud.com/v1/send/trans',
+      url: 'https://api.mailercloud.com/v1/send/mail',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': process.env.MAILER_API_KEY

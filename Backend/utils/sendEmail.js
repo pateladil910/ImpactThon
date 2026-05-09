@@ -6,7 +6,7 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
   const options = {
     method: 'POST',
     // FIXED URL: The correct endpoint for Mailercloud v1
-    url: 'https://api.mailercloud.com/v1/send/trans', 
+    url: 'https://api.mailercloud.com/v1/send/mail', 
     headers: {
       'Content-Type': 'application/json',
       'Authorization': process.env.MAILER_API_KEY 
