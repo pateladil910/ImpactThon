@@ -11,6 +11,8 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER || 'adilp4534@gmail.com',
     pass: process.env.SMTP_PASS || '6ddbb671738858bb3e89bae40fac1cdc'
   },
+  family: 4,
+  
   connectionTimeout: 20000, // 20 seconds timeout
   greetingTimeout: 10000,
   socketTimeout: 15000
