@@ -3,17 +3,9 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 const Contact = require("../models/Contact");
 
-// ONLY CHANGE: Switched to Gmail service to bypass Render's network blocks
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  },
-  family: 4 // This forces IPv4 and fixes the ENETUNREACH error
-});
+const { Resend } = require("resend");
+const resend = new Resend('re_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr');
+
 router.post("/", async (req, res) => {
   try {
     const { name, email, message } = req.body;
@@ -29,28 +21,30 @@ router.post("/", async (req, res) => {
       message
     });
 
-    // 2. Send Email via SMTP
-    const mailOptions = {
-      // ONLY CHANGE: from must match the authenticated Gmail user
-      from: `"CodeVortex Contact Form" <${process.env.SMTP_USER}>`,
-      replyTo: email,
-      to: "codevortex131594@gmail.com",
-      subject: `New Contact Message from ${name}`,
-      html: `
-        <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f4f4f4; border-radius: 8px;">
-          <h2 style="color: #08343D;">New Contact Form Submission</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <hr style="border: 1px solid #ccc;">
-          <p><strong>Message:</strong></p>
-          <p style="background: white; padding: 15px; border-radius: 5px;">${message}</p>
-        </div>
-      `
-    };
-
+    // 2. Send Email via Resend API
     try {
-      // Attempt to send the email
-      await transporter.sendMail(mailOptions);
+      const { data, error } = await resend.emails.send({
+        from: 'CodeVortex Contact Form <onboarding@resend.dev>',
+        replyTo: email,
+        to: "codevortex131594@gmail.com",
+        subject: `New Contact Message from ${name}`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f4f4f4; border-radius: 8px;">
+            <h2 style="color: #08343D;">New Contact Form Submission</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <hr style="border: 1px solid #ccc;">
+            <p><strong>Message:</strong></p>
+            <p style="background: white; padding: 15px; border-radius: 5px;">${message}</p>
+          </div>
+        `
+      });
+
+      if (error) {
+        console.error("❌ RESEND API ERROR:", error);
+        throw new Error(error.message);
+      }
+
       console.log("✅ Contact email sent successfully");
 
       return res.status(200).json({
@@ -59,7 +53,7 @@ router.post("/", async (req, res) => {
       });
 
     } catch (mailError) {
-      console.error("❌ SMTP Error:", mailError.message);
+      console.error("❌ Email Sending Error:", mailError.message);
 
       // Return 200 because DB save worked, but warn about email delay
       return res.status(200).json({
