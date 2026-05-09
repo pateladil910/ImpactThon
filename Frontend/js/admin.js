@@ -30,10 +30,59 @@ async function loadDashboardData() {
 
     // Fetch Users
     loadUsers();
+    
+    // Fetch Contacts
+    loadContacts();
 
   } catch (error) {
     console.error("Dashboard load error:", error);
   }
+}
+
+async function loadContacts() {
+  try {
+    const res = await fetch(`${ADMIN_API_BASE}/contacts`, {
+      credentials: "include"
+    });
+    const data = await res.json();
+    if (data.success) {
+      renderContactsTable(data.contacts);
+    }
+  } catch (error) {
+    console.error("Failed to load contacts:", error);
+  }
+}
+
+function renderContactsTable(contacts) {
+  const tbody = document.getElementById("contacts-tbody");
+  tbody.innerHTML = "";
+  
+  if (contacts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No messages yet.</td></tr>';
+    return;
+  }
+
+  contacts.forEach(msg => {
+    const tr = document.createElement("tr");
+
+    const tdDate = document.createElement("td");
+    tdDate.textContent = new Date(msg.createdAt).toLocaleString();
+    tr.appendChild(tdDate);
+
+    const tdName = document.createElement("td");
+    tdName.textContent = msg.name;
+    tr.appendChild(tdName);
+
+    const tdEmail = document.createElement("td");
+    tdEmail.textContent = msg.email;
+    tr.appendChild(tdEmail);
+
+    const tdMessage = document.createElement("td");
+    tdMessage.textContent = msg.message;
+    tr.appendChild(tdMessage);
+
+    tbody.appendChild(tr);
+  });
 }
 
 async function loadUsers() {
@@ -67,6 +116,13 @@ function renderUsersTable(users) {
     const tdEmail = document.createElement("td");
     tdEmail.textContent = user.email;
     tr.appendChild(tdEmail);
+
+    // Detections
+    const tdDetections = document.createElement("td");
+    tdDetections.textContent = user.detectionCount || 0;
+    tdDetections.style.fontWeight = "bold";
+    tdDetections.style.color = "#4DE6D6";
+    tr.appendChild(tdDetections);
 
     // Role Select
     const tdRole = document.createElement("td");

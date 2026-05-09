@@ -71,7 +71,8 @@ require("dotenv").config();
 const authRoutes = require("./routes/auth");
 const detectionRoutes = require("./routes/detection");
 const analyticsRoutes = require("./routes/analytics");
-const adminRoutes = require("./routes/admin"); // NEW
+const adminRoutes = require("./routes/admin");
+const contactRoutes = require("./routes/contact"); // NEW
 const sendAlertEmail = require("./utils/sendEmail");
 const connectDB = require("./config/db");
 const cookieParser = require("cookie-parser");
@@ -102,7 +103,8 @@ app.use("/api/detection", detectionRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/history", analyticsRoutes);
-app.use("/api/admin", adminRoutes); // NEW
+app.use("/api/admin", adminRoutes);
+app.use("/api/contact", contactRoutes); // NEW
 
 app.get("/api/status", (req, res) => {
   res.json({ danger: true, confidence: 92 });

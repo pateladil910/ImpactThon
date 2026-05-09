@@ -1,67 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1200">
   <title>Contact | AI Safety</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
+
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar">
-  <div class="logo">AI Safety</div>
-  <ul class="nav-links">
-    <li><a href="index.html">Home</a></li>
-    <li><a href="solution.html">Solution</a></li>
-    <li><a href="dashboard.html">Dashboard</a></li>
-  </ul>
-</nav>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="logo">AI Safety</div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="solution.html">Solution</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+    </ul>
+  </nav>
 
-<!-- CONTACT SECTION -->
-<section class="contact-section">
-  <div class="contact-container">
+  <!-- CONTACT SECTION -->
+  <section class="contact-section">
+    <div class="contact-container">
 
-    <div class="contact-info">
-      <h2>Get in Touch</h2>
-      <p>
-        Have questions about our AI-based smart safety system?
-        Contact us for support, collaboration, or feedback.
-      </p>
+      <div class="contact-info">
+        <h2>Get in Touch</h2>
+        <p>
+          Have questions about our AI-based smart safety system?
+          Contact us for support, collaboration, or feedback.
+        </p>
 
-      <div class="info-box">
-        <span>📍</span>
-        <p>LDRP-ITR, Gandhinagar, Gujarat, India</p>
+        <div class="info-box">
+          <span>📍</span>
+          <p>LDRP-ITR, Gandhinagar, Gujarat, India</p>
+        </div>
+
+        <div class="info-box">
+          <span>📧</span>
+          <p>codevortex09@gmail.com</p>
+        </div>
+
+        <div class="info-box">
+          <span>📞</span>
+          <p>+91 91067 86186</p>
+        </div>
       </div>
 
-      <div class="info-box">
-        <span>📧</span>
-        <p>codevortex09@gmail.com</p>
-      </div>
+      <!-- CONTACT FORM -->
+      <form class="contact-form" id="contactForm">
+        <h3>Send Message</h3>
 
-      <div class="info-box">
-        <span>📞</span>
-        <p>+91 91067 86186</p>
-      </div>
+        <input type="text" id="contact-name" placeholder="Your Name" required>
+        <input type="email" id="contact-email" placeholder="Your Email" required>
+        <textarea id="contact-message" rows="5" placeholder="Your Message" required></textarea>
+
+        <button type="submit" id="contact-submit-btn">Send Message</button>
+      </form>
+
     </div>
+  </section>
 
-    <!-- CONTACT FORM -->
-    <form class="contact-form">
-      <h3>Send Message</h3>
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('contact-submit-btn');
+      const name = document.getElementById('contact-name').value;
+      const email = document.getElementById('contact-email').value;
+      const message = document.getElementById('contact-message').value;
 
-      <input type="text" placeholder="Your Name" required>
-      <input type="email" placeholder="Your Email" required>
-      <textarea rows="5" placeholder="Your Message" required></textarea>
+      btn.textContent = "Sending...";
+      btn.disabled = true;
 
-      <button type="submit">Send Message</button>
-    </form>
+      try {
+        const res = await fetch("/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, message })
+        });
+        const data = await res.json();
 
-  </div>
-</section>
+        if (data.success) {
+          alert("Message sent successfully!");
+          document.getElementById('contactForm').reset();
+        } else {
+          alert(data.msg || "Failed to send message.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error sending message. Please try again later.");
+      } finally {
+        btn.textContent = "Send Message";
+        btn.disabled = false;
+      }
+    });
+  </script>
 
-<footer class="footer" style="text-align: center; padding: 25px 15px; font-size: 13px; opacity: 0.7; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+  <footer class="footer"
+    style="text-align: center; padding: 25px 15px; font-size: 13px; opacity: 0.7; border-top: 1px solid rgba(255, 255, 255, 0.05);">
     <p>© 2025 AI Smart Safety System | Built for Real-World Use</p>
-</footer>
+  </footer>
 
 </body>
+
 </html>

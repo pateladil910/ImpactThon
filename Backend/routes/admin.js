@@ -2,6 +2,7 @@ const express = require("express");
 const User = require("../models/User");
 const Detection = require("../models/Detection");
 const Incident = require("../models/Incident");
+const Contact = require("../models/Contact"); // NEW
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -43,14 +44,45 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-// 2. Get all users
+// 2. Get all users with detection counts
 router.get("/users", async (req, res) => {
   try {
-    const users = await User.find().select("-password"); // Don't send passwords
+    const users = await User.aggregate([
+      {
+        $lookup: {
+          from: "history", // Detection collection
+          localField: "email",
+          foreignField: "userId",
+          as: "userDetections"
+        }
+      },
+      {
+        $addFields: {
+          detectionCount: { $size: "$userDetections" }
+        }
+      },
+      {
+        $project: {
+          password: 0,
+          userDetections: 0 // Hide the raw array
+        }
+      }
+    ]);
     res.json({ success: true, users });
   } catch (error) {
     console.error("Admin get users error:", error);
     res.status(500).json({ msg: "Server error retrieving users" });
+  }
+});
+
+// 2.5 Get contact messages
+router.get("/contacts", async (req, res) => {
+  try {
+    const contacts = await Contact.find().sort({ createdAt: -1 });
+    res.json({ success: true, contacts });
+  } catch (error) {
+    console.error("Admin get contacts error:", error);
+    res.status(500).json({ msg: "Server error retrieving contacts" });
   }
 });
 

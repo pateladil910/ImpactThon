@@ -13,7 +13,11 @@ const DetectionSchema = new mongoose.Schema(
       required: true
     },
     event: String,
-    timestamp_ist: String
+    timestamp_ist: String,
+    userId: {
+      type: String,
+      default: "system"
+    }
   },
   { collection: 'history' }
 );

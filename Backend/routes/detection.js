@@ -9,7 +9,7 @@ let mailSent = false;
 // AI / Detection API
 router.post("/", async (req, res) => {
   try {
-    const { danger, confidence } = req.body;
+    const { danger, confidence, userId } = req.body; // NEW: receive userId
     // example: danger = true when human detected
 
     // 🔥 EMAIL TRIGGER LOGIC
@@ -18,7 +18,10 @@ router.post("/", async (req, res) => {
       try {
         await Detection.create({
           status: "DANGER",
-          message: "Human detected"
+          message: "Human detected",
+          timestamp: new Date(),
+          timestamp_ist: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+          userId: userId || "system" // Track which user made detection
         });
         console.log("💾 Danger stored to DB");
       } catch (dbError) {
