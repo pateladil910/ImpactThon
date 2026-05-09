@@ -2,11 +2,14 @@ const nodemailer = require("nodemailer");
 
 // ONLY CHANGE: Switched to Gmail service and using Environment Variables
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS
-  }
+  },
+  family: 4 // This forces IPv4 and fixes the ENETUNREACH error
 });
 
 const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null) => {

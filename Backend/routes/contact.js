@@ -5,13 +5,15 @@ const Contact = require("../models/Contact");
 
 // ONLY CHANGE: Switched to Gmail service to bypass Render's network blocks
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS
-  }
+  },
+  family: 4 // This forces IPv4 and fixes the ENETUNREACH error
 });
-
 router.post("/", async (req, res) => {
   try {
     const { name, email, message } = req.body;
