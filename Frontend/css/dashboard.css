@@ -122,8 +122,38 @@ body {
   object-fit: cover;
 }
 
+.camera-selector {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.cam-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.cam-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #38bdf8;
+}
+
+.cam-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
 .camera-status {
-  margin-top: 10px;
+  margin-top: 15px;
   font-size: 13px;
   text-align: center;
   color: #38bdf8;

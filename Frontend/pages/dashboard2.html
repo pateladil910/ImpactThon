@@ -45,8 +45,15 @@
             <img id="ai-camera" alt="AI Camera Stream" />
           </div>
 
-          <div class="camera-status">
-            LIVE – Real-time Monitoring
+          <div class="camera-selector">
+            <button id="btn-cam-1" class="cam-btn active" onclick="switchCamera(1)">Cam 1</button>
+            <button id="btn-cam-2" class="cam-btn" onclick="switchCamera(2)">Cam 2</button>
+            <button id="btn-cam-3" class="cam-btn" onclick="switchCamera(3)">Cam 3</button>
+            <button id="btn-cam-4" class="cam-btn" onclick="switchCamera(4)">Cam 4</button>
+          </div>
+
+          <div class="camera-status" id="camera-status-text">
+            LIVE – Real-time Monitoring (Camera 1)
           </div>
         </div>
 
@@ -109,10 +116,25 @@
     /* ==========================
        🎥 CAMERA STREAM
     ========================== */
-    document.addEventListener("DOMContentLoaded", () => {
+    function switchCamera(camId) {
       const cameraImg = document.getElementById("ai-camera");
-      if (cameraImg) {
-      cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";      }
+      if (!cameraImg) return;
+      
+      // Update active button
+      document.querySelectorAll('.cam-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById('btn-cam-' + camId);
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      // Update video source (appending cam parameter)
+      cameraImg.src = "https://impactthon-ai.onrender.com/video_feed?cam=" + camId;
+      
+      // Update status text
+      const statusText = document.getElementById('camera-status-text');
+      if (statusText) statusText.innerText = `LIVE – Real-time Monitoring (Camera ${camId})`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      switchCamera(1);
     });
 
     // ==========================================
@@ -276,15 +298,7 @@ await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST
     }
     setInterval(updateSafetyOnly, 500);
 
-    /* ==========================
-       🎥 CAMERA STREAM
-    ========================== */
-    document.addEventListener("DOMContentLoaded", () => {
-      const cameraImg = document.getElementById("ai-camera");
-      if (cameraImg) {
-        cameraImg.src = "https://impactthon-ai.onrender.com/video_feed";
-      }
-    });
+    /* Removed duplicate camera stream script */
   </script>
 
 </body>
