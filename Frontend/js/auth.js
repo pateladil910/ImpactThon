@@ -255,9 +255,14 @@ async function login(event) {
       // UI session only
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
+      localStorage.setItem("userRole", data.role); // Save role for UI checks
 
       // redirect
-      window.location.replace("/index.html");
+      if (data.role === "admin") {
+        window.location.replace("admin.html");
+      } else {
+        window.location.replace("index.html");
+      }
 
     } else {
 

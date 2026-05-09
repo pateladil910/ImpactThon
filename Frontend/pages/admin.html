@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - AI Smart Safety System</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="logo">AI Safety <span style="color: #ff4d4d;">| Admin</span></div>
+
+    <ul class="nav-links">
+      <li><a href="index.html">Back to Site</a></li>
+    </ul>
+
+    <!-- Profile / Logout -->
+    <div id="profile-section">
+      <span id="profile-name" class="profile-name">Admin</span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- MAIN ADMIN CONTENT -->
+  <section class="admin-container">
+
+    <!-- STATS OVERVIEW -->
+    <div class="admin-header">
+      <h2>System Overview</h2>
+      <p>Manage users and monitor system statistics securely.</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3 id="stat-users">0</h3>
+        <p>Total Users</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-detections">0</h3>
+        <p>Total Detections</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-incidents">0</h3>
+        <p>Total Incidents</p>
+      </div>
+    </div>
+
+    <!-- USERS TABLE -->
+    <div class="admin-table-container">
+      <h2>User Management</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <!-- Users will be injected here via JS -->
+          <tr>
+            <td colspan="4" style="text-align: center;">Loading users...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2026 AI Smart Safety System | Secure Admin Portal</p>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script src="../js/auth.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+
+</html>

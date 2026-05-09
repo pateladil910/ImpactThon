@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ router.post("/signup", async (req, res) => {
 
     // 1. Manually check if email exists
     const existingUser = await User.findOne({ email });
-    
+
     if (existingUser) {
       // Send 400 (Client Error) instead of 500 (Server Crash)
       return res.status(400).json({ message: "Email is already registered. Please login." });
@@ -50,7 +51,51 @@ router.post("/login", async (req, res) => {
     "secretkey"
   );
 
-  res.json({ token, role: user.role });
+  // --- CHANGE STARTS HERE ---
+
+  // 1. Set the cookie so the server can "see" it on page loads
+  res.cookie("token", token, {
+    httpOnly: true,     // Security: JS cannot steal the token
+    secure: true,       // Required for Render (HTTPS)
+    sameSite: "Lax",    // Standard security for navigation
+    maxAge: 24 * 60 * 60 * 1000 // Expires in 1 day
+  });
+
+  // 2. Send the response back to the frontend
+  return res.json({
+    success: true,
+    role: user.role
+  });
+
+  // --- CHANGE ENDS HERE ---
+});
+
+// GET CURRENT USER (/api/auth/me)
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    // req.user has the payload from the token (id, role)
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error("Auth /me error:", error);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// LOGOUT
+router.post("/logout", (req, res) => {
+  res.clearCookie("token");
+  res.json({ success: true, message: "Logged out" });
 });
 
 module.exports = router;
