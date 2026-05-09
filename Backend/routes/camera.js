@@ -8,13 +8,13 @@ function isPrivateIP(urlStr) {
   try {
     const parsed = new URL(urlStr);
     const host = parsed.hostname;
-    
+
     // Check for common private IP patterns
     if (host === 'localhost' || host === '127.0.0.1') return true;
     if (host.startsWith('192.168.')) return true;
     if (host.startsWith('10.')) return true;
     if (host.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) return true;
-    
+
     return false;
   } catch (e) {
     // Fallback if URL parsing fails
@@ -39,13 +39,13 @@ function encrypt(text) {
 // POST /api/camera/test
 router.post('/test', async (req, res) => {
   const { url } = req.body;
-  
+
   if (!url) {
     return res.status(400).json({ success: false, message: 'URL is required' });
   }
 
   const isLocal = isPrivateIP(url);
-  
+
   if (isLocal) {
     return res.status(200).json({
       success: false,
@@ -66,24 +66,38 @@ router.post('/test', async (req, res) => {
 router.post('/save', async (req, res) => {
   try {
     const { name, type, url, username, password, userId } = req.body;
-    
+
+    // Encrypt password only if provided
+    let encryptedPassword = "";
+    if (password) {
+      const key = process.env.ENCRYPTION_KEY;
+      if (!key || key.length !== 32) {
+        throw new Error("Backend Error: ENCRYPTION_KEY must be 32 characters in Render settings.");
+      }
+      encryptedPassword = encrypt(password);
+    }
+
     const isPublic = !isPrivateIP(url);
-    const encryptedPassword = encrypt(password);
-    
-    const newCamera = await Camera.create({
-      name,
-      type,
-      url,
-      username,
-      password: encryptedPassword,
-      isPublic,
-      userId: userId || null 
-    });
-    
-    res.status(201).json({ success: true, message: 'Camera saved successfully', camera: newCamera });
+
+    // UPSERT LOGIC: This updates the camera if it exists, or creates it if not.
+    // This is what makes it "Life Long" and persistent.
+    const camera = await Camera.findOneAndUpdate(
+      { name: name }, // You can also use userId if users are logged in
+      {
+        cameraType: type,
+        url,
+        username,
+        password: encryptedPassword,
+        isPublic,
+        updatedAt: Date.now()
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(201).json({ success: true, message: 'Camera saved for life!', camera });
   } catch (error) {
-    console.error('Camera Save Error:', error);
-    res.status(500).json({ success: false, message: 'Error saving camera' });
+    console.error('CRITICAL SAVE ERROR:', error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -94,6 +108,21 @@ router.get('/all', async (req, res) => {
     res.status(200).json({ success: true, cameras });
   } catch (error) {
     console.error('Fetch Cameras Error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.get('/latest', async (req, res) => {
+  try {
+    // This finds the most recently saved camera in MongoDB
+    const camera = await Camera.findOne().sort({ createdAt: -1 }).select('-password');
+
+    if (!camera) {
+      return res.status(404).json({ success: false, message: 'No camera configured' });
+    }
+
+    res.status(200).json({ success: true, camera });
+  } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
