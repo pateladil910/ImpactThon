@@ -237,14 +237,32 @@ select:focus {
 @media (max-width: 600px) {
   .navbar {
     padding: 15px 20px;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .nav-links {
+    gap: 20px;
   }
 
   .half-width,
   .button-group {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
   .glass-card {
-    padding: 30px 20px;
+    padding: 25px 15px;
+    border-radius: 20px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 25px;
   }
 }
