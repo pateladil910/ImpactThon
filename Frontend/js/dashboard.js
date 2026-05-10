@@ -102,6 +102,42 @@ async function startLiveSurveillance() {
   }
 }
 
+/* ==========================
+   🚪 CAMERA LOGOUT LOGIC
+========================== */
+
+async function logoutCamera() {
+  // Confirm with user before deleting
+  if (!confirm("Are you sure you want to disconnect this camera for life?")) return;
+
+  try {
+    // We call the DELETE route we added to the backend
+    const response = await fetch('/api/camera/reset', {
+      method: 'DELETE'
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("Camera data erased from MongoDB.");
+      // Send user back to setup page - it will now show the empty form
+      window.location.href = "camera_setup.html";
+    } else {
+      alert("Error: " + data.message);
+    }
+  } catch (err) {
+    console.error("Logout Network Error:", err);
+    alert("Failed to reach server. Check your connection.");
+  }
+}
+
+// Attach the function to your button if it exists
+document.addEventListener('DOMContentLoaded', () => {
+  const logoutBtn = document.getElementById('btnLogoutCam');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', logoutCamera);
+  }
+});
+
 document.addEventListener('DOMContentLoaded', startLiveSurveillance);
 /* ==========================
     ⏱ AUTO UPDATE
