@@ -12,34 +12,71 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 2. AUTO-REDIRECT LOGIC (Check if camera exists in DB)
   // ... existing variable declarations (btnTest, btnConnect, etc.)
 
-  async function checkExistingCamera() {
-    // NEW: Check if the user specifically wants to EDIT (by looking at the URL)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('edit') === 'true') {
-      console.log("Edit mode active. Showing form.");
-      document.body.classList.add('show-form');
-      const formElement = document.getElementById('cameraForm');
-      if (formElement) formElement.style.display = 'block';
-      return false; // Do NOT redirect
-    }
+  // async function checkExistingCamera() {
+  //   // 1. Check the URL for an 'edit' flag
+  //   const urlParams = new URLSearchParams(window.location.search);
+  //   const isEditMode = urlParams.get('edit') === 'true';
 
+  //   // 2. If we are in edit mode, STOP the redirect and show the form
+  //   if (isEditMode) {
+  //     console.log("Manual Edit Mode: Staying on setup page.");
+  //     document.body.classList.add('show-form');
+  //     const formElement = document.getElementById('cameraForm');
+  //     if (formElement) formElement.style.display = 'block';
+  //     return false;
+  //   }
+
+  //   try {
+  //     const response = await fetch('/api/camera/latest');
+  //     const data = await response.json();
+
+  //     // 3. Only jump to dashboard if a camera exists AND we aren't trying to edit
+  //     if (data.success && data.camera) {
+  //       console.log("Persistent camera found. Jumping to Dashboard.");
+  //       window.location.href = "dashboard.html";
+  //       return true;
+  //     }
+  //   } catch (err) {
+  //     console.log("No previous camera found, staying here.");
+  //     document.body.classList.add('show-form');
+  //   }
+  //   return false;
+  // }
+
+  async function checkExistingCamera() {
     try {
       const response = await fetch('/api/camera/latest');
+
+      // --- REQUIRED CHANGE: Handle empty database (404) ---
+      if (response.status === 404) {
+        console.log("No camera in database. Showing setup form.");
+        document.body.classList.add('show-form');
+        return false;
+      }
+      // ---------------------------------------------------
+
       const data = await response.json();
 
       if (data.success && data.camera) {
         console.log("Persistent camera found. Jumping to Dashboard.");
+
+        if (localStorage.getItem('editMode') === 'true') {
+          console.log("Edit mode still active. Staying on setup page.");
+          localStorage.removeItem('editMode');
+          document.body.classList.add('show-form'); // Ensure form is visible
+          return false;
+        }
+
         window.location.href = "dashboard.html";
         return true;
       }
     } catch (err) {
-      console.log("No previous camera found, showing setup form.");
+      console.log("No previous camera found or error, staying here.");
       document.body.classList.add('show-form');
-      const formElement = document.getElementById('cameraForm');
-      if (formElement) formElement.style.display = 'block';
     }
     return false;
   }
+
   // Run the check. If a camera is found, stop the script here.
   const hasCamera = await checkExistingCamera();
   if (hasCamera) return;
