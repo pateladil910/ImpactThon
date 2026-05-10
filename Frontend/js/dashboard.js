@@ -105,44 +105,38 @@ async function startLiveSurveillance() {
 /* ==========================
    🚪 CAMERA LOGOUT LOGIC
 ========================== */
+// We use a specific listener for the ID to ensure it triggers even if other errors exist
+async function handleLogout(event) {
+  event.preventDefault();
+  console.log("Logout initiated...");
 
-// Use ONE consolidated listener for the Logout Button
-document.addEventListener('click', async (event) => {
-  const logoutBtn = event.target.closest('#btnLogoutCam');
+  if (!confirm("Are you sure you want to disconnect this camera?")) return;
 
-  if (logoutBtn) {
-    event.preventDefault();
-    console.log("Logout button clicked!");
+  try {
+    // Use the absolute path to your web service to be safe
+    const response = await fetch('/api/camera/reset', {
+      method: 'DELETE'
+    });
 
-    if (!confirm("Are you sure you want to disconnect this camera?")) return;
+    const data = await response.json();
 
-    try {
-      // 1. Tell the server to delete the camera entry
-      const response = await fetch('/api/camera/reset', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        console.log("Success! Camera removed.");
-        // 2. Redirect to setup page
-        window.location.href = "camera_setup.html";
-      } else {
-        alert("Server error: " + data.message);
-      }
-    } catch (err) {
-      console.error("Network error during logout:", err);
-      alert("Could not connect to server to logout.");
+    if (data.success) {
+      alert("Camera Disconnected Successfully.");
+      window.location.href = "camera_setup.html";
     }
+  } catch (err) {
+    console.error("Logout Error:", err);
+    // Even if the server fails, we can force a redirect if needed
+    alert("Logout failed on server, but redirecting to setup.");
+    window.location.href = "camera_setup.html";
   }
-});
-// Attach the function to your button if it exists
+}
+
+// Attach the listener manually to be 100% sure
 document.addEventListener('DOMContentLoaded', () => {
-  const logoutBtn = document.getElementById('btnLogoutCam');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', logoutCamera);
+  const btn = document.getElementById('btnLogoutCam');
+  if (btn) {
+    btn.onclick = handleLogout;
   }
 });
 

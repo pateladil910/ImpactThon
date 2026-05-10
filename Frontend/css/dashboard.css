@@ -192,6 +192,11 @@ body {
   color: #ef4444;
 }
 
+#btnLogoutCam:hover {
+  background: #c82333 !important;
+  /* A slightly darker red on hover */
+}
+
 /* ================= ACTION ================= */
 .box.red {
   border-left: 6px solid #ef4444;
@@ -362,7 +367,6 @@ td {
   color: #94a3b8;
 }
 
-
 /* =========================
    MOBILE RESPONSIVE DESIGN
 ========================= */
@@ -389,11 +393,11 @@ td {
     margin-bottom: 0;
     padding: 20px;
   }
-  
+
   .box.camera {
     grid-row: auto;
   }
-  
+
   .camera-box {
     height: 220px;
   }
@@ -432,7 +436,8 @@ td {
     width: 100%;
   }
 
-  th, td {
+  th,
+  td {
     font-size: 14px;
     padding: 12px;
   }
@@ -449,11 +454,11 @@ td {
     backdrop-filter: blur(15px);
   }
 
-  .navbar > .logo {
+  .navbar>.logo {
     order: 1;
     font-size: 20px;
   }
-  
+
   .nav-links {
     order: 3;
     width: 100%;
@@ -479,7 +484,7 @@ td {
   h2 {
     font-size: 24px;
   }
-  
+
   .box-value {
     font-size: 26px;
   }
@@ -491,4 +496,5 @@ td {
     border-top: 1px solid rgba(255, 255, 255, 0.05);
   }
 }
+
 /* ================= END OF FILE ================= */
