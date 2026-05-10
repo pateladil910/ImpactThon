@@ -234,7 +234,7 @@ select:focus {
   display: block !important;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .navbar {
     padding: 15px 20px;
     flex-direction: column;
@@ -244,6 +244,8 @@ select:focus {
 
   .nav-links {
     gap: 20px;
+    justify-content: center;
+    width: 100%;
   }
 
   .half-width,
@@ -255,14 +257,15 @@ select:focus {
   .glass-card {
     padding: 25px 15px;
     border-radius: 20px;
+    width: 95%;
   }
 
   h1 {
-    font-size: 26px;
+    font-size: 24px;
   }
 
   .subtitle {
-    font-size: 14px;
+    font-size: 13px;
     margin-bottom: 25px;
   }
 }
