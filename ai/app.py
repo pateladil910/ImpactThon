@@ -215,7 +215,8 @@ def last_detection():
         })
     except Exception as e:
         print(f"❌ Error in /last_detection: {e}")
-        return jsonify({"time": None, "error": str(e)}), 500
+        # Return 200 with null time so frontend doesn't throw 500 error
+        return jsonify({"time": None, "error": str(e)})
 
 # ===============================
 # 🛑 FORCE STOP API
