@@ -61,8 +61,14 @@ app.register_blueprint(history_bp, url_prefix="/api")
 # ===============================
 @app.route("/video_feed")
 def video_feed():
+    from flask import request
+    source = request.args.get("source", 0)
+    # If source is a digit, convert to int (for camera index)
+    if isinstance(source, str) and source.isdigit():
+        source = int(source)
+        
     return Response(
-        generate_frames(),
+        generate_frames(source=source),
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 

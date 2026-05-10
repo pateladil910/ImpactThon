@@ -11,11 +11,7 @@ model = YOLO("yolov8n.pt")
 # =========================
 # CAMERA
 # =========================
-cap = cv2.VideoCapture(0)
-
-if not cap.isOpened():
-    print("❌ ERROR: Could not open camera (Index 2). Trying Index 1...")
-    cap = cv2.VideoCapture(1)
+# Camera is now initialized inside generate_frames to support dynamic sources
 
 # =========================
 # MACHINE DANGER ZONE (RECTANGLE)
@@ -49,8 +45,19 @@ def box_overlap(boxA, boxB):
 # =========================
 # FRAME GENERATOR
 # =========================
-def generate_frames():
+def generate_frames(source=0):
     global safety_state, danger_counter, safe_counter, current_confidence, latest_frame
+
+    cap = cv2.VideoCapture(source)
+    if not cap.isOpened():
+        print(f"❌ ERROR: Could not open camera source {source}")
+        # Yield a dummy frame indicating error
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        cv2.putText(frame, f"Camera Error: {source}", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        _, buffer = cv2.imencode(".jpg", frame)
+        yield (b"--frame\r\n"
+               b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n")
+        return
 
     frame_count = 0
     last_results = []
