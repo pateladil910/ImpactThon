@@ -106,30 +106,38 @@ async function startLiveSurveillance() {
    🚪 CAMERA LOGOUT LOGIC
 ========================== */
 
-async function logoutCamera() {
-  // Confirm with user before deleting
-  if (!confirm("Are you sure you want to disconnect this camera for life?")) return;
+// Use ONE consolidated listener for the Logout Button
+document.addEventListener('click', async (event) => {
+  const logoutBtn = event.target.closest('#btnLogoutCam');
 
-  try {
-    // We call the DELETE route we added to the backend
-    const response = await fetch('/api/camera/reset', {
-      method: 'DELETE'
-    });
-    const data = await response.json();
+  if (logoutBtn) {
+    event.preventDefault();
+    console.log("Logout button clicked!");
 
-    if (data.success) {
-      console.log("Camera data erased from MongoDB.");
-      // Send user back to setup page - it will now show the empty form
-      window.location.href = "camera_setup.html";
-    } else {
-      alert("Error: " + data.message);
+    if (!confirm("Are you sure you want to disconnect this camera?")) return;
+
+    try {
+      // 1. Tell the server to delete the camera entry
+      const response = await fetch('/api/camera/reset', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log("Success! Camera removed.");
+        // 2. Redirect to setup page
+        window.location.href = "camera_setup.html";
+      } else {
+        alert("Server error: " + data.message);
+      }
+    } catch (err) {
+      console.error("Network error during logout:", err);
+      alert("Could not connect to server to logout.");
     }
-  } catch (err) {
-    console.error("Logout Network Error:", err);
-    alert("Failed to reach server. Check your connection.");
   }
-}
-
+});
 // Attach the function to your button if it exists
 document.addEventListener('DOMContentLoaded', () => {
   const logoutBtn = document.getElementById('btnLogoutCam');
@@ -139,21 +147,35 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Add this at the VERY BOTTOM of dashboard.js
-document.addEventListener('click', async (e) => {
-  // This looks for the button even if it's inside a navbar or menu
-  if (e.target && e.target.id === 'btnLogoutCam') {
+document.addEventListener('click', async (event) => {
+  // Check if the clicked element (or its parent) is the logout button
+  const logoutBtn = event.target.closest('#btnLogoutCam');
+
+  if (logoutBtn) {
+    event.preventDefault(); // Stop any default link behavior
+    console.log("Logout button clicked!");
+
     if (!confirm("Are you sure you want to disconnect this camera?")) return;
 
     try {
-      const response = await fetch('/api/camera/reset', { method: 'DELETE' });
+      // 1. Tell the server to delete the camera entry
+      const response = await fetch('/api/camera/reset', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
       const data = await response.json();
 
       if (data.success) {
-        // IMPORTANT: We use a hard redirect to clear the "Persistent" state
-        window.location.replace("camera_setup.html");
+        console.log("Success! Camera removed.");
+        // 2. Hard redirect to the setup page
+        window.location.href = "camera_setup.html";
+      } else {
+        alert("Server error: " + data.message);
       }
     } catch (err) {
-      console.error("Logout failed:", err);
+      console.error("Network error during logout:", err);
+      alert("Could not connect to server to logout.");
     }
   }
 });

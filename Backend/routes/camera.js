@@ -104,11 +104,20 @@ router.post('/save', async (req, res) => {
 // DELETE /api/camera/reset
 router.delete('/reset', async (req, res) => {
   try {
-    // This deletes the most recent camera
-    await Camera.findOneAndDelete().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, message: 'Camera disconnected successfully' });
+    // deleteMany({}) ensures the "Life-Long" memory is totally wiped
+    await Camera.deleteMany({});
+
+    console.log("MongoDB: Camera collection cleared.");
+    res.status(200).json({
+      success: true,
+      message: 'Camera disconnected successfully'
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error during logout' });
+    console.error("Logout Error:", error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during logout'
+    });
   }
 });
 
