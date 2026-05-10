@@ -11,6 +11,7 @@ body {
   min-height: 100vh;
   background: radial-gradient(circle at top, #0f172a, #020617);
   color: #f8fafc;
+  overflow-x: hidden;
 }
 
 .page {
@@ -19,147 +20,145 @@ body {
   min-height: 100vh;
 }
 
+/* Navbar Consistency */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 50px;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 20px 50px;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .logo {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
   color: #38bdf8;
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
 }
 
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 24px;
+  gap: 30px;
 }
 
-.nav-links li {
-  cursor: pointer;
-  opacity: 0.85;
-  transition: 0.3s;
+.nav-links li a {
+  text-decoration: none;
+  color: #f8fafc;
+  font-weight: 500;
+  opacity: 0.8;
+  transition: 0.3s ease;
 }
 
-.nav-links li:hover {
+.nav-links li a:hover {
   opacity: 1;
   color: #38bdf8;
 }
 
+/* Main Layout Arrangement */
 .main {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
 }
 
 .glass-card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(20px);
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(25px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 40px;
+  border-radius: 28px;
+  padding: 45px;
   width: 100%;
-  max-width: 500px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  max-width: 520px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 }
 
 h1 {
-  font-size: 28px;
-  margin-bottom: 8px;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 10px;
   text-align: center;
-  color: #fff;
+  background: linear-gradient(to right, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
   color: #94a3b8;
-  margin-bottom: 30px;
+  margin-bottom: 35px;
+  line-height: 1.6;
 }
 
+/* Form Spacing */
 .setup-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+  /* Increased vertical space between sections */
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .form-group label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.2px;
+  margin-left: 4px;
 }
 
 input,
 select {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 14px 18px;
+  border-radius: 14px;
   color: #fff;
   font-size: 15px;
   outline: none;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input:focus,
 select:focus {
   border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  background: rgba(15, 23, 42, 1);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
 }
 
+/* User/Pass Side-by-Side Row */
 .half-width {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  gap: 20px;
+  /* Better gap for cleaner split */
 }
 
-.half-width>div {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.warning-text {
-  color: #fbbf24;
-  font-size: 12px;
-  margin-top: 4px;
-}
-
-.warning-text.danger {
-  color: #ef4444;
-}
-
-.hidden {
-  display: none !important;
-}
-
+/* Status Messages */
 .status-box {
-  padding: 15px;
-  border-radius: 12px;
+  padding: 14px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   font-size: 14px;
-  font-weight: 500;
-  text-align: center;
+  font-weight: 600;
+  margin-top: 10px;
 }
 
 .status-box.testing {
@@ -180,65 +179,59 @@ select:focus {
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+/* Buttons with Visual Hierarchy */
 .button-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-top: 10px;
+  gap: 16px;
+  margin-top: 15px;
 }
 
 .btn {
-  padding: 14px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 14px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   border: none;
-  text-align: center;
 }
 
 .btn-outline {
-  background: transparent;
-  border: 1px solid #38bdf8;
-  color: #38bdf8;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
 }
 
 .btn-outline:hover {
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #38bdf8;
+  color: #38bdf8;
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #38bdf8, #0ea5e9);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 10px 20px -5px rgba(56, 189, 248, 0.4);
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 25px -5px rgba(56, 189, 248, 0.5);
 }
 
-.btn-primary:disabled {
-  background: #334155;
-  color: #94a3b8;
-  box-shadow: none;
-  cursor: not-allowed;
+/* Visibility Logic */
+.hidden {
+  display: none !important;
+}
+
+#cameraForm {
+  display: none;
+  /* Keep hidden for life-long logic check */
+}
+
+.show-form #cameraForm {
+  display: block !important;
 }
 
 @media (max-width: 600px) {
@@ -246,27 +239,12 @@ select:focus {
     padding: 15px 20px;
   }
 
-  .half-width {
-    grid-template-columns: 1fr;
-  }
-
+  .half-width,
   .button-group {
     grid-template-columns: 1fr;
   }
 
   .glass-card {
-    padding: 25px 20px;
+    padding: 30px 20px;
   }
-}
-
-
-
-/* Initial state: Hide the form container */
-#cameraForm {
-  display: none;
-}
-
-/* State when no camera is found: Show the form container */
-.show-form #cameraForm {
-  display: block !important;
 }

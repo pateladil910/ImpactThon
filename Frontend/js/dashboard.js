@@ -138,6 +138,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Add this at the VERY BOTTOM of dashboard.js
+document.addEventListener('click', async (e) => {
+  // This looks for the button even if it's inside a navbar or menu
+  if (e.target && e.target.id === 'btnLogoutCam') {
+    if (!confirm("Are you sure you want to disconnect this camera?")) return;
+
+    try {
+      const response = await fetch('/api/camera/reset', { method: 'DELETE' });
+      const data = await response.json();
+
+      if (data.success) {
+        // IMPORTANT: We use a hard redirect to clear the "Persistent" state
+        window.location.replace("camera_setup.html");
+      }
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  }
+});
+
 document.addEventListener('DOMContentLoaded', startLiveSurveillance);
 /* ==========================
     ⏱ AUTO UPDATE
