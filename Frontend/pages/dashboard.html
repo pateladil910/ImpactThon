@@ -192,6 +192,29 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       fetchCameras();
+
+      const logoutBtn = document.getElementById('btnLogoutCam');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          if (!confirm("Are you sure you want to disconnect this camera?")) return;
+          try {
+            const res = await fetch('/api/camera/reset', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+              window.location.href = "camera_setup.html";
+            } else {
+              alert("Server error: " + data.message);
+            }
+          } catch (err) {
+            console.error("Logout Error:", err);
+            alert("Could not connect to server to logout.");
+          }
+        });
+      }
     });
 
     function resetCamera() {

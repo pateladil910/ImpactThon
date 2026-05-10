@@ -180,19 +180,36 @@ def status():
 # ===============================
 @app.route("/last_detection")
 def last_detection():
-    last = history_collection.find_one(
-        sort=[("timestamp", -1)]
-    )
+    try:
+        last = history_collection.find_one(
+            sort=[("timestamp", -1)]
+        )
 
-    if not last:
-        return jsonify({"time": None})
+        if not last:
+            return jsonify({"time": None})
 
-    ts = last["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST)
+        ts = last.get("timestamp")
+        if not ts:
+            return jsonify({"time": None, "error": "No timestamp in record"})
 
-    return jsonify({
-        "time": ts.strftime("%H:%M:%S"),
-        "status": last["status"]
-    })
+        if isinstance(ts, str):
+            return jsonify({
+                "time": ts,
+                "status": last.get("status", "UNKNOWN")
+            })
+
+        if ts.tzinfo is None:
+            ts = pytz.utc.localize(ts)
+        
+        ts_ist = ts.astimezone(IST)
+
+        return jsonify({
+            "time": ts_ist.strftime("%H:%M:%S"),
+            "status": last.get("status", "UNKNOWN")
+        })
+    except Exception as e:
+        print(f"❌ Error in /last_detection: {e}")
+        return jsonify({"time": None, "error": str(e)}), 500
 
 # ===============================
 # 🛑 FORCE STOP API
