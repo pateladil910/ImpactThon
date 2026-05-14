@@ -311,6 +311,10 @@ body::-webkit-scrollbar-thumb:hover {
   box-shadow: 0 15px 35px rgba(59, 130, 246, 0.5);
 }
 
+.table-box {
+  overflow-x: auto;
+}
+
 table {
   width: 100%;
   margin-top: 20px;

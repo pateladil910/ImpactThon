@@ -131,6 +131,7 @@ select {
   font-size: 15px;
   outline: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
 }
 
 input:focus,
@@ -232,6 +233,12 @@ select:focus {
 
 .show-form #cameraForm {
   display: block !important;
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .navbar {
+    padding: 15px 30px;
+  }
 }
 
 @media (max-width: 768px) {
