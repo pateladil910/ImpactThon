@@ -973,3 +973,325 @@ footer p {
         font-size: 28px;
     }
 }
+
+/* ===== ADVANCED CYBERNETIC RESPONSIVE ENGINE ===== */
+
+/* High-Definition Screens (Above 1400px Wide) */
+@media (min-width: 1400px) {
+    .hero, .features-section, .zones-section, .cta-section {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* Notebooks & Small Desktops (Under 1200px) */
+@media (max-width: 1200px) {
+    .hero {
+        padding: 130px 4% 60px;
+        gap: 4%;
+    }
+    .hero-text h1 {
+        font-size: 42px;
+    }
+    .nav-links {
+        gap: 20px;
+    }
+}
+
+/* Tablets & Cross-Orientations (Under 1024px) */
+@media (max-width: 1024px) {
+    .navbar {
+        padding: 14px 24px;
+    }
+    
+    .nav-links {
+        gap: 18px;
+    }
+    
+    .nav-links a {
+        font-size: 14px;
+    }
+
+    .cyber-hud-layer {
+        opacity: 0.25; /* Soften telemetry overlays to minimize grid clutter */
+    }
+
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 120px 24px 60px;
+        gap: 40px;
+    }
+
+    .hero-text {
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 35px 30px;
+    }
+
+    .hero-text h1 {
+        font-size: 38px;
+        text-align: center;
+    }
+
+    .hero-actions {
+        justify-content: center;
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .hero-card-wrapper {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .hero-card {
+        max-width: 550px;
+        margin: 0 auto;
+    }
+
+    .features-section, .zones-section, .cta-section {
+        padding: 60px 24px;
+    }
+    
+    .feature-grid {
+        grid-template-columns: repeat(2, 1fr); /* Clean twin columns for medium-sized viewports */
+        gap: 20px;
+    }
+    
+    .zones-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+/* Phablets & Large Mobile Viewports (Under 768px) */
+@media (max-width: 768px) {
+    .cyber-hud-layer {
+        display: none; /* Remove background overlays to prioritize mobile readability */
+    }
+
+    /* Transform desktop navigation into a clean, modern UI header wrapper */
+    .navbar {
+        padding: 12px 20px;
+    }
+
+    .nav-links {
+        display: none; /* Safely hidden unless tied to a JS hamburger menu drawer */
+    }
+
+    .auth-buttons a {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .profile-name {
+        padding: 6px 14px;
+        font-size: 13px;
+    }
+    
+    .logout-btn {
+        padding: 6px 16px;
+        font-size: 13px;
+    }
+
+    .feature-grid, .zones-grid {
+        grid-template-columns: 1fr; /* Stack columns vertically for accessible single-hand scrolling */
+        gap: 24px;
+    }
+
+    .cta-card {
+        padding: 45px 30px;
+    }
+
+    .cta-card h2 {
+        font-size: 32px;
+    }
+}
+
+/* Smartphones & Small Handheld Screens (Under 480px) */
+@media (max-width: 480px) {
+    body {
+        /* Optimize heavy gradients down to a singular tracking asset focal point on mobile */
+        background: radial-gradient(circle at 50% 20%, rgba(8, 14, 27, 0.9) 0%, var(--bg-dark) 100%);
+    }
+
+    .navbar {
+        background: rgba(4, 8, 16, 0.9); /* Sharper background definition on mobile headers */
+    }
+
+    .logo {
+        font-size: 19px;
+    }
+
+    .logo-icon {
+        width: 24px;
+        height: 24px;
+    }
+
+    .auth-buttons {
+        gap: 8px;
+    }
+
+    .auth-buttons a {
+        padding: 7px 12px;
+        border-radius: 6px; /* Streamlined utility edges look cleaner when small */
+        font-size: 12.5px;
+    }
+
+    .hero {
+        padding-top: 100px;
+        padding-bottom: 40px;
+        padding-left: 16px;
+        padding-right: 16px;
+        gap: 30px;
+    }
+
+    .hero-text {
+        padding: 25px 20px;
+        border-radius: 16px;
+    }
+
+    .hero-text h1 {
+        font-size: 28px;
+        line-height: 1.2;
+        letter-spacing: -0.5px;
+        margin-bottom: 12px;
+    }
+
+    .hero-text p {
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 25px;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-primary, .btn-outline, .btn-secondary {
+        width: 100%;
+        padding: 14px 24px;
+        font-size: 15px;
+        border-radius: 12px; /* Uniform UI styling across buttons */
+    }
+
+    .hero-card {
+        padding: 24px 20px;
+        border-radius: 16px;
+    }
+
+    .hero-card h3 {
+        font-size: 18px;
+        margin-bottom: 18px;
+    }
+
+    .status-list {
+        gap: 14px;
+    }
+
+    .status-item {
+        font-size: 13px;
+    }
+
+    .status-item b {
+        font-size: 14px;
+    }
+
+    .features-section, .zones-section, .cta-section {
+        padding: 40px 16px;
+    }
+
+    .section-header {
+        margin-bottom: 35px;
+    }
+
+    .section-header h2 {
+        font-size: 26px;
+        letter-spacing: -0.5px;
+    }
+
+    .section-header p {
+        font-size: 14px;
+    }
+
+    .feature-card-premium {
+        padding: 30px 20px;
+        border-radius: 16px;
+    }
+
+    .feature-icon {
+        margin-bottom: 18px;
+    }
+
+    .zone-card-premium {
+        padding: 25px 20px;
+        border-radius: 16px;
+    }
+
+    .cta-card {
+        padding: 40px 16px;
+        border-radius: 20px;
+        border-color: rgba(6, 182, 212, 0.35); /* Enhance high-contrast visibility elements */
+    }
+
+    .cta-card h2 {
+        font-size: 24px;
+        letter-spacing: -0.5px;
+    }
+
+    .cta-card p {
+        font-size: 14.5px;
+        margin-bottom: 25px;
+    }
+    
+    .cta-card button {
+        width: 100%;
+        padding: 14px 24px;
+        font-size: 15px;
+        border-radius: 12px;
+    }
+
+    footer {
+        padding: 30px 20px;
+    }
+    
+    footer p {
+        font-size: 12px;
+    }
+}
+
+/* Foldables, Narrow Handsets & Legacy Displays (Under 340px) */
+@media (max-width: 340px) {
+    .navbar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+    }
+    
+    .auth-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .hero {
+        padding-top: 140px;
+    }
+    
+    .hero-text h1 {
+        font-size: 24px;
+    }
+}
+
+/* Landscape Orientation Constraint Fixes */
+@media (max-height: 550px) and (orientation: landscape) {
+    .navbar {
+        position: absolute; /* Frees up critical vertical viewport space on rotation */
+    }
+    .hero {
+        padding-top: 100px;
+    }
+}
