@@ -399,8 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close menu panel if a click lands outside the navbar container
         document.addEventListener('click', (e) => {
             if (!navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
-                menuToggle.remove('active');
-                navLinks.remove('active');
+                menuToggle.classList.remove('active');
+                navLinks.classList.remove('active');
             }
         });
     });
