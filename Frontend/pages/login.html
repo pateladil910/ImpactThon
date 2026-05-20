@@ -3,46 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Login | AI Safety System</title>
-    <link rel="stylesheet" href="../css/auth_new.css">
+    <title>AI Safety Gateway | Real-time Machine Surveillance</title>
+    <link rel="stylesheet" href="../css/auth.css">
 </head>
 <body>
 
-<!-- VECTOR HUD TELEMETRY LAYER (BLEEDS THROUGH FROSTED GLASS) -->
-<div class="hud-telemetry-layer">
-    <!-- Camera Overlay Details -->
-    <div class="camera-crosshair">SYS_CAM_04 // LIVE FEED</div>
-    
-    <!-- Worker Bounding Box Bleading Through Frosted Card -->
-    <div class="hud-box worker-box">
-        <span class="hud-label">WORKER-03 [AUTHORIZED]</span>
+<!-- BACKDROP PARTICLES CANVAS -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- SCREEN WIDE SCANNING LASER Sweep Line -->
+<div class="laser-scan-line"></div>
+
+<!-- FUTURISTIC SURVEILLANCE CAMERA HUD OVERLAYS -->
+<div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+        <span>GATEWAY_SYS_VER: v8.4.2</span>
+        <span>SURVEILLANCE: ONGOING</span>
+        <span class="status-badge" style="margin-top: 10px;">
+            <span class="status-dot"></span> SYSTEM ACTIVE
+        </span>
     </div>
     
-    <!-- CNC Machine Station Bounding Box Bleading Through Frosted Card -->
-    <div class="hud-box cnc-box">
-        <span class="hud-label">CNC-STATION [IDLE]</span>
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+        <span>CAM_02_HAZARD_LINE</span>
+        <span>1920x1080 @ 30.0fps</span>
+        <span id="system-latency">LATENCY: 12ms</span>
+        <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">UTC TIME: --:--:--</span>
+    </div>
+
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+        <span>SECURE SHIELD: ACTIVE</span>
+    </div>
+
+    <!-- Active CCTV bounding boxes floating around card -->
+    <div class="hud-bounding-box float-hud-1" style="top: 15%; left: 8%; width: 150px; height: 230px; border-color: var(--safe-green);">
+        <span class="hud-box-label" style="background: var(--safe-green);">Worker-04 (99.2%)</span>
+    </div>
+
+    <div class="hud-bounding-box float-hud-2" style="bottom: 12%; right: 10%; width: 220px; height: 160px; border-color: var(--danger-red);">
+        <span class="hud-box-label" style="background: var(--danger-red);">ROBOT-ARM [DANGER]</span>
     </div>
 </div>
 
-<!-- SEVERE GLASSMORPHISM CARD OVERLAY -->
-<div class="auth-card">
-    <h2>Agent Login</h2>
-    <p class="subtitle">Please enter your details to verify clearance.</p>
+<div class="auth-container">
+    <!-- Core AI Shield Vector Icon -->
+    <div class="system-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+    </div>
+
+    <h2>AI Safety System</h2>
+    <p class="subtitle">Real-time worker and machine safety monitoring</p>
     
     <form id="loginForm">
+        <!-- Floating input username -->
         <div class="form-group">
-            <label for="username">Username / Email</label>
             <div class="input-wrapper">
-                <input id="username" type="text" placeholder="Username / Email" required>
+                <svg class="field-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <input id="username" type="text" placeholder=" " required>
+                <label for="username" class="field-label">Email or Username</label>
             </div>
         </div>
         
+        <!-- Floating input password -->
         <div class="form-group">
-            <label for="password">Password</label>
             <div class="input-wrapper">
-                <input id="password" type="password" placeholder="Password" required>
+                <svg class="field-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                <input id="password" type="password" placeholder=" " required>
+                <label for="password" class="field-label">Password</label>
                 <button type="button" class="toggle-btn" id="togglePasswordBtn" onclick="togglePasswordVisibility('password', 'togglePasswordBtn')">
-                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                 </button>
             </div>
         </div>
@@ -52,7 +90,7 @@
         </div>
         
         <button type="submit" class="submit-btn" id="submitBtn">
-            <span class="btn-text">Sign in</span>
+            <span class="btn-text">Authorize Entry</span>
             <div class="btn-loader">
                 <div class="spinner"></div>
             </div>
@@ -60,13 +98,74 @@
     </form>
     
     <p class="switch-auth">
-        Are you new? 
-        <a href="signup_new.html">Create an Account</a>
+        Don't have an account? 
+        <a href="signup.html">Create Account</a>
     </p>
+
+    <div class="footer-note">
+        SECURE GATEWAY &bull; MULTI-FACTOR MACHINE CONTROL ACTIVE
+    </div>
 </div>
 
-<!-- Password eye toggle & button loading animation scripts -->
+<!-- Cyber-Interactive Particles, Toggle and Submission loaders -->
 <script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = Math.random() * 0.4 - 0.2;
+            this.alpha = Math.random() * 0.5 + 0.1;
+            // 60% cyan particles, 40% blue particles
+            this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
+        }
+
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const count = Math.min(60, Math.floor(window.innerWidth / 20));
+    for (let i = 0; i < count; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Password Eye Toggle
     function togglePasswordVisibility(inputId, btnId) {
         const passwordInput = document.getElementById(inputId);
         const toggleButton = document.getElementById(btnId);
@@ -74,23 +173,22 @@
         if (passwordInput.type === "password") {
             passwordInput.type = "text";
             toggleButton.innerHTML = `
-                <svg viewBox="0 0 24 24">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
                 </svg>
             `;
         } else {
             passwordInput.type = "password";
             toggleButton.innerHTML = `
-                <svg viewBox="0 0 24 24">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                 </svg>
             `;
         }
     }
 
-    // Interactive form submission feedback
+    // Submission spinner loader
     const loginForm = document.getElementById('loginForm');
     const submitBtn = document.getElementById('submitBtn');
 
@@ -99,6 +197,71 @@
             submitBtn.classList.add('loading');
         });
     }
+
+    // Real-time ticking system clock inside HUD
+    const clockElement = document.getElementById('system-clock');
+    function updateClock() {
+        if (!clockElement) return;
+        const now = new Date();
+        const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
+        clockElement.textContent = `SYSTEM TIME: ${timeString} UTC`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // 3D perspective card tilt effect (background image stabilized to prevent stuttering/jumping)
+    document.addEventListener('mousemove', (e) => {
+        if (window.innerWidth < 900) return; // Disable on tablet/mobile for raw performance
+        
+        const card = document.querySelector('.auth-container');
+        if (!card) return;
+        
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+        
+        const tiltX = (dy / cy) * -6; // max 6 degrees
+        const tiltY = (dx / cx) * 6;  // max 6 degrees
+        
+        card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    });
+
+    // Reset card perspective when mouse leaves screen
+    document.addEventListener('mouseleave', () => {
+        const card = document.querySelector('.auth-container');
+        if (card) {
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+        }
+    });
+
+    // Bulletproof Input Autofill Value Checker to float label perfectly
+    function checkInputs() {
+        const inputs = document.querySelectorAll('.input-wrapper input, .input-wrapper select');
+        inputs.forEach(input => {
+            if (input.value && input.value.trim() !== "") {
+                input.classList.add('has-value');
+            } else {
+                input.classList.remove('has-value');
+            }
+        });
+    }
+
+    // Set up listeners for standard user interactions
+    document.querySelectorAll('.input-wrapper input, .input-wrapper select').forEach(input => {
+        input.addEventListener('input', checkInputs);
+        input.addEventListener('change', checkInputs);
+        input.addEventListener('blur', checkInputs);
+        input.addEventListener('focus', checkInputs);
+    });
+
+    // Run input checker with gradual staggered delays to catch delayed browser autofill actions!
+    window.addEventListener('load', checkInputs);
+    document.addEventListener('DOMContentLoaded', checkInputs);
+    setTimeout(checkInputs, 100);
+    setTimeout(checkInputs, 300);
+    setTimeout(checkInputs, 600);
+    setTimeout(checkInputs, 1200);
 </script>
 
 <!-- Existing Auth Module Integration -->
