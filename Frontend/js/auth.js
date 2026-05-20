@@ -224,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 */
 
-const API_BASE_URL = "";
+const API_BASE_URL = "https://impactthon-wjut.onrender.com";
 
 // ---------------- LOGIN ----------------
 
@@ -385,22 +385,105 @@ function checkAuthUI() {
 //   checkAuthUI();
 // });
 
-document.addEventListener('DOMContentLoaded', () => {
-        const menuToggle = document.getElementById('menuToggle');
-        const navLinks = document.getElementById('navLinks');
+// document.addEventListener('DOMContentLoaded', () => {
+//     // 1. Element Selectors
+//     const menuToggle = document.getElementById('menuToggle');
+//     const navLinks = document.getElementById('navLinks');
+//     const myButton = document.getElementById('element-id-on-line-393');
 
-        // Toggle state logic
+//     // 2. Mobile Navigation Menu Logic
+//     // This block only runs if both navigation elements exist on the current page.
+//     if (menuToggle && navLinks) {
+        
+//         // Toggle the mobile menu when clicking the hamburger icon
+//         menuToggle.addEventListener('click', (e) => {
+//             e.stopPropagation();
+//             menuToggle.classList.toggle('active');
+//             navLinks.classList.toggle('active');
+//         });
+
+//         // Close the mobile menu automatically if a user clicks anywhere outside of it
+//         document.addEventListener('click', (e) => {
+//             if (!navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
+//                 menuToggle.classList.remove('active');
+//                 navLinks.classList.remove('active');
+//             }
+//         });
+
+//     } else {
+//         // Safe fallback so your script doesn't crash on login/signup pages
+//         console.log("Navigation elements not found on this page; skipping menu setup.");
+//     }
+
+//     // 3. Specific Button Logic (Line 393)
+//     // This block only runs if this specific button exists on the current page.
+//     if (myButton) {
+//         myButton.addEventListener('click', () => {
+//             console.log("Button 393 was clicked!");
+            
+//             /* 
+//                👉 NOTE: Put your actual button action here. 
+//                For example: alert('Button clicked!'); 
+//             */
+//         });
+//     }
+// });
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ==========================================
+    // 1. ELEMENT SELECTORS
+    // ==========================================
+    const menuToggle = document.getElementById('menuToggle');
+    const navLinks = document.getElementById('navLinks');
+    const myButton = document.getElementById('element-id-on-line-393');
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+
+    // ==========================================
+    // 2. MOBILE NAVIGATION MENU LOGIC
+    // ==========================================
+    if (menuToggle && navLinks) {
+        // Toggle the mobile menu when clicking the hamburger icon
         menuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
             menuToggle.classList.toggle('active');
             navLinks.classList.toggle('active');
         });
 
-        // Close menu panel if a click lands outside the navbar container
+        // Close the mobile menu automatically if a user clicks anywhere outside of it
         document.addEventListener('click', (e) => {
             if (!navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
                 menuToggle.classList.remove('active');
                 navLinks.classList.remove('active');
             }
         });
-    });
+    } else {
+        console.log("Navigation elements not found on this page; skipping menu setup.");
+    }
+
+    // ==========================================
+    // 3. AUTHENTICATION LOGIC (UNCOMMENTED & FIXED)
+    // ==========================================
+    if (loginForm) {
+        loginForm.addEventListener("submit", login);
+    }
+
+    if (signupForm) {
+        signupForm.addEventListener("submit", signup);
+    }
+
+    // Runs your UI check (make sure this function is defined elsewhere in your project!)
+    if (typeof checkAuthUI === "function") {
+        checkAuthUI();
+    }
+
+    // ==========================================
+    // 4. SPECIFIC BUTTON LOGIC (LINE 393)
+    // ==========================================
+    if (myButton) {
+        myButton.addEventListener('click', () => {
+            console.log("Button 393 was clicked!");
+            // Add your button's actual functionality here if needed
+        });
+    }
+});
