@@ -1,0 +1,364 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+:root {
+    --primary-carbon: #1F2937;
+    --primary-carbon-hover: #111827;
+    --text-dark-slate: #1E293B;
+    --text-muted-slate: #475569;
+    
+    --border-frosted: rgba(255, 255, 255, 0.45);
+    --border-input: rgba(71, 85, 105, 0.22);
+    --border-input-focus: #3b82f6;
+    
+    --bg-glass: rgba(255, 255, 255, 0.68);
+    --sky-blue: #38BDF8;
+    --sky-blue-hover: #0ea5e9;
+    
+    --safe-green: #10b981;
+    --warning-yellow: #eab308;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    width: 100vw;
+    background: 
+        linear-gradient(rgba(15, 23, 42, 0.25), rgba(15, 23, 42, 0.3)),
+        url('../images/factory_safety_bg.png') no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ===== VECTOR HUD TELEMETRY LAYER ===== */
+.hud-telemetry-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Base bounding box style */
+.hud-box {
+    position: absolute;
+    border-style: solid;
+    border-width: 1.5px;
+    border-radius: 4px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.hud-box::before, .hud-box::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-style: solid;
+}
+
+/* Top-left corner thick bracket */
+.hud-box::before {
+    top: -2px; left: -2px;
+    border-width: 3px 0 0 3px;
+}
+
+/* Bottom-right corner thick bracket */
+.hud-box::after {
+    bottom: -2px; right: -2px;
+    border-width: 0 3px 3px 0;
+}
+
+.hud-label {
+    position: absolute;
+    top: -22px;
+    left: -1px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 2px;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Specific position behind/bleeding through the glass login card */
+.worker-box {
+    left: calc(50% - 280px);
+    top: calc(50% - 150px);
+    width: 180px;
+    height: 260px;
+    border-color: var(--safe-green);
+    background: rgba(16, 185, 129, 0.03);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+.worker-box::before, .worker-box::after { border-color: var(--safe-green); }
+.worker-box .hud-label { background: var(--safe-green); }
+
+.cnc-box {
+    left: calc(50% - 80px);
+    top: calc(50% - 240px);
+    width: 310px;
+    height: 180px;
+    border-color: var(--warning-yellow);
+    background: rgba(234, 179, 8, 0.02);
+    box-shadow: 0 0 15px rgba(234, 179, 8, 0.08);
+}
+.cnc-box::before, .cnc-box::after { border-color: var(--warning-yellow); }
+.cnc-box .hud-label { background: var(--warning-yellow); }
+
+/* Decorative Camera Grid Crosshairs */
+.camera-crosshair {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1px;
+}
+
+/* ===== SEVERE GLASSMORPHISM CARD ===== */
+.auth-card {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    max-width: 440px;
+    margin: 20px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 50px 45px;
+    border-radius: 12px; /* Consistent 12px border-radius */
+    border: 1px solid var(--border-frosted); /* 1px thin frosted border */
+    box-shadow: 
+        0 40px 80px -15px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Title in precise, dark slate geometric sans-serif */
+.auth-card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-dark-slate);
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    color: var(--text-muted-slate);
+    font-size: 14px;
+    margin-bottom: 35px;
+}
+
+/* ===== FORM CONTROLS ===== */
+.form-group {
+    margin-bottom: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark-slate);
+    letter-spacing: 0.5px;
+}
+
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Text fields with minimalist, slightly darker slate-toned borders */
+.input-wrapper input {
+    width: 100%;
+    padding: 15px 18px;
+    padding-right: 48px;
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid var(--border-input); /* 1px thin border */
+    border-radius: 12px; /* Consistent 12px border-radius */
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-dark-slate);
+    outline: none;
+    transition: all 0.25s ease;
+}
+
+.input-wrapper input::placeholder {
+    color: var(--text-muted-slate);
+    opacity: 0.7;
+}
+
+.input-wrapper input:focus {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: var(--border-input-focus);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Eye button toggle for password */
+.toggle-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted-slate);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    z-index: 5;
+}
+
+.toggle-btn:hover {
+    color: var(--text-dark-slate);
+}
+
+.toggle-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Help Links */
+.help-links {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -8px;
+    margin-bottom: 25px;
+}
+
+/* Forgot password in precise sky blue (#38BDF8) */
+.forgot-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sky-blue);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.forgot-link:hover {
+    color: var(--sky-blue-hover);
+    text-decoration: underline;
+}
+
+/* Flat professional deep carbon gray (#1F2937) */
+.submit-btn {
+    position: relative;
+    width: 100%;
+    padding: 16px;
+    background-color: var(--primary-carbon);
+    border: 1px solid rgba(31, 41, 55, 0.15); /* 1px thin frosted border */
+    color: #ffffff;
+    border-radius: 12px; /* Consistent 12px border-radius */
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(31, 41, 55, 0.15);
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.submit-btn:hover {
+    background-color: var(--primary-carbon-hover);
+    box-shadow: 0 6px 16px rgba(31, 41, 55, 0.25);
+}
+
+.submit-btn:active {
+    transform: translateY(1px);
+}
+
+/* Button loader state */
+.submit-btn .btn-text {
+    transition: opacity 0.25s ease;
+}
+
+.submit-btn.loading .btn-text {
+    opacity: 0;
+}
+
+.submit-btn .btn-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.submit-btn.loading .btn-loader {
+    opacity: 1;
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-top: 2px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Footer switches */
+.switch-auth {
+    margin-top: 35px;
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--text-muted-slate);
+}
+
+.switch-auth a {
+    color: var(--text-dark-slate);
+    text-decoration: none;
+    font-weight: 700;
+    transition: color 0.2s ease;
+    margin-left: 4px;
+}
+
+.switch-auth a:hover {
+    color: var(--sky-blue);
+    text-decoration: underline;
+}
+
+/* ===== RESPONSIVE MEDIA QUERIES ===== */
+@media (max-width: 900px) {
+    /* Mute bounding boxes on very small viewports to focus on input form clarity */
+    .hud-telemetry-layer {
+        display: none;
+    }
+}
