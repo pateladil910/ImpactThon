@@ -714,3 +714,106 @@ body {
         font-size: 26px;
     }
 }
+
+/* ===== AUTOMATED HIGH-END RESPONSIVE ADJUSTMENTS ===== */
+
+/* Tablet & Smaller Desktops (Under 1024px) */
+@media (max-width: 1024px) {
+    .cyber-hud-layer {
+        opacity: 0.4; /* Soften HUD markers so they don't fight with the form */
+    }
+    
+    .hud-top-left, .hud-top-right, .hud-bottom-left {
+        top: 20px;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+    }
+}
+
+/* Phablets & Small Tablets (Under 768px) */
+@media (max-width: 768px) {
+    .cyber-hud-layer {
+        display: none; /* Safely remove tracking clutter on tighter screens */
+    }
+    
+    .auth-container {
+        padding: 40px 30px; /* Gently compress interior spacing to save screen space */
+        margin: 20px;
+    }
+}
+
+/* Mobile Devices (Under 480px) */
+@media (max-width: 480px) {
+    body {
+        align-items: flex-start; /* Prevents awkward top-clipping on short mobile screens */
+        padding: 16px 0;
+        /* Keep the atmosphere subtle but lightweight on mobile devices */
+        background: radial-gradient(circle at 50% 20%, #080e1b 0%, var(--bg-dark) 100%);
+    }
+    
+    .auth-container {
+        margin: 12px;
+        width: calc(100% - 24px); /* Clean margins instead of smashing edges */
+        padding: 35px 20px;
+        
+        /* FIX: Preserve the premium cyber-glass aesthetic on mobile */
+        background: rgba(8, 14, 27, 0.75); 
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px;
+        border: 1px solid rgba(6, 182, 212, 0.15);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+    
+    .auth-container h2 {
+        font-size: 26px;
+        margin-bottom: 6px;
+    }
+    
+    .subtitle {
+        margin-bottom: 25px;
+        font-size: 13px;
+    }
+    
+    /* Slightly optimize field sizes for comfortable thumb taps */
+    .input-wrapper input,
+    .input-wrapper select {
+        padding: 14px 16px;
+        padding-left: 46px;
+        padding-right: 44px;
+        font-size: 14px;
+    }
+    
+    .form-group label.field-label {
+        left: 46px;
+        font-size: 13.5px;
+    }
+    
+    .social-login-grid {
+        gap: 8px; /* Snugger grids for smaller viewports */
+    }
+}
+
+/* Foldables & Ultra-Small Screens (Under 340px) */
+@media (max-width: 340px) {
+    .auth-container {
+        padding: 25px 15px;
+    }
+    
+    .social-separator {
+        margin: 16px 0;
+    }
+    
+    .terms-group {
+        font-size: 12px;
+    }
+}
+
+/* Height Fix for Landscape Mobile Orientations */
+@media (max-height: 580px) and (orientation: landscape) {
+    body {
+        align-items: flex-start;
+        padding: 20px 0;
+    }
+}
