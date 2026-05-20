@@ -1295,3 +1295,118 @@ footer p {
         padding-top: 100px;
     }
 }
+
+/* ===== AUTOMATED CYBER HAMBURGER ENGINE ===== */
+
+/* Base Toggle Styling (Hidden on Laptop/Desktop) */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 22px;
+    height: 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 110;
+    padding: 0;
+    margin-left: 15px;
+}
+
+.menu-toggle span {
+    width: 100%;
+    height: 2px;
+    background-color: var(--text-main);
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+}
+
+/* Dynamic Morphing states into an 'X' */
+.menu-toggle.active span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+    background-color: var(--primary-neon);
+}
+.menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+.menu-toggle.active span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+    background-color: var(--primary-neon);
+}
+
+/* Tablet & Mobile Layout Shifts (Under 768px) */
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: flex; /* Bring the 3 lines alive */
+    }
+
+    /* Transform desktop link layout into a premium flyout pane */
+    .nav-links {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 280px;
+        height: 100vh;
+        background: rgba(4, 8, 16, 0.95);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        border-left: 1px solid rgba(6, 182, 212, 0.2);
+        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.8);
+        
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 100px 40px 40px 40px;
+        gap: 30px;
+        
+        transform: translateX(100%);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 105;
+    }
+
+    /* Target state when menu is clicked open */
+    .nav-links.active {
+        transform: translateX(0);
+    }
+
+    .nav-links a {
+        font-size: 18px;
+        width: 100%;
+        display: block;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+}
+
+/* Micro Device Polish (Under 480px) */
+@media (max-width: 480px) {
+    .navbar {
+        padding: 12px 16px;
+    }
+
+    .logo {
+        font-size: 16px;
+        gap: 6px;
+    }
+
+    .logo-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Safely handle long email addresses in your profile section on narrow screens */
+    .profile-name {
+        padding: 6px 12px;
+        font-size: 11px;
+        max-width: 130px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .logout-btn, .auth-buttons a {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}

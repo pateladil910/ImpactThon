@@ -369,18 +369,38 @@ function checkAuthUI() {
 
 // ---------------- INIT ----------------
 
-document.addEventListener("DOMContentLoaded", () => {
+// document.addEventListener("DOMContentLoaded", () => {
 
-  const loginForm = document.getElementById("loginForm");
-  const signupForm = document.getElementById("signupForm");
+//   const loginForm = document.getElementById("loginForm");
+//   const signupForm = document.getElementById("signupForm");
 
-  if (loginForm) {
-    loginForm.addEventListener("submit", login);
-  }
+//   if (loginForm) {
+//     loginForm.addEventListener("submit", login);
+//   }
 
-  if (signupForm) {
-    signupForm.addEventListener("submit", signup);
-  }
+//   if (signupForm) {
+//     signupForm.addEventListener("submit", signup);
+//   }
 
-  checkAuthUI();
-});
+//   checkAuthUI();
+// });
+
+document.addEventListener('DOMContentLoaded', () => {
+        const menuToggle = document.getElementById('menuToggle');
+        const navLinks = document.getElementById('navLinks');
+
+        // Toggle state logic
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuToggle.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
+
+        // Close menu panel if a click lands outside the navbar container
+        document.addEventListener('click', (e) => {
+            if (!navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
+                menuToggle.remove('active');
+                navLinks.remove('active');
+            }
+        });
+    });
