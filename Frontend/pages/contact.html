@@ -1,106 +1,1142 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact | AI Safety</title>
-  <link rel="stylesheet" href="../css/style.css">
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Safety Shield | Secure Uplink Portal</title>
+    
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #020617; /* Slate Dark matching index.html and solution.html */
+            --primary-neon: #06b6d4; /* Cyan */
+            --primary-blue: #3b82f6; /* Blue */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dark: #0f172a;
+            
+            --border-glow: rgba(6, 182, 212, 0.15);
+            --border-glow-focus: rgba(56, 189, 248, 0.55);
+            
+            --bg-glass: rgba(10, 15, 30, 0.5);
+            --bg-glass-heavy: rgba(6, 9, 21, 0.85);
+            
+            --safe-green: #10b981;
+            --safe-green-glow: rgba(16, 185, 129, 0.15);
+            --danger-red: #ef4444;
+            --danger-red-glow: rgba(239, 68, 68, 0.15);
+            --warning-yellow: #f59e0b;
+            --warning-yellow-glow: rgba(245, 158, 11, 0.15);
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-dark);
+            /* Sleek, professional dark SaaS ambient gradients */
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+                linear-gradient(180deg, #020617 0%, #070a13 100%);
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ===== ACTIVE PARTICLE BACKDROP CANVAS ===== */
+        #particle-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== SCANNING LASER sweep LINE ===== */
+        .laser-scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+            box-shadow: 0 0 12px 1px var(--primary-neon);
+            animation: screenScan 9s infinite linear;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @keyframes screenScan {
+            0% { top: 0%; opacity: 0.05; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0.05; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 60px;
+            background: rgba(2, 6, 23, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.12);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            color: var(--text-main);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            color: var(--primary-neon);
+            filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4));
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 35px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.25s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            padding: 4px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-neon);
+            transition: width 0.25s ease;
+            box-shadow: 0 0 8px var(--primary-neon);
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a.active {
+            color: var(--text-main);
+        }
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .auth-buttons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .auth-buttons a {
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 22px;
+            border-radius: 30px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .auth-buttons a:first-child {
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .auth-buttons a:first-child:hover {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.18);
+            transform: translateY(-1.5px);
+        }
+
+        .auth-buttons a:last-child {
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+        }
+
+        .auth-buttons a:last-child:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
+        }
+
+        .profile-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .profile-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            padding: 8px 18px;
+            border-radius: 30px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+            cursor: default;
+        }
+
+        .logout-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+            transition: all 0.25s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+        }
+
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 18px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 110;
+        }
+
+        .menu-toggle span {
+            width: 100%;
+            height: 2px;
+            background-color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(4px, 5px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -6px);
+        }
+
+        /* ===== CONTACT MAIN CONTAINER ===== */
+        .contact-section {
+            min-height: calc(100vh - 72px);
+            padding: 130px 8% 60px;
+            max-width: 1450px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .contact-container {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 60px;
+            align-items: stretch;
+        }
+
+        /* SECURED OPERATIONAL UPLINK CARD (LEFT) */
+        .uplink-card {
+            background: rgba(6, 9, 21, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 20px;
+            padding: 45px;
+            box-shadow: 
+                0 30px 80px -20px rgba(0, 0, 0, 0.6),
+                0 0 25px rgba(6, 182, 212, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .uplink-card::before, .uplink-card::after {
+            content: "";
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: var(--primary-neon);
+            border-style: solid;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .uplink-card::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .uplink-card::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+        .uplink-header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #ffffff 60%, var(--primary-neon));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            text-shadow: 0 0 25px rgba(6, 182, 212, 0.08);
+        }
+
+        .uplink-header p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.65;
+            margin-bottom: 35px;
+        }
+
+        .info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            margin-bottom: 35px;
+        }
+
+        .info-box {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(2, 6, 23, 0.45);
+            border: 1px solid rgba(6, 182, 212, 0.08);
+            border-radius: 12px;
+            padding: 18px 24px;
+            transition: all 0.3s ease;
+        }
+
+        .info-box:hover {
+            border-color: rgba(6, 182, 212, 0.25);
+            box-shadow: 0 0 18px rgba(6, 182, 212, 0.08);
+            transform: translateX(5px);
+        }
+
+        .info-icon-wrapper {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: rgba(6, 182, 212, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-neon);
+            flex-shrink: 0;
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .info-box:hover .info-icon-wrapper {
+            background: rgba(6, 182, 212, 0.15);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+            transform: scale(1.05);
+        }
+
+        .info-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--primary-neon);
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        /* CYBER DECK SUB-WIDGET */
+        .cyber-deck {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            color: rgba(6, 182, 212, 0.4);
+            letter-spacing: 0.5px;
+        }
+
+        .deck-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.04);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 4px;
+            padding: 4px 10px;
+            color: var(--safe-green);
+            font-weight: 700;
+        }
+
+        .deck-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--safe-green);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--safe-green);
+            animation: activePulse 1.8s infinite ease-in-out;
+        }
+
+        @keyframes activePulse {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            50% { transform: scale(1.25); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.5; }
+        }
+
+        /* SECURE MESSAGE TRANSMITTER CARD (RIGHT) */
+        .form-card {
+            background: rgba(6, 9, 21, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 20px;
+            padding: 45px;
+            box-shadow: 
+                0 30px 80px -20px rgba(0, 0, 0, 0.6),
+                0 0 25px rgba(6, 182, 212, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-card::before, .form-card::after {
+            content: "";
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: var(--primary-neon);
+            border-style: solid;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .form-card::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .form-card::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+        .form-card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .form-card p.form-desc {
+            color: var(--text-muted);
+            font-size: 13.5px;
+            margin-bottom: 30px;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .input-group {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 12px;
+            outline: none;
+            color: var(--text-main);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .input-group textarea {
+            resize: none;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            background: rgba(2, 6, 23, 0.85);
+        }
+
+        .input-group label {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 13.5px;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group textarea ~ label {
+            top: 25px;
+            transform: none;
+        }
+
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label {
+            top: 0;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: var(--primary-neon);
+            background: #040814;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .input-group textarea:focus ~ label,
+        .input-group textarea:not(:placeholder-shown) ~ label {
+            top: 0;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: var(--primary-neon);
+            background: #040814;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            border: none;
+            padding: 16px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.38);
+        }
+
+        .submit-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background: rgba(6, 182, 212, 0.1);
+            color: rgba(255, 255, 255, 0.35);
+            border: 1px solid rgba(6, 182, 212, 0.05);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* ===== CUSTOM HUD TOAST NOTIFICATION ===== */
+        .hud-toast-container {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .hud-toast {
+            pointer-events: auto;
+            background: rgba(6, 9, 21, 0.92);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 4px solid var(--primary-neon);
+            border-top: 1px solid rgba(6, 182, 212, 0.25);
+            border-right: 1px solid rgba(6, 182, 212, 0.15);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 6px;
+            padding: 16px 24px;
+            color: var(--text-main);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 15px rgba(6, 182, 212, 0.12);
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 340px;
+            max-width: 450px;
+        }
+
+        .hud-toast.show {
+            transform: translateX(0);
+        }
+
+        .hud-toast.success {
+            border-left-color: var(--safe-green);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 15px rgba(16, 185, 129, 0.15);
+        }
+
+        .hud-toast.error {
+            border-left-color: var(--danger-red);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 15px rgba(239, 68, 68, 0.15);
+        }
+
+        .hud-toast-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .hud-toast-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hud-toast-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hud-toast-msg {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            line-height: 1.4;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 30px 15px;
+            font-size: 13px;
+            opacity: 0.6;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(2, 6, 23, 0.4);
+            position: relative;
+            z-index: 10;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== RESPONSIVENESS OVERRIDES ===== */
+        @media (max-width: 1024px) {
+            .navbar {
+                padding: 16px 30px;
+            }
+            .contact-section {
+                padding: 120px 5% 50px;
+            }
+            .contact-container {
+                gap: 30px;
+            }
+            .uplink-card, .form-card {
+                padding: 35px;
+            }
+            .uplink-header h1 {
+                font-size: 32px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: flex;
+            }
+            .nav-links {
+                position: fixed;
+                top: 72px;
+                right: -100%;
+                width: 70%;
+                height: calc(100vh - 72px);
+                background: var(--bg-glass-heavy);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                flex-direction: column;
+                padding: 40px;
+                gap: 30px;
+                transition: right 0.4s ease;
+                border-left: 1px solid rgba(6, 182, 212, 0.15);
+                align-items: flex-start;
+                z-index: 99;
+            }
+            .nav-links.active {
+                right: 0;
+            }
+            .auth-buttons {
+                display: none;
+            }
+            .contact-container {
+                grid-template-columns: 1fr;
+                gap: 35px;
+            }
+            .uplink-card {
+                order: 2; /* Form on top, info details below it on mobile devices */
+            }
+            .form-card {
+                order: 1;
+            }
+        }
+    </style>
+</head>
 <body>
 
-  <!-- NAVBAR -->
-  <nav class="navbar">
-    <div class="logo">AI Safety</div>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="solution.html">Solution</a></li>
-      <li><a href="dashboard.html">Dashboard</a></li>
-    </ul>
-  </nav>
+    <!-- ACTIVE PARTICLE BACKDROP CANVAS -->
+    <canvas id="particle-canvas"></canvas>
 
-  <!-- CONTACT SECTION -->
-  <section class="contact-section">
-    <div class="contact-container">
+    <!-- SCANNING LASER sweep LINE -->
+    <div class="laser-scan-line"></div>
 
-      <div class="contact-info">
-        <h2>Get in Touch</h2>
-        <p>
-          Have questions about our AI-based smart safety system?
-          Contact us for support, collaboration, or feedback.
-        </p>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+            </svg>
+            <span>AI Safety Shield</span>
+        </a>
 
-        <div class="info-box">
-          <span>📍</span>
-          <p>LDRP-ITR, Gandhinagar, Gujarat, India</p>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="solution.html">Solution</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="contact.html" class="active">Contact</a></li>
+        </ul>
+
+        <div class="auth-buttons" id="auth-buttons">
+            <a href="login.html">Log In</a>
+            <a href="signup.html">Sign Up</a>
         </div>
 
-        <div class="info-box">
-          <span>📧</span>
-          <p>codevortex09@gmail.com</p>
+        <div id="profile-section" style="display:none;" class="profile-box">
+            <span id="profile-name" class="profile-name">User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
 
-        <div class="info-box">
-          <span>📞</span>
-          <p>+91 91067 86186</p>
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+
+    <!-- MAIN CONTACT CONTENT -->
+    <section class="contact-section">
+        <div class="contact-container">
+
+            <!-- UPLINK DETAILS CARD (LEFT) -->
+            <div class="uplink-card">
+                <div class="uplink-header">
+                    <!-- CYBER WIDGET OVERLAY -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(6, 182, 212, 0.04); border: 1px solid rgba(6, 182, 212, 0.15); border-radius: 6px; padding: 10px 14px; margin-bottom: 25px; font-family: 'Space Grotesk', sans-serif;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 6px; height: 6px; background-color: var(--primary-neon); border-radius: 50%; box-shadow: 0 0 6px var(--primary-neon);"></span>
+                            <span style="font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--primary-neon);">NODE // LDRP.SECURE.GATE</span>
+                        </div>
+                        <span id="system-clock" style="font-size: 9px; font-weight: 600; color: rgba(6, 182, 212, 0.5); letter-spacing: 0.5px;">SYSTEM TIME: --:--:--</span>
+                    </div>
+
+                    <h1>Security Uplink</h1>
+                    <p>Establish a secured transmission packet straight to the AI Safety Shield operational response and deployment engineering cluster.</p>
+                </div>
+
+                <div class="info-list">
+                    <!-- LOCATION INFO BOX -->
+                    <div class="info-box">
+                        <div class="info-icon-wrapper">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1115 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="info-content">
+                            <span class="info-label">Sector Coordinates</span>
+                            <span class="info-value">LDRP-ITR, Gandhinagar, Gujarat, India</span>
+                        </div>
+                    </div>
+
+                    <!-- EMAIL INFO BOX -->
+                    <div class="info-box">
+                        <div class="info-icon-wrapper">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"></path>
+                            </svg>
+                        </div>
+                        <div class="info-content">
+                            <span class="info-label">Secure Data Channel</span>
+                            <span class="info-value">codevortex09@gmail.com</span>
+                        </div>
+                    </div>
+
+                    <!-- PHONE INFO BOX -->
+                    <div class="info-box">
+                        <div class="info-icon-wrapper">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.502-5.17-3.847-6.671-6.67l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path>
+                            </svg>
+                        </div>
+                        <div class="info-content">
+                            <span class="info-label">Secured Audio Comm</span>
+                            <span class="info-value">+91 91067 86186</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cyber-deck">
+                    <div>
+                        <span class="info-label" style="font-size: 9px;">CONNECTION LAYER</span>
+                        <div style="font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px;">AES-256-GCM DIRECT UPLINK</div>
+                    </div>
+                    <div class="deck-status">
+                        <span class="deck-dot"></span>
+                        <span>SECURED</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECURE MESSAGE TRANSMITTER CARD (RIGHT) -->
+            <div class="form-card">
+                <h2>Transmit Data Packet</h2>
+                <p class="form-desc">Complete all fields below. The transmission payload will be fully encrypted upon execution.</p>
+
+                <!-- CONTACT FORM -->
+                <form class="contact-form" id="contactForm" novalidate>
+                    <div class="input-group">
+                        <input type="text" id="contact-name" placeholder=" " required autocomplete="off">
+                        <label for="contact-name">Operator Name</label>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="email" id="contact-email" placeholder=" " required autocomplete="off">
+                        <label for="contact-email">Encrypted Email Address</label>
+                    </div>
+
+                    <div class="input-group">
+                        <textarea id="contact-message" rows="5" placeholder=" " required autocomplete="off"></textarea>
+                        <label for="contact-message">Secure Message Details</label>
+                    </div>
+
+                    <button type="submit" id="contact-submit-btn" class="submit-btn">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"></path>
+                        </svg>
+                        <span>Transmit Packet</span>
+                    </button>
+                </form>
+            </div>
+
         </div>
-      </div>
+    </section>
 
-      <!-- CONTACT FORM -->
-      <form class="contact-form" id="contactForm">
-        <h3>Send Message</h3>
+    <!-- CUSTOM HUD TOAST NOTIFICATION CONTAINER -->
+    <div class="hud-toast-container" id="hudToastContainer"></div>
 
-        <input type="text" id="contact-name" placeholder="Your Name" required>
-        <input type="email" id="contact-email" placeholder="Your Email" required>
-        <textarea id="contact-message" rows="5" placeholder="Your Message" required></textarea>
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>© 2026 AI Smart Safety System | Built for Real-World Safety Uplinks</p>
+    </footer>
 
-        <button type="submit" id="contact-submit-btn">Send Message</button>
-      </form>
+    <!-- SCRIPTS -->
+    <script>
+        // ==========================================
+        // 1. ACTIVE PARTICLE BACKDROP CANVAS ENGINE
+        // ==========================================
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
 
-    </div>
-  </section>
-
-  <script>
-    document.getElementById('contactForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('contact-submit-btn');
-      const name = document.getElementById('contact-name').value;
-      const email = document.getElementById('contact-email').value;
-      const message = document.getElementById('contact-message').value;
-
-      btn.textContent = "Sending...";
-      btn.disabled = true;
-
-      try {
-        const res = await fetch("/api/contact", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, message })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          alert("Message sent successfully!");
-          document.getElementById('contactForm').reset();
-        } else {
-          alert(data.msg || "Failed to send message.");
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-      } catch (err) {
-        console.error(err);
-        alert("Error sending message. Please try again later.");
-      } finally {
-        btn.textContent = "Send Message";
-        btn.disabled = false;
-      }
-    });
-  </script>
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-  <footer class="footer"
-    style="text-align: center; padding: 25px 15px; font-size: 13px; opacity: 0.7; border-top: 1px solid rgba(255, 255, 255, 0.05);">
-    <p>© 2025 AI Smart Safety System | Built for Real-World Use</p>
-  </footer>
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speedY = -(Math.random() * 0.4 + 0.15);
+                this.speedX = Math.random() * 0.3 - 0.15;
+                this.alpha = Math.random() * 0.35 + 0.1;
+                // Cyan or Blue nodes
+                this.color = Math.random() > 0.45 ? '6, 182, 212' : '59, 130, 246';
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                if (this.y < -10) {
+                    this.y = canvas.height + 10;
+                    this.x = Math.random() * canvas.width;
+                }
+                if (this.x < -10 || this.x > canvas.width + 10) {
+                    this.speedX = -this.speedX;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const particlesArray = [];
+        const count = Math.min(45, Math.floor(window.innerWidth / 28));
+        for (let i = 0; i < count; i++) {
+            particlesArray.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ==========================================
+        // 2. HUD DIGITAL UTC SYSTEM TIME SYNCER
+        // ==========================================
+        const clockElement = document.getElementById('system-clock');
+        function updateClock() {
+            if (!clockElement) return;
+            const now = new Date();
+            const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
+            clockElement.textContent = `UTC // ${timeString}`;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ==========================================
+        // 3. SECURE GLASSMOPHISM HUD TOAST NOTIFIER
+        // ==========================================
+        const toastContainer = document.getElementById('hudToastContainer');
+
+        function showHUDToast(title, message, type = 'success') {
+            if (!toastContainer) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `hud-toast ${type}`;
+            
+            let iconText = '✓';
+            if (type === 'error') {
+                iconText = '⚠';
+            }
+            
+            toast.innerHTML = `
+                <div class="hud-toast-icon" style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: rgba(${type === 'success' ? '16, 185, 129' : '239, 68, 68'}, 0.15);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--${type === 'success' ? 'safe-green' : 'danger-red'});
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid rgba(${type === 'success' ? '16, 185, 129' : '239, 68, 68'}, 0.35);
+                ">${iconText}</div>
+                <div class="hud-toast-content">
+                    <span class="hud-toast-title" style="color: var(--${type === 'success' ? 'safe-green' : 'danger-red'})">${title}</span>
+                    <span class="hud-toast-msg">${message}</span>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Trigger animation fade-in
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            // Automatic safe cleanup
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 5000);
+        }
+
+        // ==========================================
+        // 4. ASYNCHRONOUS SECURE FORM API HANDLER
+        // ==========================================
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('contact-submit-btn');
+            const nameEl = document.getElementById('contact-name');
+            const emailEl = document.getElementById('contact-email');
+            const messageEl = document.getElementById('contact-message');
+            
+            const name = nameEl.value.trim();
+            const email = emailEl.value.trim();
+            const message = messageEl.value.trim();
+
+            // Direct frontend secure scanning checks
+            if (!name) {
+                showHUDToast("Transmission Alert", "Please insert a valid Operator Name key.", "error");
+                nameEl.focus();
+                return;
+            }
+            if (!email || !email.includes('@')) {
+                showHUDToast("Transmission Alert", "Please check your Encrypted Email address format.", "error");
+                emailEl.focus();
+                return;
+            }
+            if (!message || message.length < 5) {
+                showHUDToast("Transmission Alert", "Please enrich your secure packet message content.", "error");
+                messageEl.focus();
+                return;
+            }
+
+            // Visual pending state
+            btn.innerHTML = `
+                <svg style="animation: spin 1s linear infinite;" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                </svg>
+                <span>TRANSMITTING...</span>
+            `;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch("/api/contact", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, message })
+                });
+                
+                let data = {};
+                try {
+                    data = await res.json();
+                } catch (jsonErr) {
+                    data = { success: res.ok, msg: res.ok ? "Data packet transmitted successfully." : "Uplink server returned unexpected status code." };
+                }
+
+                if (res.ok && data.success) {
+                    showHUDToast("Transmission Complete", "Your secure data packet has been successfully uplinked to LDRP networks.", "success");
+                    document.getElementById('contactForm').reset();
+                    // Manually dispatch input events to slide down floating labels
+                    [nameEl, emailEl, messageEl].forEach(element => {
+                        element.dispatchEvent(new Event('input'));
+                    });
+                } else {
+                    showHUDToast("Uplink Aborted", data.msg || "System gateway rejected payload transmission.", "error");
+                }
+            } catch (err) {
+                console.error("API Transmission Error:", err);
+                showHUDToast("Link Offline", "Unable to reach server node. Direct proxy connection failed.", "error");
+            } finally {
+                btn.innerHTML = `
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"></path>
+                    </svg>
+                    <span>Transmit Packet</span>
+                `;
+                btn.disabled = false;
+            }
+        });
+    </script>
+
+    <!-- GLOBAL USER AUTH & SESSION SCRIPTS -->
+    <script src="../js/auth.js"></script>
 
 </body>
-
 </html>
