@@ -1,4 +1,8 @@
-fetch("https://impactthon-wjut.onrender.com/api/history")
+const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+  ? "http://localhost:5000"
+  : "https://impactthon-wjut.onrender.com";
+
+fetch(`${API_BASE_URL}/api/history`)
   .then(res => res.json())
   .then(data => {
     const table = document.getElementById("historyBody");

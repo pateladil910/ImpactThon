@@ -444,11 +444,15 @@
 
   <!-- History DB query routines -->
   <script>
+    const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:5000"
+      : "https://impactthon-wjut.onrender.com";
+
     async function loadHistory() {
       const tbody = document.getElementById("historyBody");
 
       try {
-        const res = await fetch("https://impactthon-wjut.onrender.com/api/history");
+        const res = await fetch(`${API_BASE_URL}/api/history`);
 
         if (!res.ok) {
           throw new Error("History API not available");
@@ -516,7 +520,7 @@
     function clearHistory() {
       if (!confirm("Are you sure you want to clear all detection history? This action is permanent!")) return;
 
-      fetch("https://impactthon-wjut.onrender.com/api/clear_history", {
+      fetch(`${API_BASE_URL}/api/clear_history`, {
         method: "POST"
       })
         .then(() => location.reload())
@@ -524,7 +528,7 @@
     }
 
     function downloadExcel() {
-      window.location.href = "https://impactthon-wjut.onrender.com/api/history/download";
+      window.location.href = `${API_BASE_URL}/api/history/download`;
     }
 
     setInterval(loadHistory, 5000);

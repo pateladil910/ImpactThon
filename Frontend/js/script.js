@@ -48,7 +48,11 @@ async function loadStatus() {
   }
 
   try {
-    const res = await fetch("https://impactthon-wjut.onrender.com/api/status");
+    const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:5000"
+      : "https://impactthon-wjut.onrender.com";
+
+    const res = await fetch(`${API_BASE_URL}/api/status`);
     const data = await res.json();
 
     if (data.danger === true) {

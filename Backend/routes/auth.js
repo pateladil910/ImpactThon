@@ -181,4 +181,82 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// SOCIAL SIGNUP (MOCKED SECURE HANDSHAKE & DB PERSISTENCE)
+router.post("/social-signup", async (req, res) => {
+  try {
+    const { name, email, provider, roleSelection } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required from social provider." });
+    }
+
+    const existingUser = await User.findOne({ email });
+    
+    if (existingUser) {
+      // If user already exists, authenticate them directly!
+      const token = jwt.sign(
+        { id: existingUser._id, role: existingUser.role },
+        "secretkey"
+      );
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        maxAge: 24 * 60 * 60 * 1000
+      });
+
+      return res.json({
+        success: true,
+        message: `Welcome back! Logged in via ${provider.toUpperCase()} successfully.`,
+        role: existingUser.role
+      });
+    }
+
+    // Otherwise, generate a secure random password and save them in the database!
+    const randomPassword = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+    // Map role selection to enum values
+    let role = "viewer";
+    const normalizedRole = (roleSelection || "").toLowerCase();
+    if (normalizedRole === "admin" || email === "admin@codevortex.in") {
+      role = "admin";
+    } else if (normalizedRole === "operator" || normalizedRole === "supervisor") {
+      role = "operator";
+    }
+
+    const user = new User({
+      name: name || email.split("@")[0],
+      email,
+      password: hashedPassword,
+      role
+    });
+    
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      "secretkey"
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: `Account created and logged in via ${provider.toUpperCase()} successfully!`,
+      role: user.role
+    });
+
+  } catch (error) {
+    console.error("Social Signup Error:", error);
+    return res.status(500).json({ success: false, message: "Server error during social registration." });
+  }
+});
+
 module.exports = router;

@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+    ? "http://localhost:5000"
+    : "https://impactthon-wjut.onrender.com";
+
   // 1. SELECT UI ELEMENTS
   const btnTest = document.getElementById('btnTest');
   const btnConnect = document.getElementById('btnConnect');
@@ -45,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function checkExistingCamera() {
     try {
-      const response = await fetch('https://impactthon-wjut.onrender.com/api/camera/latest');
+      const response = await fetch(`${API_BASE_URL}/api/camera/latest`);
 
       // --- REQUIRED CHANGE: Handle empty database (404) ---
       if (response.status === 404) {
@@ -107,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnConnect.disabled = true;
 
     try {
-      const response = await fetch('https://impactthon-wjut.onrender.com/api/camera/test', {
+      const response = await fetch(`${API_BASE_URL}/api/camera/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
@@ -147,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     showStatus('testing', 'Saving camera to database...');
 
     try {
-      const response = await fetch('https://impactthon-wjut.onrender.com/api/camera/save', {
+      const response = await fetch(`${API_BASE_URL}/api/camera/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

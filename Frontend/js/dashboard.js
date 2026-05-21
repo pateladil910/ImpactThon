@@ -14,7 +14,11 @@ document.addEventListener("DOMContentLoaded", () => {
     🛡 AI STATUS
 ========================== */
 
-const STATUS_URL = "https://impactthon-wjut.onrender.com/api/status";
+const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+  ? "http://localhost:5000"
+  : "https://impactthon-wjut.onrender.com";
+
+const STATUS_URL = `${API_BASE_URL}/api/status`;
 
 let lastSafety = null;
 let lastAction = null;
@@ -80,7 +84,7 @@ async function updateStatus() {
 async function startLiveSurveillance() {
   try {
     // Fetch the 'Life-Long' saved camera from MongoDB
-    const response = await fetch('https://impactthon-wjut.onrender.com/api/camera/latest');
+    const response = await fetch(`${API_BASE_URL}/api/camera/latest`);
     const data = await response.json();
 
     if (data.success && data.camera) {
@@ -114,7 +118,7 @@ async function handleLogout(event) {
 
   try {
     // Use the absolute path to your web service to be safe
-    const response = await fetch('https://impactthon-wjut.onrender.com/api/camera/reset', {
+    const response = await fetch(`${API_BASE_URL}/api/camera/reset`, {
       method: 'DELETE'
     });
 
@@ -153,7 +157,7 @@ document.addEventListener('click', async (event) => {
 
     try {
       // 1. Tell the server to delete the camera entry
-      const response = await fetch('https://impactthon-wjut.onrender.com/api/camera/reset', {
+      const response = await fetch(`${API_BASE_URL}/api/camera/reset`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });

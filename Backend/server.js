@@ -81,9 +81,21 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-// 1. Middleware
+const allowedOrigins = [
+  "https://codevortex.in",
+  "http://localhost:5000",
+  "http://127.0.0.1:5000",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
+];
+
 app.use(cors({
-  origin: "https://codevortex.in",
+  origin: function (origin, callback) {
+    if (!origin || origin === "null" || allowedOrigins.indexOf(origin) !== -1 || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'), false);
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]

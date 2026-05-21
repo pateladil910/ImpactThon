@@ -4,9 +4,13 @@
 const SAFETY_TEXT = document.querySelector(".box.green .box-value");
 const SYSTEM_ACTION = document.querySelector(".box.red .box-value");
 
+const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+  ? "http://localhost:5000"
+  : "https://impactthon-wjut.onrender.com";
+
 async function fetchAIStatus() {
   try {
-    const response = await fetch("https://impactthon-wjut.onrender.com/api/status");
+    const response = await fetch(`${API_BASE_URL}/api/status`);
     const data = await response.json();
 
     // Update Safety Zone
