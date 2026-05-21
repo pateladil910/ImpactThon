@@ -1,5 +1,6 @@
 // admin.js
-const ADMIN_API_BASE = "/api/admin";
+const API_BASE_URL = "https://impactthon-wjut.onrender.com";
+const ADMIN_API_BASE = `${API_BASE_URL}/api/admin`;
 
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Immediately check if user is allowed here by fetching stats

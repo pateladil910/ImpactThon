@@ -1,5 +1,6 @@
 // incident_log.js
-const API_BASE = "/api/incident";
+const API_BASE_URL = "https://impactthon-wjut.onrender.com";
+const API_BASE = `${API_BASE_URL}/api/incident`;
 let allIncidents = [];
 let filteredIncidents = [];
 

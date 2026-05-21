@@ -64,7 +64,7 @@ router.post("/login", async (req, res) => {
   res.cookie("token", token, {
     httpOnly: true,     // Security: JS cannot steal the token
     secure: true,       // Required for Render (HTTPS)
-    sameSite: "Lax",    // Standard security for navigation
+    sameSite: "None",   // Required for cross-site cookie transmission
     maxAge: 24 * 60 * 60 * 1000 // Expires in 1 day
   });
 
@@ -101,7 +101,11 @@ router.get("/me", authMiddleware, async (req, res) => {
 
 // LOGOUT
 router.post("/logout", (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None"
+  });
   res.json({ success: true, message: "Logged out" });
 });
 

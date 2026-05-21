@@ -322,10 +322,19 @@ async function signup(event) {
 
 // ---------------- LOGOUT ----------------
 
-function logout() {
+async function logout() {
+  try {
+    await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
+  } catch (error) {
+    console.error("Backend logout failed:", error);
+  }
 
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
+  localStorage.removeItem("userRole");
 
   window.location.replace("login.html");
 }
