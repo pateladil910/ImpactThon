@@ -339,6 +339,142 @@ async function logout() {
   window.location.replace("login.html");
 }
 
+// ---------------- FORGOT & RESET PASSWORD ----------------
+
+function showToast(message, isError = false) {
+  const toast = document.getElementById("hudToast");
+  const toastMsg = document.getElementById("toastMessage");
+  if (!toast || !toastMsg) return;
+
+  toastMsg.textContent = message;
+  
+  if (isError) {
+    toast.classList.add("error");
+  } else {
+    toast.classList.remove("error");
+  }
+
+  toast.classList.add("active");
+
+  setTimeout(() => {
+    toast.classList.remove("active");
+  }, 4000);
+}
+
+async function handleRequestReset(event) {
+  event.preventDefault();
+  const emailInput = document.getElementById("resetEmail");
+  const requestBtn = document.getElementById("requestBtn");
+  
+  if (!emailInput || !requestBtn) return;
+  const email = emailInput.value.trim();
+
+  // Show loading state
+  requestBtn.classList.add("loading");
+  requestBtn.disabled = true;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      showToast(data.msg || "Verification code dispatched successfully!", false);
+
+      // Transition to Step 2
+      const stepRequest = document.getElementById("step-request");
+      const stepVerify = document.getElementById("step-verify");
+      const verifyEmailDisplay = document.getElementById("verifyEmailDisplay");
+
+      if (verifyEmailDisplay) {
+        verifyEmailDisplay.value = email;
+        verifyEmailDisplay.classList.add("has-value");
+      }
+
+      if (stepRequest && stepVerify) {
+        stepRequest.classList.remove("step-visible");
+        stepRequest.classList.add("step-hidden");
+
+        stepVerify.classList.remove("step-hidden");
+        stepVerify.classList.add("step-visible");
+      }
+    } else {
+      showToast(data.msg || "Failed to generate recovery packet", true);
+    }
+  } catch (error) {
+    console.error("Request Reset Error:", error);
+    showToast("Network/Connection error. Please try again.", true);
+  } finally {
+    requestBtn.classList.remove("loading");
+    requestBtn.disabled = false;
+  }
+}
+
+async function handleVerifyReset(event) {
+  event.preventDefault();
+
+  const email = document.getElementById("verifyEmailDisplay").value;
+  const code = document.getElementById("resetCode").value.trim();
+  const newPassword = document.getElementById("newPassword").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  const verifyBtn = document.getElementById("verifyBtn");
+
+  if (!email || !code || !newPassword || !confirmPassword || !verifyBtn) return;
+
+  if (code.length !== 6 || isNaN(code)) {
+    showToast("Verification code must be exactly 6 digits.", true);
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    showToast("Password must be at least 6 characters.", true);
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showToast("Passwords do not match.", true);
+    return;
+  }
+
+  // Show loading state
+  verifyBtn.classList.add("loading");
+  verifyBtn.disabled = true;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, code, newPassword })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      showToast(data.msg || "Password reset successful! Redirecting...", false);
+
+      setTimeout(() => {
+        window.location.replace("login.html");
+      }, 2000);
+    } else {
+      showToast(data.msg || "Reset failed. Please verify your OTP.", true);
+    }
+  } catch (error) {
+    console.error("Verify Reset Error:", error);
+    showToast("Network/Connection error. Please try again.", true);
+  } finally {
+    verifyBtn.classList.remove("loading");
+    verifyBtn.disabled = false;
+  }
+}
+
 // ---------------- UI ----------------
 
 function checkAuthUI() {
@@ -498,6 +634,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (signupForm) {
         signupForm.addEventListener("submit", signup);
+    }
+
+    const requestResetForm = document.getElementById("requestResetForm");
+    if (requestResetForm) {
+        requestResetForm.addEventListener("submit", handleRequestReset);
+    }
+
+    const verifyResetForm = document.getElementById("verifyResetForm");
+    if (verifyResetForm) {
+        verifyResetForm.addEventListener("submit", handleVerifyReset);
     }
 
     // Runs your UI check (make sure this function is defined elsewhere in your project!)

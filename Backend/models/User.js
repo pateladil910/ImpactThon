@@ -23,6 +23,14 @@ const UserSchema = new mongoose.Schema({
   cameraPass: {
     type: String,
     default: ""
+  },
+  resetCode: {
+    type: String,
+    default: null
+  },
+  resetCodeExpires: {
+    type: Date,
+    default: null
   }
 });
 

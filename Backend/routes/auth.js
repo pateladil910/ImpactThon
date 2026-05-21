@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
+const sendAlertEmail = require("../utils/sendEmail");
 
 const router = express.Router();
 
@@ -107,6 +108,77 @@ router.post("/logout", (req, res) => {
     sameSite: "None"
   });
   res.json({ success: true, message: "Logged out" });
+});
+
+// FORGOT PASSWORD (OTP generation & Dispatch)
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, msg: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ success: false, msg: "User with this email not found" });
+    }
+
+    // Generate random 6-digit verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save code and expiry (15 mins) to user doc
+    user.resetCode = code;
+    user.resetCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    // Send the reset code via email
+    await sendAlertEmail.sendResetPasswordEmail(user.email, code);
+
+    res.json({ success: true, msg: "Verification code sent to your email" });
+  } catch (error) {
+    console.error("Forgot password API error:", error);
+    res.status(500).json({ success: false, msg: "Server error. Please try again later." });
+  }
+});
+
+// RESET PASSWORD (Verification & Storage)
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ success: false, msg: "All fields are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ success: false, msg: "User with this email not found" });
+    }
+
+    // Verify OTP is present and valid
+    if (!user.resetCode || user.resetCode !== code) {
+      return res.status(400).json({ success: false, msg: "Invalid verification code" });
+    }
+
+    // Verify OTP has not expired
+    if (new Date() > user.resetCodeExpires) {
+      return res.status(400).json({ success: false, msg: "Verification code has expired" });
+    }
+
+    // Hash the new password securely
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear OTP fields in database
+    user.password = hashedPassword;
+    user.resetCode = null;
+    user.resetCodeExpires = null;
+    await user.save();
+
+    res.json({ success: true, msg: "Password updated successfully! Please login." });
+  } catch (error) {
+    console.error("Reset password API error:", error);
+    res.status(500).json({ success: false, msg: "Server error. Please try again later." });
+  }
 });
 
 module.exports = router;

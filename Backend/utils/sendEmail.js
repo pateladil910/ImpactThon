@@ -43,4 +43,36 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
   }
 };
 
+const sendResetPasswordEmail = async (recipientEmail, code) => {
+  console.log(`📧 Sending Reset Password Email to: ${recipientEmail}`);
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'AI Safety System <notifications@codevortex.in>',
+      to: recipientEmail,
+      subject: "🔒 Password Reset Verification Code",
+      html: `
+        <div style="font-family: sans-serif; padding: 25px; background: #0f172a; color: #f8fafc; border-radius: 12px; max-width: 500px; margin: auto; border: 1px solid #1e293b;">
+          <h2 style="color: #06b6d4; border-bottom: 1px solid #1e293b; padding-bottom: 15px; text-align: center; margin-top: 0;">AI Smart Safety System</h2>
+          <p style="font-size: 16px; line-height: 1.6; color: #cbd5e1;">You requested a password reset for your AI Smart Safety System account. Use the following verification code to proceed:</p>
+          <div style="background: #1e293b; padding: 15px; text-align: center; border-radius: 8px; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #06b6d4; margin: 25px 0;">
+            ${code}
+          </div>
+          <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 0;">This code is valid for 15 minutes. If you did not request this reset, please ignore this email.</p>
+        </div>`
+    });
+
+    if (error) {
+      console.error("❌ RESEND API RESET ERROR:", error);
+      throw new Error(error.message);
+    }
+
+    console.log("✅ Reset Mail sent response ID:", data.id);
+    return true;
+  } catch (error) {
+    console.error("❌ RESET MAIL ERROR:", error.message);
+    throw new Error(error.message);
+  }
+};
+
+sendAlertEmail.sendResetPasswordEmail = sendResetPasswordEmail;
 module.exports = sendAlertEmail;
