@@ -1,113 +1,2310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solution | AI Safety</title>
-  <link rel="stylesheet" href="../css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Safety Shield | Solution Portal</title>
+    
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #020617; /* Slate Dark matching index.html */
+            --primary-neon: #06b6d4; /* Cyan */
+            --primary-blue: #3b82f6; /* Blue */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dark: #0f172a;
+            
+            --border-glow: rgba(6, 182, 212, 0.15);
+            --border-glow-focus: rgba(56, 189, 248, 0.55);
+            
+            --bg-glass: rgba(10, 15, 30, 0.5);
+            --bg-glass-heavy: rgba(6, 9, 21, 0.85);
+            
+            --safe-green: #10b981;
+            --safe-green-glow: rgba(16, 185, 129, 0.15);
+            --danger-red: #ef4444;
+            --danger-red-glow: rgba(239, 68, 68, 0.15);
+            --warning-yellow: #f59e0b;
+            --warning-yellow-glow: rgba(245, 158, 11, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-dark);
+            /* Sleek, professional dark SaaS ambient gradients. No background image. */
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+                linear-gradient(180deg, #020617 0%, #070a13 100%);
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ===== ACTIVE PARTICLE BACKDROP CANVAS ===== */
+        #particle-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== SCANNING LASER sweep LINE ===== */
+        .laser-scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+            box-shadow: 0 0 12px 1px var(--primary-neon);
+            animation: screenScan 9s infinite linear;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @keyframes screenScan {
+            0% { top: 0%; opacity: 0.05; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0.05; }
+        }
+
+        /* ===== CYBER HUD OVERLAYS (Neat and professional) ===== */
+        .cyber-hud-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .hud-tag {
+            position: absolute;
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(6, 182, 212, 0.25);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .hud-top-left { top: 120px; left: 40px; display: flex; flex-direction: column; gap: 4px; }
+        .hud-top-right { top: 120px; right: 40px; text-align: right; }
+        .hud-bottom-left { bottom: 40px; left: 40px; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.18);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary-neon);
+            letter-spacing: 1px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-neon);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--primary-neon);
+            animation: activePulse 1.6s infinite ease-in-out;
+        }
+
+        @keyframes activePulse {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.5; }
+        }
+
+        /* Floating HUD elements - extremely subtle */
+        .hud-bounding-box {
+            position: absolute;
+            border: 1px solid rgba(6, 182, 212, 0.12);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.04);
+            border-radius: 4px;
+            background: rgba(10, 15, 30, 0.08);
+            transition: border-color 0.3s ease;
+        }
+
+        .hud-bounding-box::before,
+        .hud-bounding-box::after {
+            content: "";
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-color: inherit;
+            border-style: solid;
+            pointer-events: none;
+        }
+
+        .hud-bounding-box::before {
+            top: -2px;
+            left: -2px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .hud-bounding-box::after {
+            bottom: -2px;
+            right: -2px;
+            border-width: 0 2px 2px 0;
+        }
+
+        .hud-box-label {
+            position: absolute;
+            top: -18px;
+            left: -1px;
+            background: inherit;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 2px 2px 0 0;
+        }
+
+        .float-hud-1 {
+            animation: floatDrift1 18s ease-in-out infinite alternate;
+        }
+
+        .float-hud-2 {
+            animation: floatDrift2 22s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatDrift1 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(15px, -10px) scale(1.01); }
+        }
+
+        @keyframes floatDrift2 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-12px, 12px) scale(0.99); }
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 60px;
+            background: rgba(2, 6, 23, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.12);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            color: var(--text-main);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            color: var(--primary-neon);
+            filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4));
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 35px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.25s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            padding: 4px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-neon);
+            transition: width 0.25s ease;
+            box-shadow: 0 0 8px var(--primary-neon);
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a.active {
+            color: var(--text-main);
+        }
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .auth-buttons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .auth-buttons a {
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 22px;
+            border-radius: 30px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .auth-buttons a:first-child {
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .auth-buttons a:first-child:hover {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.18);
+            transform: translateY(-1.5px);
+        }
+
+        .auth-buttons a:last-child {
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+        }
+
+        .auth-buttons a:last-child:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
+        }
+
+        .profile-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .profile-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            padding: 8px 18px;
+            border-radius: 30px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+            cursor: default;
+        }
+
+        .logout-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+            transition: all 0.25s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+        }
+
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 18px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 110;
+        }
+
+        .menu-toggle span {
+            width: 100%;
+            height: 2px;
+            background-color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        /* ===== HERO AREA (Clean and Elegant) ===== */
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 85vh;
+            padding: 140px 8% 50px;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 5%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-text {
+            flex: 1.2;
+            max-width: 650px;
+            background: rgba(6, 9, 21, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 
+                0 30px 80px -20px rgba(0, 0, 0, 0.6),
+                0 0 25px rgba(6, 182, 212, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            position: relative;
+        }
+
+        .hero-text::before, .hero-text::after {
+            content: "";
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: var(--primary-neon);
+            border-style: solid;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .hero-text::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .hero-text::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+        .hero-text h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 46px;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #ffffff 50%, var(--primary-neon));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 25px rgba(6, 182, 212, 0.08);
+        }
+
+        .hero-text p {
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.65;
+            margin-bottom: 30px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            color: #ffffff;
+            padding: 13px 30px;
+            border-radius: 30px;
+            font-size: 14.5px;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.2);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2.5px) scale(1.01);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.4), 0 0 15px rgba(59, 130, 246, 0.15);
+        }
+
+        .btn-outline {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-main);
+            padding: 12px 26px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        /* ===== METRIC DASHBOARD HERO CARD ===== */
+        .hero-card-wrapper {
+            flex: 0.9;
+            display: flex;
+            justify-content: center;
+            max-width: 460px;
+        }
+
+        .hero-card {
+            background: rgba(4, 7, 20, 0.75);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(6, 182, 212, 0.18);
+            border-radius: 20px;
+            padding: 35px;
+            width: 100%;
+            box-shadow: 
+                0 30px 80px -20px rgba(0, 0, 0, 0.65),
+                0 0 25px rgba(6, 182, 212, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .hero-card::before, .hero-card::after {
+            content: "";
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: var(--primary-neon);
+            border-style: solid;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        .hero-card::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .hero-card::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+        .hero-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            letter-spacing: -0.5px;
+            border-bottom: 1px solid rgba(6, 182, 212, 0.12);
+            padding-bottom: 12px;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--safe-green);
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--safe-green);
+            border-radius: 50%;
+            animation: livePulse 1.2s infinite;
+        }
+
+        .status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .status-item span {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .status-item b {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 15.5px;
+        }
+
+        .glow-cyan { color: var(--primary-neon); text-shadow: 0 0 8px rgba(6, 182, 212, 0.35); }
+        .glow-blue { color: var(--primary-blue); text-shadow: 0 0 8px rgba(59, 130, 246, 0.35); }
+        .glow-emerald { color: var(--safe-green); text-shadow: 0 0 8px rgba(16, 185, 129, 0.35); }
+        .glow-red { color: var(--danger-red); text-shadow: 0 0 8px rgba(239, 68, 68, 0.35); }
+        .glow-warning { color: var(--warning-yellow); text-shadow: 0 0 8px rgba(245, 158, 11, 0.35); }
+
+        .progress-bar-wrapper {
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 88%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--primary-neon));
+            box-shadow: 0 0 8px var(--primary-neon);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* ===== LIVE AI OPERATIONAL CONSOLE (Sleek CCTV frame) ===== */
+        .video-section {
+            padding: 80px 8%;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .console-header {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+
+        .console-header h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #ffffff 60%, var(--primary-neon));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .console-header p {
+            color: var(--text-muted);
+            font-size: 15px;
+            max-width: 600px;
+            margin: 10px auto 0;
+        }
+
+        .console-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            max-width: 950px;
+            margin: 0 auto;
+        }
+
+        .console-terminal {
+            background: rgba(4, 7, 20, 0.8);
+            border: 1px solid rgba(6, 182, 212, 0.16);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 
+                0 30px 80px rgba(0, 0, 0, 0.5),
+                0 0 25px rgba(6, 182, 212, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .console-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            color: rgba(6, 182, 212, 0.6);
+            letter-spacing: 1.5px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .video-box-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .video-box-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Diagnostic HUD Overlays */
+        .diagnostic-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay-bounding-box {
+            position: absolute;
+            border: 1.5px solid var(--safe-green);
+            box-shadow: 0 0 8px var(--safe-green-glow);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .overlay-bounding-box::before {
+            content: attr(data-label);
+            position: absolute;
+            top: -18px;
+            left: -1.5px;
+            background: var(--safe-green);
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 2px 2px 0 0;
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .reticle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+        }
+        .reticle-tl { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+        .reticle-tr { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+        .reticle-bl { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+        .reticle-br { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+
+        .terminal-actions-shelf {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 15px 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .action-label-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .action-label-block span:first-child {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .action-label-block span:last-child {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .action-toggles-box {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .diag-btn {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            color: var(--primary-neon);
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.25s ease;
+        }
+
+        .diag-btn:hover {
+            background: rgba(6, 182, 212, 0.15);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.12);
+        }
+
+        .diag-btn.active {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Rolling Log terminal display (Deep, clean and realistic) */
+        .rolling-terminal-log {
+            background: #01030a;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px 20px;
+            min-height: 145px;
+            height: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #10b981;
+            overflow-y: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .log-line {
+            flex-shrink: 0;
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            animation: lineFadeIn 0.3s ease forwards;
+        }
+
+        @keyframes lineFadeIn {
+            from { opacity: 0; transform: translateY(3px); }
+            to { opacity: 0.8; transform: translateY(0); }
+        }
+
+        /* ===== COORDINATE PROXIMITY CONFIGURATOR (Neat design) ===== */
+        .configurator-section {
+            padding: 80px 8%;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .configurator-card {
+            background: rgba(4, 7, 20, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.16);
+            border-radius: 20px;
+            padding: 45px;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 40px;
+            position: relative;
+        }
+
+        .configurator-card::before {
+            content: "";
+            position: absolute;
+            top: -2px; left: 50px; right: 50px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+            box-shadow: 0 0 8px var(--primary-neon);
+        }
+
+        .config-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 25px;
+        }
+
+        .config-title h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 32px;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .config-title p {
+            color: var(--text-muted);
+            font-size: 14.5px;
+            line-height: 1.6;
+        }
+
+        .coords-slider-box {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .slider-num {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--primary-neon);
+        }
+
+        .range-bar {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .range-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-neon);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 6px var(--primary-neon);
+            cursor: pointer;
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 15px 25px;
+            border-radius: 12px;
+        }
+
+        .switch-holder {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+
+        .switch-holder input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-body {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.08);
+            transition: .3s;
+            border-radius: 34px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .toggle-body::before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-body {
+            background-color: var(--primary-neon);
+        }
+
+        input:checked + .toggle-body::before {
+            transform: translateX(22px);
+        }
+
+        /* Config Grid Visualizer */
+        .config-right {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .floorplan-grid {
+            height: 220px;
+            width: 100%;
+            background: 
+                linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(6, 182, 212, 0.06);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .grid-scanner {
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.03) 0%, transparent 60%);
+            animation: radarSweep 7s infinite linear;
+        }
+
+        .floor-machine {
+            position: absolute;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .floor-machine-core {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(4, 7, 20, 0.85);
+            border: 2px solid var(--safe-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 0 15px var(--safe-green-glow);
+            transition: all 0.3s ease;
+        }
+
+        .floor-machine-spin {
+            animation: machineSpin 2s infinite linear;
+        }
+
+        .floor-worker {
+            position: absolute;
+            z-index: 6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            transition: left 0.15s ease, top 0.15s ease;
+        }
+
+        .floor-worker-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid var(--primary-neon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.35);
+            position: relative;
+        }
+
+        .floor-beam {
+            position: absolute;
+            bottom: -30px;
+            width: 2px;
+            height: 30px;
+            background: dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .boundary-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            pointer-events: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .bound-warning {
+            width: 170px;
+            height: 170px;
+            border-color: rgba(245, 158, 11, 0.25);
+        }
+
+        .bound-danger {
+            width: 90px;
+            height: 90px;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .flash-alarm-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(239, 68, 68, 0.12);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            animation: alarmFlash 1s infinite alternate;
+            display: none;
+        }
+
+        @keyframes alarmFlash {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .sim-stats-log {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.01);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding-top: 15px;
+        }
+
+        .sim-stats-log .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13.5px;
+        }
+
+        .sim-stats-log .stat-row span:first-child {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .sim-stats-log .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+        }
+
+        /* ===== CORE MATRIX FEATURE CARD GRID ===== */
+        .features-section {
+            padding: 80px 8%;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            width: 100%;
+        }
+
+        .feature-card-glass {
+            background: var(--bg-glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(6, 182, 212, 0.1);
+            border-radius: 20px;
+            padding: 40px 30px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .feature-card-glass::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .feature-card-glass:hover::before {
+            transform: translateX(100%);
+        }
+
+        .feature-card-glass:hover {
+            transform: translateY(-6px);
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 
+                0 15px 30px rgba(0, 0, 0, 0.4),
+                0 0 15px rgba(6, 182, 212, 0.1);
+        }
+
+        .feat-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-neon);
+            margin-bottom: 24px;
+            font-size: 22px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card-glass:hover .feat-icon {
+            background: rgba(6, 182, 212, 0.12);
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+            transform: scale(1.03);
+        }
+
+        .feature-card-glass h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 12px;
+        }
+
+        .feature-card-glass p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ===== SYSTEM WORKFLOW ARCHITECTURE MATRIX ===== */
+        .architecture-explorer {
+            padding: 80px 8%;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .architecture-explorer h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 50px;
+            letter-spacing: -1px;
+        }
+
+        .arch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 25px;
+        }
+
+        .arch-node {
+            background: var(--bg-glass);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 20px;
+            padding: 35px 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .arch-node:hover {
+            border-color: rgba(6, 182, 212, 0.15);
+            background: rgba(6, 9, 21, 0.5);
+            transform: translateY(-4px);
+        }
+
+        .arch-node-num {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            color: #ffffff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+        }
+
+        .arch-node p {
+            color: var(--text-muted);
+            font-size: 14.5px;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        /* ===== CALL TO ACTION CARD ===== */
+        .cta-section {
+            padding: 60px 8% 80px;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .cta-container {
+            background: radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.08) 0%, rgba(4, 7, 20, 0.8) 80%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-container h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: -1.5px;
+        }
+
+        .cta-container p {
+            color: var(--text-muted);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            line-height: 1.7;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            color: #ffffff;
+            padding: 14px 34px;
+            border-radius: 30px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 15.5px;
+            text-decoration: none;
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2.5px);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.4);
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            text-align: center;
+            padding: 30px 15px;
+            font-size: 13px;
+            color: var(--text-muted);
+            opacity: 0.8;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            position: relative;
+            z-index: 10;
+            background: rgba(2, 6, 23, 0.9);
+        }
+
+        /* ===== RESPONSIVE MEDIA QUERIES ===== */
+        @media (max-width: 1024px) {
+            .navbar { padding: 16px 30px; }
+            .hero { flex-direction: column; gap: 50px; text-align: center; padding-top: 120px; }
+            .hero-text { max-width: 100%; }
+            .hero-actions { justify-content: center; }
+            .configurator-card { grid-template-columns: 1fr; gap: 40px; }
+            .hud-top-left, .hud-top-right { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle { display: flex; }
+            .nav-links {
+                position: fixed;
+                top: 72px;
+                right: -100%;
+                width: 70%;
+                height: calc(100vh - 72px);
+                background: var(--bg-glass-heavy);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                flex-direction: column;
+                padding: 40px;
+                gap: 30px;
+                transition: right 0.4s ease;
+                border-left: 1px solid rgba(6, 182, 212, 0.15);
+                align-items: flex-start;
+                z-index: 99;
+            }
+            .nav-links.active { right: 0; }
+            .auth-buttons { display: none; }
+            .hero-text h1 { font-size: 34px; }
+            .configurator-card { padding: 25px; }
+            .config-title h2 { font-size: 26px; }
+            .terminal-actions-shelf { flex-direction: column; align-items: flex-start; }
+            .action-toggles-box { width: 100%; justify-content: space-between; margin-top: 10px; }
+        }
+
+        /* Dynamic Proximity Sandbox Extensions */
+        .sandbox-legend {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .dot-safe { background: var(--safe-green); box-shadow: 0 0 6px var(--safe-green-glow); }
+        .dot-warning { background: var(--warning-yellow); box-shadow: 0 0 6px var(--warning-yellow-glow); }
+        .dot-danger { background: var(--danger-red); box-shadow: 0 0 6px rgba(239, 68, 68, 0.6); }
+
+        .explanation-box {
+            background: rgba(6, 182, 212, 0.03);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 12px;
+            padding: 18px 22px;
+            margin-top: 5px;
+            transition: all 0.3s ease;
+        }
+        .explanation-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .explanation-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--safe-green);
+            box-shadow: 0 0 8px var(--safe-green-glow);
+            transition: all 0.3s ease;
+        }
+        .explanation-box h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+            margin: 0;
+        }
+        .explanation-box p {
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: var(--text-muted);
+            margin: 0;
+            transition: all 0.3s ease;
+        }
+    </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
+<!-- BACKDROP PARTICLES CANVAS -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+<div class="laser-scan-line"></div>
+
+<!-- FUTURISTIC HUD OVERLAYS (Color grading cyan/blue) -->
+<div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+        <span>GRID_VISION_CORE: ENGAGED</span>
+        <span>MODEL: YOLOv8-NEURAL</span>
+        <span class="status-badge" style="margin-top: 10px;">
+            <span class="status-dot"></span> THREAT STATUS: SECURE
+        </span>
+    </div>
+    
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+        <span>CYBER_MATRIX_STREAM_03</span>
+        <span>LATENCY: SUB_MILLI</span>
+        <span id="system-latency" style="color: var(--primary-neon);">PING: 3ms</span>
+        <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">UTC TIME: --:--:--</span>
+    </div>
+
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+        <span>NEURAL SAFETY ENVELOPE [ENGAGED]</span>
+    </div>
+
+    <!-- Bounding boxes floating under overlays -->
+    <div class="hud-bounding-box float-hud-1" style="top: 22%; left: 8%; width: 150px; height: 230px; border-color: var(--primary-neon);">
+        <span class="hud-box-label" style="background: var(--primary-neon);">Neural scanner</span>
+    </div>
+
+    <div class="hud-bounding-box float-hud-2" style="bottom: 20%; right: 7%; width: 230px; height: 170px; border-color: var(--safe-green);">
+        <span class="hud-box-label" style="background: var(--safe-green);">Zone protection (Active)</span>
+    </div>
+</div>
+
+<!-- FLOATING GLASSMORPHIC NAVBAR -->
 <nav class="navbar">
-  <div class="logo">AI Safety</div>
-  <ul class="nav-links">
-    <li><a href="index.html">Home</a></li>
-    <li><a href="dashboard.html">Dashboard</a></li>
-    <li><a href="contact.html">Contact</a></li>
-  </ul>
+    <a href="new_index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="solution.html" class="active">Solution</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
+    </ul>
+
+    <div class="auth-buttons" id="auth-buttons">
+        <a href="login.html">Log In</a>
+        <a href="signup.html">Sign Up</a>
+    </div>
+
+    <div id="profile-section" style="display:none;" class="profile-box">
+        <span id="profile-name" class="profile-name">User</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
 </nav>
 
-<!-- SOLUTION HERO -->
-<section class="solution-hero">
-  <h1>Our Intelligent Safety Solution</h1>
-  <p>
-    AI-powered system designed to protect humans working near industrial machines
-    by detecting danger zones and triggering instant alerts.
-  </p>
-</section>
-
-<!-- SOLUTION FEATURES -->
-<section class="solution-features">
-
-  <div class="feature-card">
-    <h3>AI Human Detection</h3>
-    <p>
-      Uses YOLO & computer vision to detect human presence near hazardous machines
-      in real-time.
-    </p>
-  </div>
-
-  <div class="feature-card">
-    <h3>Danger Zone Monitoring</h3>
-    <p>
-      Dynamically defines unsafe zones and triggers alerts when humans enter
-      restricted areas.
-    </p>
-  </div>
-
-  <div class="feature-card">
-    <h3>Instant Alerts</h3>
-    <p>
-      Sends visual and audio warnings to prevent accidents before they occur.
-    </p>
-  </div>
-
-  <div class="feature-card">
-    <h3>Smart Dashboard</h3>
-    <p>
-      Real-time monitoring dashboard with confidence levels, response time,
-      and machine status.
-    </p>
-  </div>
-
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="how-it-works">
-  <h2>How It Works</h2>
-
-  <div class="steps">
-    <div class="step">
-      <span>1</span>
-      <p>Camera captures live video feed near machines</p>
+<!-- HERO CONSOLE -->
+<section class="hero">
+    <div class="hero-text">
+        <h1>Autonomous Industrial Safety Shield</h1>
+        <p>
+            Deploy next-generation 3D security mapping. By wrapping heavy machinery in adaptive neural barriers, our YOLOv8-powered vision edge engine tracks coordinates in real-time, executing PLC emergency overrides instantly to create an absolute hazard exclusion zone.
+        </p>
+        <div class="hero-actions">
+            <a href="#sandbox" class="btn-primary">Launch Proximity Sandbox</a>
+            <a href="#console" class="btn-outline">Open Diagnostic Video</a>
+        </div>
     </div>
 
-    <div class="step">
-      <span>2</span>
-      <p>AI model detects humans and machine proximity</p>
-    </div>
+    <!-- NEURAL DASHBOARD HERO CARD -->
+    <div class="hero-card-wrapper">
+        <div class="hero-card">
+            <h3>
+                <span>NEURAL ENGINE STATE</span>
+                <span class="live-indicator">
+                    <span class="live-dot"></span> SCANNING
+                </span>
+            </h3>
 
-    <div class="step">
-      <span>3</span>
-      <p>System analyzes danger zones in real-time</p>
-    </div>
+            <div class="status-list">
+                <div class="progress-bar-wrapper">
+                    <div class="status-item">
+                        <span>AI Inference Speed</span>
+                        <b class="glow-cyan" id="core-temp">6.2ms</b>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="core-bar" style="width: 88%;"></div>
+                    </div>
+                </div>
 
-    <div class="step">
-      <span>4</span>
-      <p>Alerts are triggered and machines can be stopped</p>
+                <div class="status-item">
+                    <span>Active Threat Index</span>
+                    <b class="glow-emerald" id="threat-index">0.02%</b>
+                </div>
+
+                <div class="status-item">
+                    <span>YOLOv8 Vision Model</span>
+                    <b class="glow-cyan">EDGE_V8_FPS_60</b>
+                </div>
+
+                <div class="status-item">
+                    <span>Virtual Boundaries</span>
+                    <b class="glow-emerald" id="boundary-status">SECURE [STABLE]</b>
+                </div>
+
+                <div class="status-item">
+                    <span>Hardware Relays</span>
+                    <b class="glow-emerald" id="relay-status">ONLINE [ENGAGED]</b>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </section>
 
-  <!-- DEMO VIDEO -->
-  <section class="demo-video-section">
-    <h2>See It In Action</h2>
-    <div class="video-container">
-      <video controls muted autoplay loop>
-        <source src="../../Demo_video.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
+<!-- LIVE AI FEED OPERATIONAL CONSOLE -->
+<section class="video-section" id="console">
+    <div class="console-header">
+        <h2>Live Diagnostic AI Console</h2>
+        <p>
+            Observe the YOLOv8 vision system tracking worker postures and proximity parameters on the factory floor in real-time. Use the toggles below to view diagnostic matrices.
+        </p>
+    </div>
 
-<section class="solution-cta">
-  <h2>Make Your Workplace Safer</h2>
-  <p>Experience the future of industrial safety with AI-powered monitoring.</p>
-  <a href="dashboard.html" class="cta-btn">View Dashboard</a>
+    <div class="console-layout">
+        <div class="console-terminal">
+            
+            <div class="console-bar">
+                <span>AI_STREAM_MONITOR_CAM_04</span>
+                <span>RESOLUTION: 1080P_HD</span>
+                <div class="rec-indicator">
+                    <span class="rec-dot"></span>
+                    <span>LIVE DIAGNOSTIC HUD</span>
+                </div>
+            </div>
+
+            <!-- Video Player with Toggleable HUD bounding boxes -->
+            <div class="video-box-wrapper">
+                <div class="diagnostic-overlay" id="diagHudOverlay">
+                    <!-- Worker bounding box -->
+                    <div class="overlay-bounding-box" style="top: 22%; left: 42%; width: 22%; height: 58%;" data-label="Worker (99.1%)"></div>
+                    <!-- Proximity buffer box -->
+                    <div class="overlay-bounding-box" style="top: 30%; left: 18%; width: 20%; height: 50%; border-color: var(--warning-yellow);" data-label="Caution Buffer"></div>
+                    
+                    <div class="reticle reticle-tl"></div>
+                    <div class="reticle reticle-tr"></div>
+                    <div class="reticle reticle-bl"></div>
+                    <div class="reticle reticle-br"></div>
+                </div>
+
+                <video id="demoVideo" controls muted autoplay loop>
+                    <source src="../../Demo_video.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <!-- Dashboard controls -->
+            <div class="terminal-actions-shelf">
+                <div class="action-label-block">
+                    <span>AI Diagnostic Overlay</span>
+                    <span>Display live YOLO bounding boxes and warning fields</span>
+                </div>
+                <div class="action-toggles-box">
+                    <button class="diag-btn active" id="toggleHudBtn">DIAGNOSTICS: ON</button>
+                </div>
+            </div>
+
+            <!-- Rolling terminal log screen -->
+            <div class="rolling-terminal-log" id="rollingLogs">
+                <div class="log-line">> [12:05:40] AI Diagnostic Core initialized. Loading YOLO weights...</div>
+                <div class="log-line">> [12:05:41] Neural pipeline linked with hardware interfaces. 0 overrides active.</div>
+            </div>
+        </div>
+    </div>
 </section>
 
-<footer class="footer" style="text-align: center; padding: 25px 15px; font-size: 13px; opacity: 0.7; border-top: 1px solid rgba(255, 255, 255, 0.05);">
-    <p>© 2025 AI Smart Safety System | Built for Real-World Use</p>
+<!-- Draggable Safety Coordinate Configurator (Sandbox) -->
+<section class="configurator-section" id="sandbox">
+    <div class="configurator-card">
+        
+        <!-- Left configuration controls -->
+        <div class="config-left">
+            <div class="config-title">
+                <h2>Virtual Proximity Sandbox</h2>
+                <p>
+                    Simulate factory floor boundaries in our interactive coordinate grid. Slide the X and Y controllers to position the worker relative to the heavy machinery, monitoring incursion events.
+                </p>
+            </div>
+
+            <div class="coords-slider-box">
+                <!-- X Position Slider -->
+                <div class="slider-row" style="margin-bottom: 20px;">
+                    <div class="slider-info">
+                        <span class="slider-name">Horizontal Distance (X-Axis):</span>
+                        <span class="slider-num" id="xDisplay">7.0m</span>
+                    </div>
+                    <input type="range" min="0.5" max="8.0" step="0.1" value="7.0" class="range-bar" id="xSlider">
+                </div>
+
+                <!-- Y Position Slider -->
+                <div class="slider-row">
+                    <div class="slider-info">
+                        <span class="slider-name">Vertical Proximity (Y-Axis):</span>
+                        <span class="slider-num" id="yDisplay">6.5m</span>
+                    </div>
+                    <input type="range" min="0.5" max="7.0" step="0.1" value="6.5" class="range-bar" id="ySlider">
+                </div>
+            </div>
+
+            <!-- Sound trigger -->
+            <div class="switch-row" style="margin-bottom: 20px;">
+                <div class="action-label-block">
+                    <span>Synthetic Siren Buzzer</span>
+                    <span>Triggers live warning tone synthesizers on boundary incursions</span>
+                </div>
+                <label class="switch-holder">
+                    <input type="checkbox" id="audioSwitch">
+                    <span class="toggle-body"></span>
+                </label>
+            </div>
+
+            <!-- Interactive explanation card -->
+            <div class="explanation-box" id="sandboxExplanation">
+                <div class="explanation-header">
+                    <span class="explanation-indicator" id="explanationIndicator"></span>
+                    <h4 id="explanationTitle">AI SYSTEM ENGAGED</h4>
+                </div>
+                <p id="explanationDesc">Drag the sliders above to simulate operator movement. The system will compute 2D vector coordinates in real-time and actuate emergency relays accordingly.</p>
+            </div>
+        </div>
+
+        <!-- Right Visual floorgrid visualizer -->
+        <div class="config-right">
+            <div class="flash-alarm-overlay" id="flashSiren"></div>
+            
+            <div class="floorplan-grid">
+                <div class="grid-scanner"></div>
+                
+                <!-- Dynamic SVG connector line between Machine and Operator -->
+                <svg id="sandbox-connector" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4;">
+                    <line id="connector-line" x1="0" y1="0" x2="0" y2="0" stroke="var(--safe-green)" stroke-width="2" stroke-dasharray="5,5" style="transition: stroke 0.3s ease;" />
+                    <g id="connector-badge" style="transition: transform 0.15s ease;">
+                        <rect id="badge-bg" x="-27" y="-9" width="54" height="18" rx="4" fill="rgba(4, 7, 20, 0.9)" stroke="var(--safe-green)" stroke-width="1.5" style="transition: stroke 0.3s ease;" />
+                        <text id="badge-text" x="0" y="0" font-family="'Space Grotesk', sans-serif" font-size="10px" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="central">0.0m</text>
+                    </g>
+                </svg>
+                
+                <!-- Central Machine Core -->
+                <div class="floor-machine">
+                    <div class="floor-machine-core floor-machine-spin" id="machineCore">⚙️</div>
+                    <span class="hud-box-label" style="background: var(--safe-green); font-size: 8px; position: static;" id="machineStatusLabel">ROBOT ARM [ON]</span>
+                </div>
+
+                <!-- Draggable Operator Avatar -->
+                <div class="floor-worker" id="floorWorker">
+                    <div class="floor-worker-avatar">👷
+                        <div class="floor-beam"></div>
+                    </div>
+                    <span class="hud-box-label" style="background: var(--primary-neon); font-size: 8px; position: static;">Operator</span>
+                </div>
+
+                <!-- Warning Exclusion zone rings -->
+                <div class="boundary-circle bound-warning"></div>
+                <div class="boundary-circle bound-danger"></div>
+            </div>
+
+            <!-- Simulated live metrics -->
+            <div class="sim-stats-log">
+                <div class="stat-row">
+                    <span>Proximity Safe Status:</span>
+                    <span class="stat-value" id="statsSafety" style="color: var(--safe-green);">🟢 SECURE [NORMAL]</span>
+                </div>
+                <div class="stat-row">
+                    <span>Industrial Relays State:</span>
+                    <span class="stat-value" id="statsRelays" style="color: var(--safe-green);">PLC_RUN [FULL SPEED]</span>
+                </div>
+                <div class="stat-row">
+                    <span>Calculated Threat Index:</span>
+                    <span class="stat-value" id="statsThreat" style="color: var(--safe-green);">0.00%</span>
+                </div>
+            </div>
+
+            <!-- Boundary Zone Legend -->
+            <div class="sandbox-legend">
+                <div class="legend-item"><span class="legend-dot dot-safe"></span>Safe (&gt;3.2m)</div>
+                <div class="legend-item"><span class="legend-dot dot-warning"></span>Warning (1.5m - 3.2m)</div>
+                <div class="legend-item"><span class="legend-dot dot-danger"></span>Danger (&lt;1.5m)</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SOLUTION CAPABILITIES -->
+<section class="features-section">
+    <div class="features-grid">
+        <div class="feature-card-glass">
+            <div class="feat-icon">🧠</div>
+            <h3>YOLOv8 Edge Neural Net</h3>
+            <p>
+                Highly-optimized neural model deployed right at the edge. Runs image checks at 60fps to capture human skeletons and poses instantly.
+            </p>
+        </div>
+
+        <div class="feature-card-glass">
+            <div class="feat-icon">⚡</div>
+            <h3>280ms Relay Tripping</h3>
+            <p>
+                Outputs warning signals to industrial PLC networks via automated MQTT / socket events, triggering emergency interlock sequences in 280ms.
+            </p>
+        </div>
+
+        <div class="feature-card-glass">
+            <div class="feat-icon">📊</div>
+            <h3>Analytics Dashboard</h3>
+            <p>
+                Provides live logs, audit reports, security telemetry charts, buzzer pulse logs, and alert timelines in a unified modern glass web terminal.
+            </p>
+        </div>
+
+        <div class="feature-card-glass">
+            <div class="feat-icon">🔒</div>
+            <h3>Enterprise Controller Fusion</h3>
+            <p>
+                Engineered to pair perfectly with Raspberry Pi hardware blocks, relay shields, buzzer arrays, and industrial camera loops.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- SYSTEM WORKFLOW ARCHITECTURE -->
+<section class="architecture-explorer">
+    <h2>4 Protective Layers</h2>
+    <div class="arch-grid">
+        <div class="arch-node">
+            <div class="arch-node-num">1</div>
+            <p>High-resolution optics monitor work zones frame-by-frame</p>
+        </div>
+
+        <div class="arch-node">
+            <div class="arch-node-num">2</div>
+            <p>Edge AI neural logic deciphers coordinate parameters at 60fps</p>
+        </div>
+
+        <div class="arch-node">
+            <div class="arch-node-num">3</div>
+            <p>Calculates dynamic worker vector offsets inside exclusionary grids</p>
+        </div>
+
+        <div class="arch-node">
+            <div class="arch-node-num">4</div>
+            <p>Physical PLC commands actuate safety relays, cutting power immediately</p>
+        </div>
+    </div>
+</section>
+
+<!-- CALL TO ACTION -->
+<section class="cta-section">
+    <div class="cta-container">
+        <h2>Advance Your Factory Security</h2>
+        <p>Deploy real-time deep computer vision surveillance to safeguard high-risk machine cells and assembly zones.</p>
+        <a href="camera_setup.html" class="cta-btn">Open Live Feed</a>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <p>&copy; 2026 AI Smart Safety System | Cybernetic Surveillance & Industrial Defense</p>
 </footer>
+
+<!-- SYSTEM SCRIPTS -->
+<script>
+    // Particle Backdrop Generator (Cyan / Blue theme colors matching index.html)
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 1.8 + 0.5;
+            this.speedY = -(Math.random() * 0.5 + 0.15);
+            this.speedX = Math.random() * 0.4 - 0.2;
+            this.alpha = Math.random() * 0.4 + 0.1;
+            // Cyan / Blue nodes
+            this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
+        }
+
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const count = Math.min(50, Math.floor(window.innerWidth / 24));
+    for (let i = 0; i < count; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Clock
+    const clockElement = document.getElementById('system-clock');
+    function updateClock() {
+        if (!clockElement) return;
+        const now = new Date();
+        const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
+        clockElement.textContent = `SYSTEM TIME: ${timeString} UTC`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Hero stats simulation (cyan and blue colors)
+    setInterval(() => {
+        const coreTemp = document.getElementById('core-temp');
+        const threatIndex = document.getElementById('threat-index');
+        const boundaryStatus = document.getElementById('boundary-status');
+        const relayStatus = document.getElementById('relay-status');
+        const coreBar = document.getElementById('core-bar');
+
+        if (!coreTemp || !threatIndex) return;
+
+        const isBreached = Math.random() > 0.88;
+        if (isBreached) {
+            coreTemp.textContent = '14.2ms';
+            coreBar.style.width = '35%';
+            threatIndex.textContent = (82.1 + Math.random() * 8).toFixed(2) + '%';
+            threatIndex.className = 'glow-red';
+            boundaryStatus.textContent = 'WARNING ZONE BREACHED';
+            boundaryStatus.className = 'glow-warning';
+            relayStatus.textContent = 'PLC_HALTED [SLOW]';
+            relayStatus.className = 'glow-warning';
+        } else {
+            coreTemp.textContent = (5.8 + Math.random() * 0.9).toFixed(1) + 'ms';
+            coreBar.style.width = '88%';
+            threatIndex.textContent = (0.01 + Math.random() * 0.04).toFixed(3) + '%';
+            threatIndex.className = 'glow-emerald';
+            boundaryStatus.textContent = 'SECURE [STABLE]';
+            boundaryStatus.className = 'glow-emerald';
+            relayStatus.textContent = 'ONLINE [ENGAGED]';
+            relayStatus.className = 'glow-emerald';
+        }
+    }, 4500);
+
+    // ============================================
+    // VIDEO DIAGNOSTICS & TELEMETRY LOGS
+    // ============================================
+    const toggleHudBtn = document.getElementById('toggleHudBtn');
+    const diagHudOverlay = document.getElementById('diagHudOverlay');
+    const rollingLogs = document.getElementById('rollingLogs');
+
+    toggleHudBtn.addEventListener('click', () => {
+        if (diagHudOverlay.style.opacity === '0') {
+            diagHudOverlay.style.opacity = '1';
+            toggleHudBtn.textContent = 'DIAGNOSTICS: ON';
+            toggleHudBtn.classList.add('active');
+            addLog("Diagnostic overlay layers enabled.");
+        } else {
+            diagHudOverlay.style.opacity = '0';
+            toggleHudBtn.textContent = 'DIAGNOSTICS: OFF';
+            toggleHudBtn.classList.remove('active');
+            addLog("Diagnostic overlay layers disabled.");
+        }
+    });
+
+    // Logging simulation helper
+    function addLog(text) {
+        const time = new Date().toLocaleTimeString();
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.textContent = `> [${time}] ${text}`;
+        rollingLogs.appendChild(line);
+        if (rollingLogs.children.length > 5) {
+            rollingLogs.removeChild(rollingLogs.children[0]);
+        }
+    }
+
+    const logPhrases = [
+        "Frame analyzed in 6.4ms. Confidence: 99.1%",
+        "PLC socket pinged successfully. Latency: 3.2ms",
+        "Coordinate grids checked. Worker remains in secure sector.",
+        "Edge controller synchronization completed.",
+        "Camera stream 04 FPS rating: 60.1fps",
+        "Spatial bounding calculations active."
+    ];
+
+    setInterval(() => {
+        const randIndex = Math.floor(Math.random() * logPhrases.length);
+        addLog(logPhrases[randIndex]);
+    }, 3500);
+
+    // ============================================
+    // VIRTUAL COORDINATE EXCLUSION SANDBOX
+    // ============================================
+    const xSlider = document.getElementById('xSlider');
+    const ySlider = document.getElementById('ySlider');
+    const xDisplay = document.getElementById('xDisplay');
+    const yDisplay = document.getElementById('yDisplay');
+    const floorWorker = document.getElementById('floorWorker');
+    const flashSiren = document.getElementById('flashSiren');
+    const machineCore = document.getElementById('machineCore');
+    const machineStatusLabel = document.getElementById('machineStatusLabel');
+    const audioSwitch = document.getElementById('audioSwitch');
+
+    const statsSafety = document.getElementById('statsSafety');
+    const statsRelays = document.getElementById('statsRelays');
+    const statsThreat = document.getElementById('statsThreat');
+
+    let synthCtx = null;
+    let sirenOsc = null;
+    let sirenGain = null;
+    let sirenInterval = null;
+    let sirenPlaying = false;
+
+    function initSynth() {
+        if (!synthCtx) {
+            synthCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function triggerBeep(freq, dur, type='sine') {
+        if (!audioSwitch.checked || !synthCtx) return;
+        try {
+            const osc = synthCtx.createOscillator();
+            const gain = synthCtx.createGain();
+            osc.connect(gain);
+            gain.connect(synthCtx.destination);
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.12, synthCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, synthCtx.currentTime + dur);
+            osc.start();
+            osc.stop(synthCtx.currentTime + dur);
+        } catch(e){}
+    }
+
+    function runSiren() {
+        if (!audioSwitch.checked || sirenPlaying) return;
+        initSynth();
+        try {
+            sirenPlaying = true;
+            sirenOsc = synthCtx.createOscillator();
+            sirenGain = synthCtx.createGain();
+            sirenOsc.connect(sirenGain);
+            sirenGain.connect(synthCtx.destination);
+            sirenOsc.type = 'sawtooth';
+            
+            let t = synthCtx.currentTime;
+            sirenOsc.frequency.setValueAtTime(750, t);
+            sirenOsc.frequency.linearRampToValueAtTime(1050, t + 0.25);
+            sirenOsc.frequency.linearRampToValueAtTime(750, t + 0.5);
+            sirenGain.gain.setValueAtTime(0.08, t);
+
+            sirenInterval = setInterval(() => {
+                if (!synthCtx) return;
+                let curT = synthCtx.currentTime;
+                sirenOsc.frequency.setValueAtTime(750, curT);
+                sirenOsc.frequency.linearRampToValueAtTime(1050, curT + 0.25);
+                sirenOsc.frequency.linearRampToValueAtTime(750, curT + 0.5);
+            }, 500);
+
+            sirenOsc.start();
+        } catch(e){}
+    }
+
+    function haltSiren() {
+        if (sirenInterval) {
+            clearInterval(sirenInterval);
+            sirenInterval = null;
+        }
+        if (sirenOsc) {
+            try {
+                sirenOsc.stop();
+                sirenOsc.disconnect();
+            } catch(e){}
+            sirenOsc = null;
+        }
+        sirenPlaying = false;
+    }
+
+    audioSwitch.addEventListener('change', () => {
+        if (audioSwitch.checked) {
+            initSynth();
+            triggerBeep(980, 0.15);
+        } else {
+            haltSiren();
+        }
+    });
+
+    function recalculateGrid() {
+        const xVal = parseFloat(xSlider.value);
+        const yVal = parseFloat(ySlider.value);
+
+        if (xDisplay) xDisplay.textContent = xVal.toFixed(1) + 'm';
+        if (yDisplay) yDisplay.textContent = yVal.toFixed(1) + 'm';
+
+        // Horizontal positioning: slider ranges 0.5m to 8m. Map visually from 15% to 85%
+        const visualLeft = 15 + ((xVal - 0.5) / 7.5) * 70;
+        // Vertical positioning: slider ranges 0.5m to 7m. Map visually from 12% to 80%
+        const visualTop = 12 + ((yVal - 0.5) / 6.5) * 68;
+
+        floorWorker.style.left = visualLeft + '%';
+        floorWorker.style.top = visualTop + '%';
+
+        // Center is equivalent to X=4.25m, Y=3.75m
+        const dx = xVal - 4.25;
+        const dy = yVal - 3.75;
+        const distance = Math.sqrt(dx*dx + dy*dy);
+
+        // Map Threat indices
+        let threatRating = 0;
+
+        const explanationIndicator = document.getElementById('explanationIndicator');
+        const explanationTitle = document.getElementById('explanationTitle');
+        const explanationDesc = document.getElementById('explanationDesc');
+        const explanationBox = document.getElementById('sandboxExplanation');
+
+        if (distance > 3.2) {
+            // SAFE ZONE
+            haltSiren();
+            if (statsSafety) {
+                statsSafety.innerHTML = '🟢 SECURE [NORMAL]';
+                statsSafety.style.color = 'var(--safe-green)';
+            }
+            if (statsRelays) {
+                statsRelays.innerHTML = 'PLC_RUN [FULL SPEED]';
+                statsRelays.style.color = 'var(--safe-green)';
+            }
+            threatRating = (1.5 / distance) * 2.5; 
+            if (statsThreat) {
+                statsThreat.innerHTML = threatRating.toFixed(2) + '%';
+                statsThreat.style.color = 'var(--safe-green)';
+            }
+
+            machineCore.style.border = '2px solid var(--safe-green)';
+            machineCore.style.boxShadow = '0 0 20px var(--safe-green-glow)';
+            machineCore.classList.add('floor-machine-spin');
+            machineCore.style.animationDuration = '1.2s';
+            machineStatusLabel.style.background = 'var(--safe-green)';
+            machineStatusLabel.textContent = 'ROBOT ARM [ON]';
+
+            flashSiren.style.display = 'none';
+
+            // Update explanation card
+            if (explanationBox) {
+                explanationIndicator.style.background = 'var(--safe-green)';
+                explanationIndicator.style.boxShadow = '0 0 8px var(--safe-green-glow)';
+                explanationTitle.textContent = 'AI STATE: SYSTEM SECURE';
+                explanationDesc.textContent = 'Operator is at a safe distance (' + distance.toFixed(1) + 'm). The Edge AI network reports 0% collision threat. Industrial PLC runs standard operations at full speed (100% capacity).';
+                explanationBox.style.background = 'rgba(16, 185, 129, 0.03)';
+                explanationBox.style.borderColor = 'rgba(16, 185, 129, 0.15)';
+            }
+        }
+        else if (distance <= 3.2 && distance >= 1.5) {
+            // WARNING ZONE
+            haltSiren();
+            if (statsSafety) {
+                statsSafety.innerHTML = '🟡 WARNING BUFFER INTRUSION';
+                statsSafety.style.color = 'var(--warning-yellow)';
+            }
+            if (statsRelays) {
+                statsRelays.innerHTML = 'PLC_SLOW [REDUCED FREQ]';
+                statsRelays.style.color = 'var(--warning-yellow)';
+            }
+            threatRating = 30 + ((3.2 - distance) / 1.7) * 45;
+            if (statsThreat) {
+                statsThreat.innerHTML = threatRating.toFixed(2) + '%';
+                statsThreat.style.color = 'var(--warning-yellow)';
+            }
+
+            machineCore.style.border = '2px solid var(--warning-yellow)';
+            machineCore.style.boxShadow = '0 0 20px var(--warning-yellow-glow)';
+            machineCore.classList.add('floor-machine-spin');
+            machineCore.style.animationDuration = '3.0s';
+            machineStatusLabel.style.background = 'var(--warning-yellow)';
+            machineStatusLabel.textContent = 'BUFFER AVOIDANCE';
+
+            flashSiren.style.display = 'none';
+            if (Math.random() > 0.72) {
+                triggerBeep(490, 0.08, 'triangle');
+            }
+
+            // Update explanation card
+            if (explanationBox) {
+                explanationIndicator.style.background = 'var(--warning-yellow)';
+                explanationIndicator.style.boxShadow = '0 0 8px var(--warning-yellow-glow)';
+                explanationTitle.textContent = 'AI STATE: WARNING BUFFER INTRUSION';
+                explanationDesc.textContent = 'Operator entered the safety buffer zone (' + distance.toFixed(1) + 'm). Threat index increased to ' + threatRating.toFixed(1) + '%. PLC controller throttles robot speed by 30% reduction.';
+                explanationBox.style.background = 'rgba(245, 158, 11, 0.03)';
+                explanationBox.style.borderColor = 'rgba(245, 158, 11, 0.15)';
+            }
+        }
+        else {
+            // DANGER EXCLUSION ZONE (E-STOP TRIPPED)
+            if (statsSafety) {
+                statsSafety.innerHTML = '🔴 CRITICAL INTRUSION ACTIVE';
+                statsSafety.style.color = 'var(--danger-red)';
+            }
+            if (statsRelays) {
+                statsRelays.innerHTML = 'PLC_TRIPPED [POWER CUT]';
+                statsRelays.style.color = 'var(--danger-red)';
+            }
+            threatRating = 92 + ((1.5 - distance) / 1.5) * 8;
+            if (statsThreat) {
+                statsThreat.innerHTML = threatRating.toFixed(2) + '%';
+                statsThreat.style.color = 'var(--danger-red)';
+            }
+
+            machineCore.style.border = '2px solid var(--danger-red)';
+            machineCore.style.boxShadow = '0 0 25px rgba(239, 68, 68, 0.6)';
+            machineCore.classList.remove('floor-machine-spin');
+            machineStatusLabel.style.background = 'var(--danger-red)';
+            machineStatusLabel.textContent = 'SYSTEM SHUTDOWN';
+
+            flashSiren.style.display = 'block';
+            runSiren();
+
+            // Update explanation card
+            if (explanationBox) {
+                explanationIndicator.style.background = 'var(--danger-red)';
+                explanationIndicator.style.boxShadow = '0 0 8px rgba(239, 68, 68, 0.6)';
+                explanationTitle.textContent = 'AI STATE: CRITICAL ESTOP TRIPPED';
+                explanationDesc.textContent = 'CRITICAL BREACH! Operator crossed the 1.5m hardware safety boundary (' + distance.toFixed(1) + 'm). Edge processor outputs E-STOP instantly, cutting power to the arm shield in <280ms.';
+                explanationBox.style.background = 'rgba(239, 68, 68, 0.05)';
+                explanationBox.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+            }
+        }
+
+        // Draw dynamic SVG connector line and distance badge
+        requestAnimationFrame(() => {
+            const connectorLine = document.getElementById('connector-line');
+            const connectorBadge = document.getElementById('connector-badge');
+            const badgeBg = document.getElementById('badge-bg');
+            const badgeText = document.getElementById('badge-text');
+            const floorplanGrid = document.querySelector('.floorplan-grid');
+
+            if (connectorLine && connectorBadge && badgeBg && badgeText && floorplanGrid) {
+                const gridRect = floorplanGrid.getBoundingClientRect();
+                const machineRect = machineCore.getBoundingClientRect();
+                const workerAvatar = floorWorker.querySelector('.floor-worker-avatar');
+                const workerRect = workerAvatar.getBoundingClientRect();
+
+                // If dimensions are 0 (hidden on load or tab hidden), skip to avoid nan
+                if (gridRect.width === 0 || machineRect.width === 0 || workerRect.width === 0) return;
+
+                const x1 = (machineRect.left + machineRect.width / 2) - gridRect.left;
+                const y1 = (machineRect.top + machineRect.height / 2) - gridRect.top;
+                const x2 = (workerRect.left + workerRect.width / 2) - gridRect.left;
+                const y2 = (workerRect.top + workerRect.height / 2) - gridRect.top;
+
+                // Update line coordinates
+                connectorLine.setAttribute('x1', x1);
+                connectorLine.setAttribute('y1', y1);
+                connectorLine.setAttribute('x2', x2);
+                connectorLine.setAttribute('y2', y2);
+
+                // Calculate mid point
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+
+                // Move badge
+                connectorBadge.setAttribute('transform', `translate(${midX}, ${midY})`);
+                badgeText.textContent = distance.toFixed(1) + 'm';
+
+                // Choose stroke color matching the threat zone
+                let currentColor = 'var(--safe-green)';
+                if (distance > 3.2) {
+                    currentColor = 'var(--safe-green)';
+                } else if (distance <= 3.2 && distance >= 1.5) {
+                    currentColor = 'var(--warning-yellow)';
+                } else {
+                    currentColor = 'var(--danger-red)';
+                }
+                connectorLine.setAttribute('stroke', currentColor);
+                badgeBg.setAttribute('stroke', currentColor);
+            }
+        });
+    }
+
+    if (xSlider) xSlider.addEventListener('input', recalculateGrid);
+    if (ySlider) ySlider.addEventListener('input', recalculateGrid);
+
+    // Initial load run with a small delay to allow container layout rendering
+    setTimeout(recalculateGrid, 100);
+    window.addEventListener('resize', recalculateGrid);
+</script>
+
+<!-- Existing Auth Module Integration -->
+<script src="../js/auth.js"></script>
 
 </body>
 </html>
