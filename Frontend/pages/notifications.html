@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smart Safety System | Alert Dispatcher Panel</title>
+  
+  <!-- Access Guard Rail -->
+  <script>
+    if (localStorage.getItem("isLoggedIn") !== "true" || localStorage.getItem("userRole") !== "admin") {
+      window.location.replace("index.html");
+    }
+  </script>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/notifications.css?v=1">
+</head>
+
+<body>
+
+  <!-- BACKDROP PARTICLES CANVAS -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+  <div class="laser-scan-line"></div>
+
+  <!-- DYNAMIC TOAST CONTAINER FOR HUD ALERTS -->
+  <div id="toast-container" class="hud-toast-container"></div>
+
+  <!-- FUTURISTIC HUD OVERLAYS -->
+  <div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+      <span>NOTIFICATION_DISPATCHER: ACTIVE</span>
+      <span>ALARM_CORE: SLEEPING</span>
+      <span class="status-badge" style="margin-top: 10px;">
+        <span class="status-dot"></span> alert routing ready
+      </span>
+    </div>
+
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+      <span>UPLINK_ALERT_SECURE</span>
+      <span>AES_256_ACTIVE</span>
+      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: --ms</span>
+      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
+    </div>
+
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="solution.html">Solution</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="notifications.html" class="active">Alerts</a></li>
+        <li><a href="incident_log.html">Incident Logs</a></li>
+        <li><a href="admin.html">Admin</a></li>
+      </ul>
+
+      <div class="auth-buttons" id="auth-buttons" style="display: none;">
+        <a href="login.html">Log In</a>
+        <a href="signup.html">Sign Up</a>
+      </div>
+
+      <div id="profile-section" style="display:none;" class="profile-box">
+        <span id="profile-name" class="profile-name">Operator</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main notifications-container">
+
+      <div class="notifications-header">
+        <h1>Active Alert Notification Dispatcher</h1>
+        <p class="subtitle">Configure real-time warning dispatches, emergency communication channels, and proximity trigger alert parameters.</p>
+      </div>
+
+      <div class="notifications-dual-layout">
+
+        <!-- LEFT PANEL: ALARM CHANNELS & THRESHOLDS -->
+        <div class="layout-column">
+
+          <!-- Alarm Dispatch Channels Box -->
+          <div class="settings-card">
+            <div class="card-title-bar">
+              <h2>🔌 Dispatch Channels Configurations</h2>
+              <span class="card-subtitle">Toggle automated secure alert transmission protocols.</span>
+            </div>
+
+            <div class="dispatch-toggles-list">
+
+              <!-- Email Dispatcher -->
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-name">✉️ Email Alerts Dispatcher</span>
+                  <span class="toggle-desc">Transmit encrypted breach reports immediately to registered operators.</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="dispatch-email" checked>
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <!-- SMS Dispatcher -->
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-name">📱 SMS Emergency Dispatcher</span>
+                  <span class="toggle-desc">Dispatch SMS alert payloads to cell nodes via secure API gateway.</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="dispatch-sms">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <!-- Audible Sirens -->
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-name">🚨 Audible Factory Alarm Relay</span>
+                  <span class="toggle-desc">Trigger physical PLC relays to active warning buzzer systems.</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="dispatch-siren" checked>
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Alert Thresholds Sliders -->
+          <div class="settings-card" style="margin-top: 30px;">
+            <div class="card-title-bar">
+              <h2>🎛️ Warning Parameters & Sensitivity</h2>
+              <span class="card-subtitle">Adjust minimum threat triggers before notifications fire.</span>
+            </div>
+
+            <div class="sliders-list">
+              
+              <!-- Confidence Slider -->
+              <div class="slider-block">
+                <div class="slider-labels">
+                  <span>Minimum AI Confidence Trigger</span>
+                  <span id="label-confidence" class="value-badge">85%</span>
+                </div>
+                <input type="range" id="threshold-confidence" min="50" max="98" value="85" class="range-slider">
+                <span class="slider-desc">Alerts bypass notifications if YOLO accuracy is lower.</span>
+              </div>
+
+              <!-- Jitter Delay Slider -->
+              <div class="slider-block">
+                <div class="slider-labels">
+                  <span>Continuous Incursion Duration</span>
+                  <span id="label-duration" class="value-badge">0.8s</span>
+                </div>
+                <input type="range" id="threshold-duration" min="1" max="50" value="8" class="range-slider">
+                <span class="slider-desc">Trigger alerts only if target persists in zone for X seconds.</span>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT PANEL: OPERATOR DIRECTORY & SIMULATOR -->
+        <div class="layout-column">
+
+          <!-- Operator Email Directory -->
+          <div class="settings-card">
+            <div class="card-title-bar">
+              <h2>🛡️ Emergency Communications Registry</h2>
+              <span class="card-subtitle">Manage registered supervisors receiving danger reports.</span>
+            </div>
+
+            <form id="supervisor-form" class="supervisor-form" onsubmit="registerSupervisor(event)">
+              <div class="input-group">
+                <input type="text" id="sup-name" required placeholder=" ">
+                <label for="sup-name">Supervisor Name</label>
+              </div>
+
+              <div class="input-group" style="margin-top: 20px;">
+                <input type="email" id="sup-email" required placeholder=" ">
+                <label for="sup-email">Operator Secure Email</label>
+              </div>
+
+              <button type="submit" class="btn-register">Register Terminal Node</button>
+            </form>
+
+            <div class="directory-list-wrapper">
+              <h3>Registered Contacts Database</h3>
+              <div class="directory-scroll-box">
+                <ul id="supervisor-list" class="supervisor-list">
+                  <!-- Injected via JS -->
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Broadcast Testing Simulator -->
+          <div class="settings-card" style="margin-top: 30px;">
+            <div class="card-title-bar">
+              <h2>🚨 Incursion Alert Testing Core</h2>
+              <span class="card-subtitle">Broadcast a simulated proximity breach to test dispatcher relays.</span>
+            </div>
+
+            <div class="simulator-body">
+              <p>Triggers a mock high-risk safety interception to verify SMTP notification dispatching, SMS webhooks, and visual on-screen indicators.</p>
+              
+              <div class="simulator-actions">
+                <button onclick="triggerMockInterception()" class="btn-test-danger">
+                  🔴 Broadcast Mock Danger Intercept
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+      <p>&copy; 2026 AI Smart Safety System | Secure Operator Notification Hub | Version 2.8.5-LTS</p>
+    </footer>
+
+  </div>
+
+  <!-- PARTICLES AND NOTIFICATION CONTROLLERS -->
+  <script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.alpha = Math.random() * 0.5 + 0.25;
+        }
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+        draw() {
+            ctx.fillStyle = `rgba(6, 182, 212, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const particleCount = 45;
+    for (let i = 0; i < particleCount; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // ================= SLIDER COUNTERS CONTROLLERS =================
+    const sliderConf = document.getElementById('threshold-confidence');
+    const labelConf = document.getElementById('label-confidence');
+    const sliderDur = document.getElementById('threshold-duration');
+    const labelDur = document.getElementById('label-duration');
+
+    if (sliderConf && labelConf) {
+        sliderConf.addEventListener('input', (e) => {
+            labelConf.textContent = `${e.target.value}%`;
+            localStorage.setItem('alert_min_confidence', e.target.value);
+        });
+        
+        // Restore
+        const stored = localStorage.getItem('alert_min_confidence');
+        if (stored) {
+            sliderConf.value = stored;
+            labelConf.textContent = `${stored}%`;
+        }
+    }
+
+    if (sliderDur && labelDur) {
+        sliderDur.addEventListener('input', (e) => {
+            const secs = (e.target.value / 10).toFixed(1);
+            labelDur.textContent = `${secs}s`;
+            localStorage.setItem('alert_min_duration', e.target.value);
+        });
+
+        // Restore
+        const stored = localStorage.getItem('alert_min_duration');
+        if (stored) {
+            sliderDur.value = stored;
+            labelDur.textContent = `${(stored / 10).toFixed(1)}s`;
+        }
+    }
+
+    // ================= SUPERVISOR DIRECTORY CONTROLLERS =================
+    let contacts = [
+        { name: 'Director Adil Patel', email: 'adil.safety@factory.io' },
+        { name: 'Supervisor Rohan Mehta', email: 'rohan.mehta@factory.io' }
+    ];
+
+    // Load from LocalStorage if exists
+    const storedContacts = localStorage.getItem('safety_supervisors');
+    if (storedContacts) {
+        contacts = JSON.parse(storedContacts);
+    }
+
+    function renderContacts() {
+        const listEl = document.getElementById('supervisor-list');
+        if (!listEl) return;
+        
+        listEl.innerHTML = '';
+        contacts.forEach((contact, idx) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="contact-card-info">
+                  <span class="sup-card-name">${contact.name}</span>
+                  <span class="sup-card-email">${contact.email}</span>
+                </div>
+                <button class="btn-delete-contact" onclick="deleteContact(${idx})" title="Deregister node">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+            `;
+            listEl.appendChild(li);
+        });
+        
+        localStorage.setItem('safety_supervisors', JSON.stringify(contacts));
+    }
+
+    function registerSupervisor(event) {
+        event.preventDefault();
+        const nameEl = document.getElementById('sup-name');
+        const emailEl = document.getElementById('sup-email');
+        if (!nameEl || !emailEl) return;
+
+        contacts.push({
+            name: nameEl.value,
+            email: emailEl.value
+        });
+        
+        nameEl.value = '';
+        emailEl.value = '';
+        
+        renderContacts();
+        showToast('✉️ Terminal Node Registered', `Added supervisor alert route to registry successfully.`, 'success');
+    }
+
+    function deleteContact(index) {
+        const deleted = contacts[index];
+        contacts.splice(index, 1);
+        renderContacts();
+        showToast('🚨 Terminal Node Deregistered', `Removed alert router email node for ${deleted.name}.`, 'warning');
+    }
+
+    renderContacts();
+
+    // ================= SIMULATOR DISPATCHER TOASTS =================
+    const toastContainer = document.getElementById('toast-container');
+
+    function showToast(title, message, type = 'success') {
+        if (!toastContainer) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `hud-toast ${type}`;
+        
+        toast.innerHTML = `
+            <div class="toast-indicator"></div>
+            <div class="toast-content">
+              <h4>${title}</h4>
+              <p>${message}</p>
+            </div>
+            <button class="toast-close-btn" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Auto remove after 5.5 seconds
+        setTimeout(() => {
+            if (toast) {
+                toast.classList.add('fading');
+                setTimeout(() => toast.remove(), 400);
+            }
+        }, 5500);
+    }
+
+    function triggerMockInterception() {
+        const isEmailActive = document.getElementById('dispatch-email').checked;
+        const isSmsActive = document.getElementById('dispatch-sms').checked;
+        const isSirenActive = document.getElementById('dispatch-siren').checked;
+
+        // 1. Show immediate local toast breach warnings
+        showToast(
+            '🚨 PROXIMITY VIOLATION DETECTED', 
+            `Target breached warning threshold around Sector B at confidence 94.2%. Machine override running!`, 
+            'danger'
+        );
+
+        // 2. Dispatch simulated triggers
+        setTimeout(() => {
+            if (isEmailActive && contacts.length > 0) {
+                showToast(
+                    '✉️ SMTP PAYLOAD TRANSMITTED', 
+                    `Safety incident dispatch packet transmitted successfully to ${contacts[0].email} and ${contacts.length - 1} other operator nodes.`, 
+                    'success'
+                );
+            } else if (isEmailActive) {
+                showToast(
+                    '⚠️ SMTP TRANSMISSION LOCKED', 
+                    'Email dispatch is enabled but no supervisor nodes are registered inside database.', 
+                    'warning'
+                );
+            }
+        }, 1200);
+
+        setTimeout(() => {
+            if (isSmsActive) {
+                showToast(
+                    '📱 CELLULAR Webhook payload DISPATCHED', 
+                    'SMS warning message payload successfully queued to SMS gateway.', 
+                    'success'
+                );
+            }
+        }, 2200);
+
+        setTimeout(() => {
+            if (isSirenActive) {
+                showToast(
+                    '🚨 RELAY PLC INTERCEPT TRIGGERED', 
+                    'Physical Contactor Cutoff Sync active. Audible factory warning relays active.', 
+                    'warning'
+                );
+            }
+        }, 3000);
+    }
+
+    // Latency & System Time Clock
+    function updateHUDData() {
+        const timeEl = document.getElementById('system-clock');
+        const latencyEl = document.getElementById('system-latency');
+        
+        if (timeEl) {
+            const now = new Date();
+            const timeStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            timeEl.textContent = 'SYSTEM TIME: ' + timeStr.split(' ')[1] + ' UTC';
+        }
+        
+        if (latencyEl) {
+            const lat = Math.floor(Math.random() * 5) + 6;
+            latencyEl.textContent = `LATENCY: ${lat}ms`;
+        }
+    }
+    
+    setInterval(updateHUDData, 1000);
+    updateHUDData();
+  </script>
+
+  <!-- SCRIPTS -->
+  <script src="../js/auth.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smart Safety System | Edge AI Diagnostics & Node Health</title>
+  
+  <!-- Access Guard Rail -->
+  <script>
+    if (localStorage.getItem("isLoggedIn") !== "true" || localStorage.getItem("userRole") !== "admin") {
+      window.location.replace("index.html");
+    }
+  </script>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/diagnostics.css?v=1">
+</head>
+
+<body>
+
+  <!-- BACKDROP PARTICLES CANVAS -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+  <div class="laser-scan-line"></div>
+
+  <!-- FUTURISTIC HUD OVERLAYS -->
+  <div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+      <span>DIAGNOSTICS_ENGINE: ACTIVE</span>
+      <span>NODE_MONITOR: RUNNING</span>
+      <span class="status-badge" style="margin-top: 10px;">
+        <span class="status-dot"></span> hardware uplink synced
+      </span>
+    </div>
+
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+      <span>SYS_ANALYSIS_CHANNEL</span>
+      <span>SECURE CORE PROT</span>
+      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: --ms</span>
+      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
+    </div>
+
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="solution.html">Solution</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="diagnostics.html" class="active">Diagnostics</a></li>
+        <li><a href="notifications.html">Alerts</a></li>
+        <li><a href="incident_log.html">Incident Logs</a></li>
+        <li><a href="admin.html">Admin</a></li>
+      </ul>
+
+      <div class="auth-buttons" id="auth-buttons" style="display: none;">
+        <a href="login.html">Log In</a>
+        <a href="signup.html">Sign Up</a>
+      </div>
+
+      <div id="profile-section" style="display:none;" class="profile-box">
+        <span id="profile-name" class="profile-name">Operator</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main diagnostics-container">
+
+      <div class="diagnostics-header">
+        <h1>Edge AI Diagnostics & Node Health</h1>
+        <p class="subtitle">Real-time telemetry of compute nodes, hardware loads, IP gateway jitters, and deep learning inference metrics.</p>
+      </div>
+
+      <!-- HARDWARE LOAD METRICS GRIDS -->
+      <div class="resources-grid">
+        
+        <!-- CPU Load Circle -->
+        <div class="resource-card">
+          <h3>Compute Load (CPU)</h3>
+          <div class="gauge-wrapper">
+            <svg class="progress-ring" width="160" height="160">
+              <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.03)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+              <circle id="cpu-ring" class="progress-ring__circle" stroke="var(--primary-neon)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+            </svg>
+            <div id="cpu-percent" class="gauge-value">--%</div>
+          </div>
+          <div class="resource-footer">Intel Xeon Edge Controller</div>
+        </div>
+
+        <!-- RAM Allocation Circle -->
+        <div class="resource-card">
+          <h3>Memory Usage (RAM)</h3>
+          <div class="gauge-wrapper">
+            <svg class="progress-ring" width="160" height="160">
+              <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.03)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+              <circle id="ram-ring" class="progress-ring__circle" stroke="var(--primary-blue)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+            </svg>
+            <div id="ram-percent" class="gauge-value">--%</div>
+          </div>
+          <div class="resource-footer">Shared Edge Buffer Allocation</div>
+        </div>
+
+        <!-- GPU Core Temperature Circle -->
+        <div class="resource-card">
+          <h3>Edge Accelerator Temp</h3>
+          <div class="gauge-wrapper">
+            <svg class="progress-ring" width="160" height="160">
+              <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.03)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+              <circle id="temp-ring" class="progress-ring__circle" stroke="var(--danger-red)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+            </svg>
+            <div id="temp-value" class="gauge-value">--°C</div>
+          </div>
+          <div class="resource-footer">NVIDIA Jetson Core Sentinel</div>
+        </div>
+
+      </div>
+
+      <!-- MIDDLE DUAL LAYOUT: INFERENCE PERFORMANCE & CAMERA NETWORK NODES -->
+      <div class="diagnostics-dual-grid">
+
+        <!-- Inference Velocity Speedometer -->
+        <div class="diagnostics-card performance-panel">
+          <h2>🧠 Neural Engine Inference Telemetry</h2>
+          <span class="section-desc">Active benchmarking of deep-learning proximity calculations.</span>
+          
+          <div class="metrics-shelf">
+            <div class="metric-block">
+              <span class="metric-label">YOLO Inference Time</span>
+              <span id="inference-time" class="metric-number-highlight">18.4 ms</span>
+              <span class="metric-sublabel">Geometric coordinate parse</span>
+            </div>
+            
+            <div class="metric-block">
+              <span class="metric-label">Execution Velocity</span>
+              <span id="neural-fps" class="metric-number-highlight text-cyan">58.2 FPS</span>
+              <span class="metric-sublabel">Frames processed/second</span>
+            </div>
+          </div>
+
+          <div class="hardware-spec-details">
+            <div class="spec-row">
+              <span>Active Model Path</span>
+              <span class="code-font">yolov8n-proximity-shield.pt</span>
+            </div>
+            <div class="spec-row">
+              <span>GPU Tensor Cores Active</span>
+              <span class="text-cyan">128 / 128 (100% capacity)</span>
+            </div>
+            <div class="spec-row">
+              <span>Floating Intercept Relay Delay</span>
+              <span class="text-green">0.45 ms (contactor limit)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera Network Gateway Health -->
+        <div class="diagnostics-card camera-health-panel">
+          <h2>🔌 Camera Gateway Network Jitters</h2>
+          <span class="section-desc">Gateway logs, pings, and frame buffer health of active surveillance streams.</span>
+          
+          <div class="camera-nodes-list">
+            
+            <div class="camera-node-row">
+              <div class="node-info">
+                <span class="node-name">📹 Camera Node 1 (Operator Sector A)</span>
+                <span class="node-ip">192.168.10.45 &bull; <span class="text-green">ONLINE</span></span>
+              </div>
+              <div class="node-ping-graph">
+                <div class="mini-bar-graph">
+                  <div class="mini-bar" style="height: 45%;"></div>
+                  <div class="mini-bar" style="height: 52%;"></div>
+                  <div class="mini-bar" style="height: 38%;"></div>
+                  <div class="mini-bar" style="height: 48%;"></div>
+                  <div class="mini-bar" style="height: 42%;"></div>
+                </div>
+                <span id="ping-cam-1" class="ping-latency">7ms</span>
+              </div>
+            </div>
+
+            <div class="camera-node-row">
+              <div class="node-info">
+                <span class="node-name">📹 Camera Node 2 (Relay Contactor B)</span>
+                <span class="node-ip">192.168.10.46 &bull; <span class="text-green">ONLINE</span></span>
+              </div>
+              <div class="node-ping-graph">
+                <div class="mini-bar-graph">
+                  <div class="mini-bar" style="height: 58%;"></div>
+                  <div class="mini-bar" style="height: 64%;"></div>
+                  <div class="mini-bar" style="height: 51%;"></div>
+                  <div class="mini-bar" style="height: 68%;"></div>
+                  <div class="mini-bar" style="height: 60%;"></div>
+                </div>
+                <span id="ping-cam-2" class="ping-latency text-blue">9ms</span>
+              </div>
+            </div>
+
+            <div class="camera-node-row">
+              <div class="node-info">
+                <span class="node-name">📹 USB Test Input / Core Webcam</span>
+                <span class="node-ip">DEV_UVC_USB001 &bull; <span class="text-green">ACTIVE</span></span>
+              </div>
+              <div class="node-ping-graph">
+                <div class="mini-bar-graph">
+                  <div class="mini-bar" style="height: 18%;"></div>
+                  <div class="mini-bar" style="height: 22%;"></div>
+                  <div class="mini-bar" style="height: 14%;"></div>
+                  <div class="mini-bar" style="height: 24%;"></div>
+                  <div class="mini-bar" style="height: 16%;"></div>
+                </div>
+                <span id="ping-cam-3" class="ping-latency">3ms</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- LIVE SYSTEM LOG CONSOLE TERMINAL -->
+      <div class="diagnostics-card log-terminal-panel">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red"></span>
+            <span class="dot-yellow"></span>
+            <span class="dot-green"></span>
+          </div>
+          <div class="terminal-title">LIVE SYSTEM UPLINK DIAGNOSTICS &bull; terminal_io</div>
+          <span class="status-badge-inline">stream active</span>
+        </div>
+        
+        <div id="terminal-body" class="terminal-body">
+          <div class="terminal-line"><span class="line-time">[23:10:01]</span> <span class="line-status status-ok">[OK]</span> SECURE_PLC_CONTROLLER_SYNC: Connection verified at 115200 baud.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:02]</span> <span class="line-status status-ok">[OK]</span> NEURAL_ENGINE_CALIBRATED: Acceleration model successfully pinned to GPU core.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:04]</span> <span class="line-status status-ok">[OK]</span> ESTABLISHED_CAM_STREAM: Ingest core listening on 192.168.10.45.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:05]</span> <span class="line-status status-warn">[WARN]</span> FRAME_BUFFER_JITTER: Latency deviation spikes up to 12ms. Restructuring buffer queues.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:07]</span> <span class="line-status status-ok">[OK]</span> RESOLVED_QUEUE_OVERLAY: Buffer queues aligned. Real-time stream synced.</div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+      <p>&copy; 2026 AI Smart Safety System | Secure Operator Diagnostics Control | Version 2.8.5-LTS</p>
+    </footer>
+
+  </div>
+
+  <!-- PARTICLES, CLOCK, AND DYNAMIC TELEMETRY CONTROLLERS -->
+  <script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.alpha = Math.random() * 0.5 + 0.25;
+        }
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+        draw() {
+            ctx.fillStyle = `rgba(6, 182, 212, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const particleCount = 45;
+    for (let i = 0; i < particleCount; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // ================= DYNAMIC RESOURCES GAUGES LOGIC =================
+    const cpuRing = document.getElementById('cpu-ring');
+    const ramRing = document.getElementById('ram-ring');
+    const tempRing = document.getElementById('temp-ring');
+
+    const circumference = 2 * Math.PI * 70; // r=70
+    
+    // Init circumferences
+    [cpuRing, ramRing, tempRing].forEach(ring => {
+        if(ring) {
+            ring.style.strokeDasharray = `${circumference} ${circumference}`;
+            ring.style.strokeDashoffset = circumference;
+        }
+    });
+
+    function setGaugeProgress(ring, textEl, value, max = 100, suffix = '%') {
+        if (!ring || !textEl) return;
+        const percent = (value / max) * 100;
+        const offset = circumference - (percent / 100) * circumference;
+        ring.style.strokeDashoffset = offset;
+        textEl.textContent = `${Math.round(value)}${suffix}`;
+    }
+
+    // Live fluctuate resources
+    let currentCPU = 42;
+    let currentRAM = 64;
+    let currentTemp = 58;
+
+    function updateResources() {
+        // Random walking values
+        currentCPU += (Math.random() - 0.5) * 8;
+        currentCPU = Math.max(25, Math.min(88, currentCPU));
+        setGaugeProgress(cpuRing, document.getElementById('cpu-percent'), currentCPU);
+
+        currentRAM += (Math.random() - 0.5) * 2;
+        currentRAM = Math.max(58, Math.min(72, currentRAM));
+        setGaugeProgress(ramRing, document.getElementById('ram-percent'), currentRAM);
+
+        currentTemp += (Math.random() - 0.5) * 3;
+        currentTemp = Math.max(45, Math.min(78, currentTemp));
+        setGaugeProgress(tempRing, document.getElementById('temp-value'), currentTemp, 100, '°C');
+
+        // Fluctuate Inference Performance
+        const inferenceEl = document.getElementById('inference-time');
+        const fpsEl = document.getElementById('neural-fps');
+        if (inferenceEl && fpsEl) {
+            const time = (16.2 + Math.random() * 3.8).toFixed(1);
+            const fps = (1000 / time).toFixed(1);
+            inferenceEl.textContent = `${time} ms`;
+            fpsEl.textContent = `${fps} FPS`;
+        }
+
+        // Fluctuate Pings
+        for (let i = 1; i <= 3; i++) {
+            const pingEl = document.getElementById(`ping-cam-${i}`);
+            if (pingEl) {
+                const basePing = i === 3 ? 3 : (i === 1 ? 7 : 9);
+                const pingVal = Math.max(1, basePing + Math.floor((Math.random() - 0.5) * 4));
+                pingEl.textContent = `${pingVal}ms`;
+            }
+        }
+    }
+
+    setInterval(updateResources, 1800);
+    updateResources();
+
+    // ================= TERMINAL COMMAND INJECTOR =================
+    const terminalBody = document.getElementById('terminal-body');
+    const logsTemplates = [
+        { type: 'ok', msg: 'PLC_RETRANSMIT: Contactor confirmation packet received successfully.' },
+        { type: 'ok', msg: 'MODEL_CALIBRATION_SYNC: Real-time bounding box anchors synced.' },
+        { type: 'warn', msg: 'FRAME_DROPPED: Camera feed frame buffer queue saturated. Auto-purging frame caches.' },
+        { type: 'ok', msg: 'PLC_STATE_ACK: Machine running normal state. Speed limit locked.' },
+        { type: 'ok', msg: 'NETWORK_SOCKET_OK: SSL socket tunnels refreshed with edge server.' },
+        { type: 'warn', msg: 'LIGHT_CONTRAST_SHIFT: Contrast drop in Camera Node 2. Adjusting auto-exposure parameters.' },
+        { type: 'ok', msg: 'EXPOSURE_COMPENSATED: Contrast calibration stable.' }
+    ];
+
+    function appendTerminalLog() {
+        if (!terminalBody) return;
+        
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+        const log = logsTemplates[Math.floor(Math.random() * logsTemplates.length)];
+        
+        const line = document.createElement('div');
+        line.className = 'terminal-line';
+        
+        const statusClass = log.type === 'ok' ? 'status-ok' : 'status-warn';
+        const statusText = log.type === 'ok' ? '[OK]' : '[WARN]';
+        
+        line.innerHTML = `<span class="line-time">[${timeStr}]</span> <span class="line-status ${statusClass}">${statusText}</span> ${log.msg}`;
+        terminalBody.appendChild(line);
+        
+        // Auto scroll to bottom
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+        
+        // Limit total lines to 20 to prevent performance degradation
+        while (terminalBody.childElementCount > 25) {
+            terminalBody.removeChild(terminalBody.firstChild);
+        }
+    }
+
+    // Append logs randomly between 3s and 7s
+    function scheduleLogs() {
+        const delay = Math.floor(Math.random() * 4000) + 3000;
+        setTimeout(() => {
+            appendTerminalLog();
+            scheduleLogs();
+        }, delay);
+    }
+    scheduleLogs();
+
+    // Latency & System Time Clock
+    function updateHUDData() {
+        const timeEl = document.getElementById('system-clock');
+        const latencyEl = document.getElementById('system-latency');
+        
+        if (timeEl) {
+            const now = new Date();
+            const timeStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            timeEl.textContent = 'SYSTEM TIME: ' + timeStr.split(' ')[1] + ' UTC';
+        }
+        
+        if (latencyEl) {
+            const lat = Math.floor(Math.random() * 5) + 6;
+            latencyEl.textContent = `LATENCY: ${lat}ms`;
+        }
+    }
+    
+    setInterval(updateHUDData, 1000);
+    updateHUDData();
+  </script>
+
+  <!-- SCRIPTS -->
+  <script src="../js/auth.js"></script>
+</body>
+
+</html>

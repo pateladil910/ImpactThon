@@ -3,8 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Safety Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual Operations Dashboard | Live Control Console</title>
 
   <!-- CSS -->
   <link rel="stylesheet" href="../css/dashboard.css" />
@@ -13,17 +13,69 @@
 
 <body>
 
+  <!-- BACKDROP PARTICLES CANVAS -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+  <div class="laser-scan-line"></div>
+
+  <!-- FUTURISTIC HUD OVERLAYS -->
+  <div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+      <span>SYSTEM_CONTROL: MANUAL_SCHED</span>
+      <span>AI_SCANNER: ONLINE</span>
+      <span class="status-badge" style="margin-top: 10px;">
+        <span class="status-dot"></span> SCANNER ONLINE
+      </span>
+    </div>
+
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+      <span>CAM_GATEWAY_MANUAL</span>
+      <span>1920x1080 @ 60.0fps</span>
+      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: 8ms</span>
+      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
+    </div>
+
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+    </div>
+  </div>
+
   <div class="page">
 
     <!-- ================= NAVBAR ================= -->
     <nav class="navbar">
-      <div class="logo">AI Safety</div>
-      <ul class="nav-links">
-        <li onclick="location.href='index.html'">Home</li>
-        <li onclick="location.href='chart.html'">Analytics</li>
-        <li onclick="location.href='contact.html'">Contact</li>
-        <li onclick="location.href='setup.html'">Configuration</li>
+      <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="solution.html">Solution</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
       </ul>
+
+      <div class="auth-buttons" id="auth-buttons">
+        <a href="login.html">Log In</a>
+        <a href="signup.html">Sign Up</a>
+      </div>
+
+      <div id="profile-section" style="display:none;" class="profile-box">
+        <span id="profile-name" class="profile-name">User</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </nav>
 
     <!-- ================= MAIN ================= -->
@@ -31,18 +83,34 @@
 
       <h1>Manual Operation Dashboard</h1>
       <p class="subtitle">
-        Real-time monitoring of human proximity, machine status, and AI-based safety decisions.
+        Real-time temporal scheduling of operator shifts, custom machinery cycles, and automated hardware safety shutdowns.
       </p>
 
       <!-- ================= GRID ================= -->
       <div class="dashboard-grid">
 
-        <!-- 🎥 CAMERA -->
+        <!-- 🎥 CAMERA VIEWPORT -->
         <div class="box camera">
-          <div class="box-title">Camera Detection Live</div>
+          <div class="box-title">🎥 AI Calibration Camera Feed</div>
 
-          <div class="camera-box">
-            <img id="ai-camera" alt="AI Camera Stream" />
+          <div class="camera-viewport-wrapper">
+            <div class="camera-box">
+              <!-- HUD Feed Ticker -->
+              <div class="camera-feed-hud">
+                <div class="feed-hud-top">
+                  <span class="feed-hud-rec">
+                    <span class="feed-rec-dot"></span> LIVE
+                  </span>
+                  <span>1080P CH1</span>
+                </div>
+                <div>SECURE EDGE AGENT OVERLAY</div>
+              </div>
+              
+              <!-- Scan sweep -->
+              <div class="camera-scanner-sweep"></div>
+              
+              <img id="ai-camera" alt="AI Camera Stream" />
+            </div>
           </div>
 
           <div class="camera-selector" id="camera-selector">
@@ -59,7 +127,7 @@
           <div class="box-title">🛡 Safety Zone</div>
           <div class="box-value" id="safety-status">SAFE</div>
           <div class="box-desc" id="safety-desc">
-            Human distance above threshold
+            Area clear
           </div>
         </div>
 
@@ -68,17 +136,18 @@
           <div class="box-title">🧠 AI Confidence</div>
           <div class="box-value" id="confidence-value">92%</div>
           <div class="box-desc">
-            YOLO detection accuracy
+            YOLO Object Detection Accuracy
           </div>
         </div>
 
+        <!-- 🕒 MANUAL SCHEDULE -->
         <div class="box" id="manual-schedule-box">
           <h4>🕒 Manual Schedule</h4>
           <h2 id="manual-time-display">--</h2>
           <p id="manual-timer-status">Waiting for config...</p>
         </div>
 
-        <!-- 🚨 SYSTEM ACTION (REACTS TO BOTH) -->
+        <!-- 🚨 SYSTEM ACTION -->
         <div class="box safe" id="action-box">
           <div class="box-title">🚨 System Action</div>
           <div class="box-value" id="machine-action">RUN</div>
@@ -89,26 +158,102 @@
 
       </div>
 
+      <!-- ================= CONTROLS ================= -->
+      <div class="history-btn-wrapper">
+        <a href="history.html" class="history-btn">
+          📊 View Detection History →
+        </a>
+      </div>
 
-  </div>
+    </main>
 
-  <div class="history-btn-wrapper">
-    <a href="history.html" class="history-btn">
-      📊 View Detection History →
-    </a>
-  </div>
-
-
-  </main>
-
-  <!-- ================= FOOTER ================= -->
-  <footer class="footer">
-    © 2025 AI Smart Safety System | Live Industrial Monitoring
-  </footer>
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+      &copy; 2026 AI Smart Safety System | Industrial Surveillance & Defense Core
+    </footer>
 
   </div>
 
   <!-- ================= JAVASCRIPT ================= -->
+  
+  <!-- Particles canvas, clock ticking overlays -->
+  <script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = Math.random() * 0.4 - 0.2;
+            this.alpha = Math.random() * 0.5 + 0.1;
+            this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
+        }
+
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const count = Math.min(60, Math.floor(window.innerWidth / 20));
+    for (let i = 0; i < count; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Real-time ticking system clock inside HUD
+    const clockElement = document.getElementById('system-clock');
+    function updateClock() {
+        if (!clockElement) return;
+        const now = new Date();
+        const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
+        clockElement.textContent = `SYSTEM TIME: ${timeString} UTC`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Simulate latency shifts inside HUD
+    setInterval(() => {
+        const latencyEl = document.getElementById('system-latency');
+        if (latencyEl) {
+            latencyEl.textContent = `LATENCY: ${Math.floor(6 + Math.random() * 5)}ms`;
+        }
+    }, 3000);
+  </script>
+
+  <!-- Native Active Stream and Fetch updates -->
   <script>
     /* ==========================
        🎥 CAMERA STREAM
@@ -201,19 +346,14 @@
 
         // Handle overnight logic (e.g. 23:00 - 02:00)
         const [startH, startM] = startStr.split(":").map(Number);
-        // If the start-time is "later" than end-time (e.g. 22:00 vs 02:00), 
-        // and we are currently in the "start" part (e.g. 23:00), 
-        // then end is tomorrow.
         if (endH < startH && now.getHours() >= startH) {
           end.setDate(end.getDate() + 1);
         }
-        // If we are in the "early morning" part (e.g. 01:00), end is today. 
-        // The default `new Date()` handles today correctly.
 
         if (now >= end) {
           // EXPIRED
           document.getElementById("manual-timer-status").innerText = "⚠️ TIME EXPIRED";
-          document.getElementById("manual-timer-status").style.color = "red";
+          document.getElementById("manual-timer-status").style.color = "#ef4444";
 
           // Update System Action Box
           const machAct = document.getElementById("machine-action");
@@ -236,7 +376,7 @@
           const secs = Math.floor((diff % 60000) / 1000);
 
           document.getElementById("manual-timer-status").innerText = `Ends in ${hours}h ${mins}m ${secs}s`;
-          document.getElementById("manual-timer-status").style.color = "#00ff88";
+          document.getElementById("manual-timer-status").style.color = "#10b981";
         }
       }, 1000);
     }
@@ -246,7 +386,7 @@
       if (stopTriggered) return;
       stopTriggered = true;
       try {
-await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST" });
+        await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST" });
       } catch (e) {
         console.error(e);
       }
@@ -254,19 +394,6 @@ await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST
 
     // Start
     initManualDashboard();
-
-    // Standard Status Updates (Keep basic stuff or reduce)
-    // We basically just need camera and maybe safety zone status
-    // But System Action is now controlled by Timer in this view? 
-    // Or do we still want "Safety Stop" separately?
-    // Let's keep data updates but ignore System Action overwriting our Timer box
-
-    // ... (Old updateStatus code omitted or simplified?)
-    // Actually, updateStatus writes to "action-box", "system-action". 
-    // I renamed them in HTML above to "timer-action" etc?
-    // Wait, I reused id="action-box", id="timer-action" (was system-action).
-    // The old script references "system-action". So collision.
-    // I should probably REMOVE the old updateStatus call that overwrites box 5.
 
     // Re-implementing a simpler updateStatus for Manual Dash that doesn't touch Box 5
     const STATUS_URL = "https://impactthon-ai.onrender.com/status";
@@ -282,12 +409,12 @@ await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST
         if (data.safety === "DANGER") {
           document.getElementById("safety-status").innerText = "DANGER";
           document.getElementById("safety-desc").innerText = "Human detected!";
-          safetyBox.classList.replace("safe", "danger");
+          safetyBox.classList.add("danger");
+          safetyBox.classList.remove("safe");
 
           // Also Stop Machine UI (unless timer already stopped it)
           if (machAct && machAct.innerText !== "STOP") {
             machAct.innerText = "STOP";
-            machAct.style.color = "red";
           }
           const actionBox = document.getElementById("action-box");
           const actionDesc = document.getElementById("machine-desc");
@@ -295,18 +422,18 @@ await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST
             actionBox.classList.add("danger");
             actionBox.classList.remove("safe");
           }
-          if (actionDesc && machAct && machAct.innerText === "STOP") {
+          if (actionDesc) {
             actionDesc.innerText = "Emergency Stop - Human Detected";
           }
         } else {
           document.getElementById("safety-status").innerText = "SAFE";
           document.getElementById("safety-desc").innerText = "Area clear";
-          safetyBox.classList.replace("danger", "safe");
+          safetyBox.classList.add("safe");
+          safetyBox.classList.remove("danger");
 
           // Only RUN if not forced STOP by timer
           if (machAct && !stopTriggered) {
             machAct.innerText = "RUN";
-            machAct.style.color = "#00ff88";
             const actionBox = document.getElementById("action-box");
             const actionDesc = document.getElementById("machine-desc");
             if (actionBox) {
@@ -325,9 +452,10 @@ await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST
       } catch (e) { }
     }
     setInterval(updateSafetyOnly, 500);
-
-    /* Removed duplicate camera stream script */
   </script>
+
+  <!-- Auth and Mobile Menu Handler -->
+  <script src="../js/auth.js"></script>
 
 </body>
 

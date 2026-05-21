@@ -336,6 +336,7 @@ function checkAuthUI() {
 
   const isLoggedIn = localStorage.getItem("isLoggedIn");
   const username = localStorage.getItem("username");
+  const userRole = localStorage.getItem("userRole");
 
   const authButtons = document.getElementById("auth-buttons");
   const profileSection = document.getElementById("profile-section");
@@ -344,7 +345,9 @@ function checkAuthUI() {
   if (isLoggedIn === "true") {
 
     if (authButtons) {
-      authButtons.style.display = "none";
+      if (authButtons.querySelector('a[href*="login.html"]')) {
+        authButtons.style.display = "none";
+      }
     }
 
     if (profileSection) {
@@ -358,13 +361,29 @@ function checkAuthUI() {
   } else {
 
     if (authButtons) {
-      authButtons.style.display = "flex";
+      if (authButtons.querySelector('a[href*="login.html"]')) {
+        authButtons.style.display = "flex";
+      }
     }
 
     if (profileSection) {
       profileSection.style.display = "none";
     }
   }
+
+  // Dynamic admin details filter
+  const isAdmin = isLoggedIn === "true" && userRole === "admin";
+  const adminPages = ["admin.html", "diagnostics.html", "notifications.html", "incident_log.html"];
+
+  adminPages.forEach(page => {
+    const links = document.querySelectorAll(`a[href*="${page}"]`);
+    links.forEach(link => {
+      const li = link.closest("li");
+      if (li) {
+        li.style.display = isAdmin ? "" : "none";
+      }
+    });
+  });
 }
 
 // ---------------- INIT ----------------

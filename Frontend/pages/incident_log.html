@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smart Safety System | Safety Incident Compliance Audit Log</title>
+  
+  <!-- Access Guard Rail -->
+  <script>
+    if (localStorage.getItem("isLoggedIn") !== "true" || localStorage.getItem("userRole") !== "admin") {
+      window.location.replace("index.html");
+    }
+  </script>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/incident_log.css?v=1">
+</head>
+
+<body>
+
+  <!-- BACKDROP PARTICLES CANVAS -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+  <div class="laser-scan-line"></div>
+
+  <!-- FUTURISTIC HUD OVERLAYS -->
+  <div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+      <span>AUDIT_LOGGER: RUNNING</span>
+      <span>COMPLIANCE_LEVEL: ISO_27001</span>
+      <span class="status-badge" style="margin-top: 10px;">
+        <span class="status-dot"></span> audit log live
+      </span>
+    </div>
+
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+      <span>SECURE AUDIT DATABASE</span>
+      <span>ENCRYPTED RECORDS KEY</span>
+      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: 8ms</span>
+      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
+    </div>
+
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+      <span>SAFETY CORE SHIELD &bull; AUDIT_TRAIL_ACTIVE</span>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="solution.html">Solution</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="notifications.html">Alerts</a></li>
+        <li><a href="incident_log.html" class="active">Incident Logs</a></li>
+        <li><a href="admin.html">Admin</a></li>
+      </ul>
+
+      <div class="auth-buttons" id="auth-buttons" style="display: none;">
+        <a href="login.html">Log In</a>
+        <a href="signup.html">Sign Up</a>
+      </div>
+
+      <div id="profile-section" style="display:none;" class="profile-box">
+        <span id="profile-name" class="profile-name">Operator</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main audit-container">
+
+      <div class="audit-header">
+        <h1>Safety Incident Compliance Audit Log</h1>
+        <p class="subtitle">Chronological, immutable record of danger zone incursions, safety gear compliance breaches, and active operator response statuses.</p>
+      </div>
+
+      <!-- SEVERITY SHELF METRICS CARDS -->
+      <div class="severity-grid">
+        
+        <!-- Critical breaches card -->
+        <div class="severity-card critical-card">
+          <div class="card-glow-element"></div>
+          <div class="card-content">
+            <span class="severity-icon-wrapper">🚨</span>
+            <div class="metric-text-box">
+              <h3 id="critical-count">0</h3>
+              <p>Critical Incursions</p>
+            </div>
+          </div>
+          <div class="card-badge bg-red-pulse">Immediate Danger</div>
+        </div>
+
+        <!-- Warning incidents card -->
+        <div class="severity-card warning-card">
+          <div class="card-glow-element"></div>
+          <div class="card-content">
+            <span class="severity-icon-wrapper">⚠️</span>
+            <div class="metric-text-box">
+              <h3 id="warning-count">0</h3>
+              <p>Warning Incidents</p>
+            </div>
+          </div>
+          <div class="card-badge bg-yellow-pulse">Warning Zones / PPE</div>
+        </div>
+
+        <!-- System indicators card -->
+        <div class="severity-card system-card">
+          <div class="card-glow-element"></div>
+          <div class="card-content">
+            <span class="severity-icon-wrapper">⚙️</span>
+            <div class="metric-text-box">
+              <h3 id="system-count">0</h3>
+              <p>System Events</p>
+            </div>
+          </div>
+          <div class="card-badge bg-blue-pulse">Network / Bypasses</div>
+        </div>
+
+      </div>
+
+      <!-- FILTERING & SIMULATION HUD HUB -->
+      <div class="audit-hub-card">
+        <div class="hub-header">
+          <h2>🛡️ Database Auditing & Control Panel</h2>
+          <p class="hub-sub">Query incident parameters, simulate live incursions, and compile compliance records.</p>
+        </div>
+        
+        <div class="filter-controls-bar">
+          <!-- Text Search -->
+          <div class="input-wrapper search-wrapper">
+            <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <input type="text" id="search-type" placeholder="Search breach type (e.g. Human)" oninput="filterIncidents()">
+          </div>
+
+          <!-- Camera Select -->
+          <div class="input-wrapper">
+            <select id="filter-camera" onchange="filterIncidents()">
+              <option value="all">📹 All Cameras / Nodes</option>
+              <option value="Camera Node 1">Camera Node 1</option>
+              <option value="Camera Node 2">Camera Node 2</option>
+              <option value="USB Test Input">USB Test Input</option>
+            </select>
+          </div>
+
+          <!-- Severity Select -->
+          <div class="input-wrapper">
+            <select id="filter-severity" onchange="filterIncidents()">
+              <option value="all">⚡ All Severities</option>
+              <option value="critical">🚨 Critical</option>
+              <option value="warning">⚠️ Warning</option>
+              <option value="system">⚙️ System</option>
+            </select>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="actions-wrapper">
+            <button class="glow-btn btn-primary" onclick="exportCSV()">
+              <span>📥 Export CSV Audit</span>
+            </button>
+            <button class="glow-btn btn-sec" onclick="openSimModal()">
+              <span>⚡ Simulate Incident</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIT DATA GRID TABLE -->
+      <div class="audit-table-card">
+        <div class="table-responsive-wrapper">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Originating Sector / Node</th>
+                <th>Threat Metric Type</th>
+                <th>Confidence</th>
+                <th>Severity Status</th>
+                <th>Acknowledgment Override</th>
+              </tr>
+            </thead>
+            <tbody id="incidents-tbody">
+              <!-- Logs injected here -->
+              <tr>
+                <td colspan="6" class="loading-state">
+                  <div class="loader-circle"></div>
+                  <span>Pulling real-time database logs...</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Pagination -->
+        <div class="table-footer-controls">
+          <span class="pagination-info" id="pagination-text">Showing 0 - 0 of 0 records</span>
+          <div class="pagination-buttons">
+            <button id="btn-prev" onclick="prevPage()" disabled>Previous</button>
+            <button id="btn-next" onclick="nextPage()" disabled>Next</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- SIMULATION OVERLAY MODAL -->
+    <div id="sim-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>⚡ Secure AI Threat Simulation Injector</h3>
+          <button class="close-btn" onclick="closeSimModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-desc">Simulate a hardware/software trigger event in the neural layer. This transmits a mock safety zone infraction to the database.</p>
+          
+          <form id="sim-form" onsubmit="submitSimulation(event)">
+            <div class="form-group">
+              <label for="sim-type">Threat Metric Type</label>
+              <select id="sim-type" required>
+                <option value="Zone Breach - Human Near Gear">Human Zone Breach</option>
+                <option value="PPE Compliance - No Vest Detected">PPE Violation: No Safety Vest</option>
+                <option value="PPE Compliance - No Helmet Detected">PPE Violation: No Helmet</option>
+                <option value="Camera Connection Offline">Camera Offline Event</option>
+                <option value="Emergency PLC Contactor Override">Manual Contactor Override</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="sim-camera">Originating Camera</label>
+              <select id="sim-camera" required>
+                <option value="Camera Node 1">Camera Node 1 (Operator Sector A)</option>
+                <option value="Camera Node 2">Camera Node 2 (Relay Contactor B)</option>
+                <option value="USB Test Input">USB Test Input (Core Webcam)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="sim-confidence">Threat Confidence Level (%)</label>
+              <input type="number" id="sim-confidence" min="10" max="100" value="92" required>
+            </div>
+
+            <button type="submit" class="glow-btn btn-primary modal-submit">
+              <span>🚀 Dispatch Threat Log</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+      <p>&copy; 2026 AI Smart Safety System | Encrypted Compliance Auditor Log | Version 2.8.5-LTS</p>
+    </footer>
+
+  </div>
+
+  <!-- PARTICLES, CONTROLLER, & API CORE SCRIPTS -->
+  <script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.alpha = Math.random() * 0.4 + 0.2;
+        }
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+        draw() {
+            ctx.fillStyle = `rgba(6, 182, 212, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const particleCount = 45;
+    for (let i = 0; i < particleCount; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // System HUD clock
+    function updateHUDTime() {
+        const timeEl = document.getElementById('system-clock');
+        if (timeEl) {
+            const now = new Date();
+            const timeStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            timeEl.textContent = 'SYSTEM TIME: ' + timeStr.split(' ')[1] + ' UTC';
+        }
+    }
+    setInterval(updateHUDTime, 1000);
+    updateHUDTime();
+  </script>
+
+  <!-- SCRIPTS -->
+  <script src="../js/auth.js"></script>
+  <script src="../js/incident_log.js"></script>
+</body>
+
+</html>

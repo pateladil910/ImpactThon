@@ -4,98 +4,279 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel - AI Smart Safety System</title>
-  <link rel="stylesheet" href="../css/style.css?v=2">
-  <link rel="stylesheet" href="../css/admin.css?v=2">
+  <title>AI Smart Safety System | Secure Admin Command Portal</title>
+  
+  <!-- Access Guard Rail -->
+  <script>
+    if (localStorage.getItem("isLoggedIn") !== "true" || localStorage.getItem("userRole") !== "admin") {
+      window.location.replace("index.html");
+    }
+  </script>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/admin.css?v=3">
 </head>
 
 <body>
-  <!-- NAVBAR -->
-  <nav class="navbar">
-    <div class="logo">AI Safety <span style="color: #ff4d4d;">| Admin</span></div>
-    <ul class="nav-links">
-      <li><a href="index.html">Back to Site</a></li>
-    </ul>
 
-    <!-- Profile / Logout -->
-    <div id="profile-section">
-      <span id="profile-name" class="profile-name">Admin</span>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-  </nav>
+  <!-- BACKDROP PARTICLES CANVAS -->
+  <canvas id="particle-canvas"></canvas>
 
-  <!-- MAIN ADMIN CONTENT -->
-  <section class="admin-container">
+  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+  <div class="laser-scan-line"></div>
 
-    <!-- STATS OVERVIEW -->
-    <div class="admin-header">
-      <h2>System Overview</h2>
-      <p>Manage users and monitor system statistics securely.</p>
+  <!-- FUTURISTIC HUD OVERLAYS -->
+  <div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+      <span>SECURE_UPLINK: RUNNING</span>
+      <span>AI_ADMIN_PORTAL: ONLINE</span>
+      <span class="status-badge" style="margin-top: 10px;">
+        <span class="status-dot"></span> SECURE ADMIN CORE
+      </span>
     </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3 id="stat-users">0</h3>
-        <p>Total Users</p>
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+      <span>ADMIN_GATEWAY_ACTIVE</span>
+      <span>AES_256_SECURED</span>
+      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: --ms</span>
+      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
+    </div>
+
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+        <span class="admin-badge">Admin</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="solution.html">Solution</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="notifications.html">Alerts</a></li>
+        <li><a href="incident_log.html">Incident Logs</a></li>
+        <li><a href="admin.html" class="active">Admin</a></li>
+      </ul>
+
+      <div class="auth-buttons" id="auth-buttons" style="display: none;">
+        <a href="login.html">Log In</a>
+        <a href="signup.html">Sign Up</a>
       </div>
-      <div class="stat-card">
-        <h3 id="stat-detections">0</h3>
-        <p>Total Detections</p>
+
+      <div id="profile-section" style="display:none;" class="profile-box">
+        <span id="profile-name" class="profile-name">Admin</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
-      <div class="stat-card">
-        <h3 id="stat-incidents">0</h3>
-        <p>Total Incidents</p>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+
+    <!-- ================= MAIN ADMIN CONTENT ================= -->
+    <main class="main admin-container">
+
+      <div class="admin-header">
+        <h1>Secure Admin Command Console</h1>
+        <p class="subtitle">Real-time gateway monitoring, user access control, and encrypted feedback message routing.</p>
       </div>
-    </div>
 
-    <!-- USERS TABLE -->
-    <div class="admin-table-container">
-      <h2>User Management</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Detections</th>
-            <th>Role</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="users-tbody">
-          <!-- Users will be injected here via JS -->
-          <tr>
-            <td colspan="5" style="text-align: center;">Loading users...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <!-- STATS OVERVIEW -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon-wrapper">
+            <svg class="stat-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A12.018 12.018 0 0112 21c-2.21 0-4.26-.597-6.02-1.646v-.109m12-2.122a9.04 9.04 0 00-1.625-6.587M15 9.75a3 3 0 11-6 0 3 3 0 016 0zm6.5 3c0-1.28-.415-2.464-1.12-3.427a3 3 0 11-4.76 3.427M9 19.128a9.38a9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M9 19.128v-.003c0-1.113.285-2.16.786-3.07M9 19.128v.109A12.018 12.018 0 016 21c-2.21 0-4.26-.597-6.02-1.646v-.109m12-2.122A9.04 9.04 0 007.375 12.5M10 9.75a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
+          <h3 id="stat-users">0</h3>
+          <p>Total Registered Users</p>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon-wrapper">
+            <svg class="stat-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
+          <h3 id="stat-detections">0</h3>
+          <p>Total Threat Detections</p>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon-wrapper">
+            <svg class="stat-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"></path>
+            </svg>
+          </div>
+          <h3 id="stat-incidents">0</h3>
+          <p>Active System Incidents</p>
+        </div>
+      </div>
 
-    <!-- CONTACT MESSAGES TABLE -->
-    <div class="admin-table-container" style="margin-top: 40px;">
-      <h2>Contact Messages</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Message</th>
-          </tr>
-        </thead>
-        <tbody id="contacts-tbody">
-          <tr>
-            <td colspan="4" style="text-align: center;">Loading messages...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <!-- USERS TABLE -->
+      <div class="admin-table-container">
+        <div class="table-header-bar">
+          <h2>🛡️ User Permissions Management</h2>
+          <span class="table-subtitle">Assign system roles and authenticate secure personnel keys.</span>
+        </div>
+        <div class="table-responsive-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Operator Name</th>
+                <th>Secure Email Address</th>
+                <th>Proximity Detections</th>
+                <th>Operational Role</th>
+                <th>Security Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <!-- Users will be injected here via JS -->
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 40px 0; color: var(--text-muted);">
+                  <div class="table-loader-wrap">
+                    <div class="table-loader"></div>
+                  </div>
+                  Loading system operators registry...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-  </section>
+      <!-- CONTACT MESSAGES TABLE -->
+      <div class="admin-table-container" style="margin-top: 50px;">
+        <div class="table-header-bar">
+          <h2>✉️ Security Feedback & Inbound Packets</h2>
+          <span class="table-subtitle">Read secure terminal messages and operator reports transmitted to root.</span>
+        </div>
+        <div class="table-responsive-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Transmission Date</th>
+                <th>Sender Name</th>
+                <th>Origin Email</th>
+                <th>Transmission Message Details</th>
+              </tr>
+            </thead>
+            <tbody id="contacts-tbody">
+              <tr>
+                <td colspan="4" style="text-align: center; padding: 40px 0; color: var(--text-muted);">
+                  <div class="table-loader-wrap">
+                    <div class="table-loader"></div>
+                  </div>
+                  Loading inbound operational messages...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-  <!-- FOOTER -->
-  <footer>
-    <p>© 2026 AI Smart Safety System | Secure Admin Portal</p>
-  </footer>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+      <p>&copy; 2026 AI Smart Safety System | Secure Admin Command Portal | Version 2.8.5-LTS</p>
+    </footer>
+
+  </div>
+
+  <!-- PARTICLES & CLOCK CLONE FOR THEME SYNC -->
+  <script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.alpha = Math.random() * 0.5 + 0.25;
+        }
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+        draw() {
+            ctx.fillStyle = `rgba(6, 182, 212, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const particleCount = 45;
+    for (let i = 0; i < particleCount; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // System HUD Latency & Real-Time Clock
+    function updateHUDData() {
+        const timeEl = document.getElementById('system-clock');
+        const latencyEl = document.getElementById('system-latency');
+        
+        if (timeEl) {
+            const now = new Date();
+            const timeStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            timeEl.textContent = 'SYSTEM TIME: ' + timeStr.split(' ')[1] + ' UTC';
+        }
+        
+        if (latencyEl) {
+            // Random fluctuation between 6ms and 11ms
+            const lat = Math.floor(Math.random() * 6) + 6;
+            latencyEl.textContent = `LATENCY: ${lat}ms`;
+        }
+    }
+    
+    setInterval(updateHUDData, 1000);
+    updateHUDData();
+  </script>
 
   <!-- SCRIPTS -->
   <script src="../js/auth.js"></script>

@@ -5,123 +5,84 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Danger Analytics | AI Safety</title>
+  <title>Danger Analytics | AI Safety Shield</title>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="../css/dashboard.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body {
-      background: linear-gradient(180deg, #061a1f, #020c0f);
-      color: #eafaf4;
-      font-family: "Segoe UI", sans-serif;
-    }
-
+    /* Custom analytics refinements */
     .analytics-container {
       width: 100%;
-      max-width: 1200px;
+      max-width: 1300px;
       margin: auto;
-      padding: 40px 20px;
+      padding: 0;
     }
 
     .analytics-title {
-      font-size: 26px;
-      color: #00ff9c;
-      margin-bottom: 18px;
+      font-size: 28px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff, var(--primary-neon));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 25px;
       display: flex;
       align-items: center;
       gap: 10px;
+      letter-spacing: -0.5px;
     }
 
     .chart-card {
       position: relative;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--bg-glass);
+      border: 1px solid rgba(6, 182, 212, 0.15);
       border-radius: 20px;
-      padding: 70px 20px 30px;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 0 35px rgba(0, 255, 156, 0.08);
+      padding: 80px 24px 30px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     }
 
     .chart-container {
       width: 100%;
-      max-width: 1200px;
-      height: 420px;
+      height: 440px;
+      margin-top: 15px;
     }
 
     .chart-container canvas {
       width: 100% !important;
       height: 100% !important;
-      width: 100%;
-      max-width: 1200px;
-      height: 100% !important;
-      max-width: 1200px;
-      margin: auto;
-      display: block;
       border-radius: 12px;
-      background: rgba(0, 0, 0, 0.3);
-      box-shadow: 0 0 18px rgba(0, 255, 156, 0.25);
+      background: rgba(4, 8, 16, 0.4);
+      padding: 10px;
     }
 
     /* ===== TOP RIGHT CONTROLS ===== */
     .chart-controls {
       position: absolute;
-      top: 16px;
-      right: 20px;
+      top: 20px;
+      right: 24px;
       display: flex;
-      gap: 10px;
+      gap: 15px;
       z-index: 10;
+      align-items: center;
     }
-
-    /* ===== MONTH FILTER – BRIGHT FIX ===== */
-    .month-filter {
-      background: rgba(0, 255, 156, 0.15);
-      border: 1px solid rgba(0, 255, 156, 0.45);
-      color: #00ff9c;
-
-      padding: 9px 16px;
-      border-radius: 22px;
-
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-
-      box-shadow:
-        0 0 12px rgba(0, 255, 156, 0.65),
-        inset 0 0 6px rgba(255, 255, 255, 0.25);
-
-      transition: all 0.25s ease;
-    }
-
-    .month-filter:hover {
-      box-shadow:
-        0 0 18px rgba(0, 255, 156, 0.9),
-        inset 0 0 10px rgba(255, 255, 255, 0.35);
-      transform: translateY(-1px);
-    }
-
-    /* Dropdown list */
-    .month-filter option {
-      background: #062c28;
-      color: #00ff9c;
-      font-weight: 600;
-    }
-
 
     /* ===== FILTER GROUP ===== */
     .filter-group {
       display: flex;
-      gap: 12px;
+      gap: 15px;
       align-items: center;
-      background: rgba(0, 255, 156, 0.1);
-      padding: 5px 10px;
+      background: rgba(8, 14, 27, 0.6);
+      padding: 6px 16px;
       border-radius: 30px;
-      border: 1px solid rgba(0, 255, 156, 0.3);
+      border: 1px solid rgba(6, 182, 212, 0.25);
     }
 
     /* Toggle Switch */
     .toggle-container {
-      width: 100%;
-      max-width: 1200px;
       display: flex;
       background: rgba(0, 0, 0, 0.3);
       border-radius: 20px;
@@ -130,109 +91,145 @@
     }
 
     .toggle-container input {
-      width: 100%;
-      max-width: 1200px;
       display: none;
     }
 
     .toggle-container label {
-      width: 100%;
-      max-width: 1200px;
-      padding: 6px 14px;
-      font-size: 12px;
+      padding: 6px 16px;
+      font-size: 11px;
+      font-family: 'Space Grotesk', sans-serif;
       font-weight: 700;
       cursor: pointer;
-      color: #00ff9c;
+      color: var(--text-muted);
       transition: all 0.3s ease;
       border-radius: 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .toggle-container input:checked+label {
-      width: 100%;
-      max-width: 1200px;
-      background: #00ff9c;
-      color: #000;
+      background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(6, 182, 212, 0.35);
     }
 
     /* Date Input */
     .date-input {
       background: transparent;
       border: none;
-      color: #00ff9c;
-      font-family: inherit;
+      color: var(--primary-neon);
+      font-family: 'Space Grotesk', sans-serif;
       font-size: 13px;
       font-weight: 600;
       outline: none;
       cursor: pointer;
     }
 
-    /* Calendar icon color fix */
     .date-input::-webkit-calendar-picker-indicator {
-      filter: invert(1) sepia(100%) saturate(500%) hue-rotate(90deg) brightness(120%);
+      filter: invert(1) sepia(100%) saturate(800%) hue-rotate(145deg) brightness(110%);
       cursor: pointer;
     }
 
     .download-chart-btn {
       display: flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(0, 255, 156, 0.15);
-      border: 1px solid rgba(0, 255, 156, 0.45);
-      color: #00ff9c;
-      padding: 8px 18px;
-      border-radius: 24px;
+      gap: 8px;
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      color: var(--primary-neon);
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-family: 'Space Grotesk', sans-serif;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       backdrop-filter: blur(10px);
-      box-shadow: 0 0 18px rgba(0, 255, 156, 0.25);
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.1);
       transition: all 0.25s ease;
+      letter-spacing: 0.5px;
     }
 
     .download-chart-btn:hover {
-      background: rgba(0, 255, 156, 0.25);
-      box-shadow: 0 0 30px rgba(0, 255, 156, 0.45);
-      transform: translateY(-2px);
+      background: rgba(6, 182, 212, 0.18);
+      border-color: var(--primary-neon);
+      box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .back-btn-container {
+      margin-top: 40px;
+      display: flex;
+      justify-content: flex-start;
+      width: 100%;
     }
 
     .back-clean {
-      position: fixed;
-      left: 24px;
-      bottom: 24px;
-      background: rgba(0, 255, 156, 0.18);
-      border: 1px solid rgba(0, 255, 156, 0.45);
-      color: #00ff9c;
-      padding: 10px 22px;
-      border-radius: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(8, 14, 27, 0.7);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      color: var(--primary-neon);
+      padding: 12px 28px;
+      border-radius: 30px;
+      font-family: 'Space Grotesk', sans-serif;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.5px;
       cursor: pointer;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 0 22px rgba(0, 255, 156, 0.35);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(6, 182, 212, 0.15);
+      transition: all 0.25s ease;
+      text-decoration: none;
     }
 
-    @media (max-width: 768px) {
-      .chart-controls {
-        position: static;
-        flex-direction: column;
-        margin-bottom: 20px;
-      }
+    .back-clean:hover {
+      background: rgba(6, 182, 212, 0.15);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 25px rgba(6, 182, 212, 0.35);
+      transform: translateY(-2px);
+    }
 
-      .filter-group {
+    @media (max-width: 900px) {
+      .chart-card {
+        padding: 140px 15px 30px;
+      }
+      
+      .chart-controls {
+        left: 20px;
+        right: 20px;
         flex-direction: column;
         align-items: stretch;
+        gap: 12px;
       }
-
-      .chart-card {
-        padding: 30px 15px 30px;
-      }
-
-      .analytics-title {
-        font-size: 20px;
-        justify-content: center;
+      
+      .filter-group {
+        justify-content: space-between;
       }
 
       .download-chart-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .analytics-title {
+        font-size: 22px;
+        justify-content: center;
+      }
+
+      .chart-container {
+        height: 320px;
+      }
+
+      .back-btn-container {
+        justify-content: center;
+        margin-top: 30px;
+      }
+
+      .back-clean {
+        width: 100%;
         justify-content: center;
       }
     }
@@ -241,117 +238,263 @@
 
 <body>
 
-  <nav class="navbar">
-    <div class="logo">AI Safety</div>
-    <ul class="nav-links">
-      <li onclick="location.href='dashboard.html'">Dashboard</li>
-      <li onclick="location.href='history.html'">History</li>
-      <li onclick="location.href='chart.html'">Analytics</li>
-    </ul>
-  </nav>
+  <!-- BACKDROP PARTICLES CANVAS -->
+  <canvas id="particle-canvas"></canvas>
 
-  <main class="main">
-    <div class="analytics-container">
+  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+  <div class="laser-scan-line"></div>
 
-      <div class="analytics-title">
-        📊 Hour-Wise Danger Analytics
-      </div>
-
-      <div class="chart-card">
-
-        <!-- TOP RIGHT FILTER + DOWNLOAD -->
-        <!-- TOP RIGHT FILTER + DOWNLOAD -->
-        <div class="chart-controls">
-
-          <div class="filter-group">
-            <!-- Type Toggle -->
-            <div class="toggle-container">
-              <input type="radio" id="typeDay" name="filterType" value="day" checked onchange="toggleFilterType()">
-              <label for="typeDay">Day</label>
-              <input type="radio" id="typeMonth" name="filterType" value="month" onchange="toggleFilterType()">
-              <label for="typeMonth">Month</label>
-            </div>
-
-            <!-- Date Input -->
-            <input type="date" id="dateFilter" class="date-input" onchange="fetchData()">
-
-            <!-- Month Input (Hidden by default) -->
-            <input type="month" id="monthFilter" class="date-input" style="display:none;" onchange="fetchData()">
-          </div>
-
-          <button class="download-chart-btn" onclick="downloadExcel()">
-            ⬇ Download Chart
-          </button>
-        </div>
-
-        <div class="chart-container">
-          <canvas id="dangerChart"></canvas>
-        </div>
-
-      </div>
+  <!-- FUTURISTIC HUD OVERLAYS -->
+  <div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+      <span>ANALYTICS_CORE: ACTIVE</span>
+      <span>STATS_RESOLVER: RUNNING</span>
+      <span class="status-badge" style="margin-top: 10px;">
+        <span class="status-dot"></span> LIVE INSIGHTS
+      </span>
     </div>
 
-    <button class="back-clean" onclick="location.href='dashboard.html'">
-      ⬅ Back
-    </button>
-  </main>
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+      <span>METRIC_ANALYTICS_GRID</span>
+      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: 8ms</span>
+      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
+    </div>
 
-  <footer class="footer" style="text-align: center; padding: 25px 15px; font-size: 13px; opacity: 0.7; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 20px;">
-    © 2025 AI Smart Safety System | Live Industrial Monitoring
-  </footer>
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+    </div>
+  </div>
 
+  <div class="page">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="solution.html">Solution</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="diagnostics.html">Diagnostics</a></li>
+        <li><a href="notifications.html">Alerts</a></li>
+        <li><a href="incident_log.html">Incident Logs</a></li>
+        <li><a href="admin.html">Admin</a></li>
+      </ul>
+
+      <div class="auth-buttons" id="auth-buttons">
+        <a href="login.html">Log In</a>
+        <a href="signup.html">Sign Up</a>
+      </div>
+
+      <div id="profile-section" style="display:none;" class="profile-box">
+        <span id="profile-name" class="profile-name">User</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="analytics-container">
+
+        <div class="analytics-title">
+          📊 Neural Threat Analytics
+        </div>
+
+        <div class="chart-card">
+
+          <!-- TOP RIGHT FILTER + DOWNLOAD -->
+          <div class="chart-controls">
+
+            <div class="filter-group">
+              <!-- Type Toggle -->
+              <div class="toggle-container">
+                <input type="radio" id="typeDay" name="filterType" value="day" checked onchange="toggleFilterType()">
+                <label for="typeDay">Day</label>
+                <input type="radio" id="typeMonth" name="filterType" value="month" onchange="toggleFilterType()">
+                <label for="typeMonth">Month</label>
+              </div>
+
+              <!-- Date Input -->
+              <input type="date" id="dateFilter" class="date-input" onchange="fetchData()">
+
+              <!-- Month Input (Hidden by default) -->
+              <input type="month" id="monthFilter" class="date-input" style="display:none;" onchange="fetchData()">
+            </div>
+
+            <button class="download-chart-btn" onclick="downloadExcel()">
+              ⬇ Export Chart Database
+            </button>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="dangerChart"></canvas>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="back-btn-container">
+        <a href="dashboard.html" class="back-clean">
+          ⬅ Return to Console
+        </a>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      &copy; 2026 AI Smart Safety System | Neural Analytics & Shift Reporting
+    </footer>
+
+  </div>
+
+  <!-- Particles backdrop, system clock -->
   <script>
-    const ctx = document.getElementById("dangerChart").getContext("2d");
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
 
-    // Initialize Chart with empty data (will be filled by API)
-    const dangerChart = new Chart(ctx, {
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = Math.random() * 0.4 - 0.2;
+            this.alpha = Math.random() * 0.5 + 0.1;
+            this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
+        }
+
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const count = Math.min(60, Math.floor(window.innerWidth / 20));
+    for (let i = 0; i < count; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Real-time ticking system clock inside HUD
+    const clockElement = document.getElementById('system-clock');
+    function updateClock() {
+        if (!clockElement) return;
+        const now = new Date();
+        const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
+        clockElement.textContent = `SYSTEM TIME: ${timeString} UTC`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Simulate latency shifts inside HUD
+    setInterval(() => {
+        const latencyEl = document.getElementById('system-latency');
+        if (latencyEl) {
+            latencyEl.textContent = `LATENCY: ${Math.floor(6 + Math.random() * 5)}ms`;
+        }
+    }, 3000);
+  </script>
+
+  <!-- Analytics Chart Rendering script -->
+  <script>
+    const chartCtx = document.getElementById("dangerChart").getContext("2d");
+
+    // Initialize Chart
+    const dangerChart = new Chart(chartCtx, {
       type: "bar",
       data: {
-        labels: [], // To be populated
+        labels: [],
         datasets: [{
-          label: "Danger Count",
-          data: [], // To be populated
-          backgroundColor: "#ff4d4d"
+          label: "Incursions",
+          data: [],
+          backgroundColor: "#ef4444",
+          borderColor: "rgba(239, 68, 68, 0.8)",
+          borderWidth: 1,
+          borderRadius: 6,
+          hoverBackgroundColor: "rgba(239, 68, 68, 0.95)"
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
         scales: {
           x: {
-            title: {
-              display: true,
-              text: 'Hours',
-              color: '#00ff9c',
-              font: {
-                size: 14,
-                weight: 'bold'
-              }
+            grid: {
+              color: "rgba(255, 255, 255, 0.05)"
             },
             ticks: {
-              color: "#fff"
+              color: "#94a3b8",
+              font: {
+                family: "Space Grotesk",
+                weight: "bold"
+              }
             }
           },
           y: {
-            title: {
-              display: true,
-              text: 'Danger Counts',
-              color: '#00ff9c',
+            grid: {
+              color: "rgba(255, 255, 255, 0.05)"
+            },
+            ticks: {
+              color: "#94a3b8",
               font: {
-                size: 14,
-                weight: 'bold'
+                family: "Space Grotesk"
               }
             },
-            beginAtZero: true,
-            ticks: {
-              color: "#fff"
-            }
+            beginAtZero: true
           }
         }
       }
     });
 
-    // Toggle Input Fields based on selection
+    // Toggle input types
     function toggleFilterType() {
       const type = document.querySelector('input[name="filterType"]:checked').value;
       const dateInput = document.getElementById("dateFilter");
@@ -361,7 +504,6 @@
         dateInput.style.display = "inline-block";
         monthInput.style.display = "none";
 
-        // Default to today if empty
         if (!dateInput.value) {
           dateInput.valueAsDate = new Date();
         }
@@ -369,7 +511,6 @@
         dateInput.style.display = "none";
         monthInput.style.display = "inline-block";
 
-        // Default to current month if empty
         if (!monthInput.value) {
           const now = new Date();
           const year = now.getFullYear();
@@ -378,11 +519,10 @@
         }
       }
 
-      // Auto-fetch data when toggling
       fetchData();
     }
 
-    // Fetch Data from Backend
+    // Query backend
     async function fetchData() {
       const type = document.querySelector('input[name="filterType"]:checked').value;
       let dateValue = "";
@@ -396,8 +536,6 @@
       if (!dateValue) return;
 
       try {
-        // Adjust URL to point to backend port 5000
-        // Change 'http://localhost:5000' to your live Render URL
         const response = await fetch(`https://impactthon-wjut.onrender.com/api/analytics/data?type=${type}&date=${dateValue}`);
         const result = await response.json();
 
@@ -405,7 +543,6 @@
           updateChart(result.labels, result.data);
         } else {
           console.error("Failed to fetch data:", result.message);
-          // Optional: Clear chart or show error
           updateChart([], []);
         }
       } catch (error) {
@@ -419,44 +556,43 @@
       dangerChart.update();
     }
 
-    // Download Chart Data as CSV
+    // Export CSV
     function downloadExcel() {
       const labels = dangerChart.data.labels;
       const data = dangerChart.data.datasets[0].data;
 
       if (!labels || labels.length === 0) {
-        alert("No data to download");
+        alert("No analytics data currently loaded");
         return;
       }
 
-      let csvContent = "Time/Day,Danger Count\n";
+      let csvContent = "TimePeriod,DangerCount\n";
       labels.forEach((label, index) => {
         csvContent += `${label},${data[index]}\n`;
       });
 
       const blob = new Blob([csvContent], {
-        type: "application/vnd.ms-excel"
+        type: "text/csv;charset=utf-8;"
       });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "danger_analytics.csv";
+      a.download = "danger_analytics_report.csv";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     }
 
-    // Initialize on load
     window.onload = function () {
-      // Set default date to today
       document.getElementById("dateFilter").valueAsDate = new Date();
-      toggleFilterType(); // specific call to set initial state correctly
-
-      // Auto-refresh every 5 seconds
+      toggleFilterType();
       setInterval(fetchData, 5000);
     };
   </script>
+
+  <!-- Auth and Mobile Menu Handler -->
+  <script src="../js/auth.js"></script>
 
 </body>
 
