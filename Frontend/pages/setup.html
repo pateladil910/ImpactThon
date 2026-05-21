@@ -1,113 +1,1124 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/style.css">
-
+    <title>AI Safety Shield | System Configuration Gateway</title>
+    
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        .setup-dropdown {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
+        :root {
+            --bg-dark: #020617;
+            --primary-neon: #06b6d4;
+            --primary-blue: #3b82f6;
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dark: #0f172a;
+            
+            --border-glow: rgba(6, 182, 212, 0.15);
+            --border-glow-focus: rgba(56, 189, 248, 0.55);
+            
+            --bg-glass: rgba(10, 15, 30, 0.5);
+            --bg-glass-heavy: rgba(6, 9, 21, 0.85);
+            
+            --safe-green: #10b981;
+            --safe-green-glow: rgba(16, 185, 129, 0.15);
+            --danger-red: #ef4444;
+            --danger-red-glow: rgba(239, 68, 68, 0.15);
+            --warning-yellow: #f59e0b;
+            --warning-yellow-glow: rgba(245, 158, 11, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-dark);
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+                linear-gradient(180deg, #020617 0%, #070a13 100%);
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ===== ACTIVE PARTICLE BACKDROP CANVAS ===== */
+        #particle-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== SCANNING LASER sweep LINE ===== */
+        .laser-scan-line {
+            position: absolute;
+            left: 0;
             width: 100%;
-            font-family: inherit;
-            margin-top: 5px;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+            box-shadow: 0 0 12px 1px var(--primary-neon);
+            animation: screenScan 9s infinite linear;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @keyframes screenScan {
+            0% { top: 0%; opacity: 0.05; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0.05; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 60px;
+            background: rgba(2, 6, 23, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.12);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            color: var(--text-main);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            color: var(--primary-neon);
+            filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4));
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 35px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.25s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            padding: 4px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-neon);
+            transition: width 0.25s ease;
+            box-shadow: 0 0 8px var(--primary-neon);
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a.active {
+            color: var(--text-main);
+        }
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .auth-buttons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .auth-buttons a {
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 22px;
+            border-radius: 30px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .auth-buttons a:first-child {
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .auth-buttons a:first-child:hover {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.18);
+            transform: translateY(-1.5px);
+        }
+
+        .auth-buttons a:last-child {
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+        }
+
+        .auth-buttons a:last-child:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
+        }
+
+        .profile-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .profile-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            padding: 8px 18px;
+            border-radius: 30px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+            cursor: default;
+        }
+
+        .logout-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+            transition: all 0.25s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+        }
+
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 18px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 110;
+        }
+
+        .menu-toggle span {
+            width: 100%;
+            height: 2px;
+            background-color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(4px, 5px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -6px);
+        }
+
+        /* ===== SYSTEM CONFIG CONTAINER ===== */
+        .setup-section {
+            min-height: calc(100vh - 72px);
+            padding: 130px 8% 60px;
+            max-width: 1450px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        /* WIZARD FLOW STEPPER */
+        .wizard-stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(6, 9, 21, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(6, 182, 212, 0.12);
+            border-radius: 12px;
+            padding: 18px 40px;
+            width: 100%;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .step-item.active {
+            color: var(--primary-neon);
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+
+        .step-item.completed {
+            color: var(--safe-green);
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: inherit;
+        }
+
+        .step-item.active .step-number {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.2);
+        }
+
+        .step-item.completed .step-number {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--safe-green);
+            color: var(--safe-green);
+        }
+
+        .step-connector {
+            flex-grow: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.06);
+            margin: 0 20px;
+        }
+
+        .step-connector.active {
+            background: linear-gradient(90deg, var(--safe-green), var(--primary-neon));
+        }
+
+        /* CONFIGURATION CONTENT GRID */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+            width: 100%;
+        }
+
+        .setup-card {
+            background: rgba(6, 9, 21, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 
+                0 30px 80px -20px rgba(0, 0, 0, 0.6),
+                0 0 25px rgba(6, 182, 212, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            position: relative;
+        }
+
+        .setup-card::before, .setup-card::after {
+            content: "";
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: var(--primary-neon);
+            border-style: solid;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .setup-card::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .setup-card::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+        .setup-card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 60%, var(--primary-neon));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .setup-card p.card-desc {
+            color: var(--text-muted);
+            font-size: 13.5px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        /* INTERACTIVE OPTIONS WRAPPER */
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .option-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-label-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .option-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--primary-neon);
+            text-transform: uppercase;
+        }
+
+        .option-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* CUSTOM SELECT SELECTORS */
+        .setup-dropdown {
+            width: 100%;
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+        }
+
+        .setup-dropdown:focus {
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
         }
 
         .setup-dropdown option {
-            background: #0f172a;
-            color: white;
+            background: #060915;
+            color: var(--text-main);
+            padding: 10px;
+        }
+
+        /* DYNAMIC TIME SELECT FIELDS */
+        .time-slot-box {
+            background: rgba(2, 6, 23, 0.3);
+            border: 1px dashed rgba(6, 182, 212, 0.12);
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 10px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* MULTI TOGGLES OR BUTTONS SHELF */
+        .actions-shelf {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .toggle-box {
+            background: rgba(2, 6, 23, 0.4);
+            border: 1px solid rgba(6, 182, 212, 0.08);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-box:hover {
+            border-color: rgba(6, 182, 212, 0.2);
+            background: rgba(6, 182, 212, 0.03);
+            transform: translateY(-2px);
+        }
+
+        .toggle-box.active {
+            border-color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.06);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.08);
+        }
+
+        .toggle-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-box.active .toggle-icon {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--primary-neon);
+            color: var(--primary-neon);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+
+        .toggle-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .toggle-box.active .toggle-title {
+            color: var(--text-main);
+        }
+
+        /* TELEMETRY MATRIX (RIGHT PANEL) */
+        .status-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .status-matrix {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(2, 6, 23, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+
+        .status-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--warning-yellow);
+            box-shadow: 0 0 8px var(--warning-yellow);
+        }
+
+        .status-indicator.stable {
+            background-color: var(--safe-green);
+            box-shadow: 0 0 8px var(--safe-green);
+        }
+
+        .status-indicator.offline {
+            background-color: var(--danger-red);
+            box-shadow: 0 0 8px var(--danger-red);
+            animation: pulseFlicker 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulseFlicker {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .status-text-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value-pill {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-value-pill.green {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--safe-green);
+        }
+
+        .status-value-pill.yellow {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: var(--warning-yellow);
+        }
+
+        .status-value-pill.red {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger-red);
+        }
+
+        /* PROCEDURAL CTA BOTTOM PANEL */
+        .gateway-cta-deck {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .proceed-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            border: none;
+            padding: 16px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .proceed-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.38);
+        }
+
+        .proceed-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ===== CUSTOM HUD TOAST NOTIFICATION ===== */
+        .hud-toast-container {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .hud-toast {
+            pointer-events: auto;
+            background: rgba(6, 9, 21, 0.92);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 4px solid var(--primary-neon);
+            border-top: 1px solid rgba(6, 182, 212, 0.25);
+            border-right: 1px solid rgba(6, 182, 212, 0.15);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 6px;
+            padding: 16px 24px;
+            color: var(--text-main);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 15px rgba(6, 182, 212, 0.12);
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 340px;
+            max-width: 450px;
+        }
+
+        .hud-toast.show {
+            transform: translateX(0);
+        }
+
+        .hud-toast.success {
+            border-left-color: var(--safe-green);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 15px rgba(16, 185, 129, 0.15);
+        }
+
+        .hud-toast-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .hud-toast-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hud-toast-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hud-toast-msg {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            line-height: 1.4;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 30px 15px;
+            font-size: 13px;
+            opacity: 0.6;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(2, 6, 23, 0.4);
+            position: relative;
+            z-index: 10;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== RESPONSIVENESS ===== */
+        @media (max-width: 1024px) {
+            .navbar {
+                padding: 16px 30px;
+            }
+            .setup-section {
+                padding: 120px 5% 50px;
+            }
+            .setup-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            .wizard-stepper {
+                padding: 18px 25px;
+            }
         }
 
         @media (max-width: 768px) {
-            .navbar nav {
+            .menu-toggle {
                 display: flex;
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-                margin-top: 15px;
             }
-
-            .navbar nav a {
-                padding-right: 0;
+            .nav-links {
+                position: fixed;
+                top: 72px;
+                right: -100%;
+                width: 70%;
+                height: calc(100vh - 72px);
+                background: var(--bg-glass-heavy);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                flex-direction: column;
+                padding: 40px;
+                gap: 30px;
+                transition: right 0.4s ease;
+                border-left: 1px solid rgba(6, 182, 212, 0.15);
+                align-items: flex-start;
+                z-index: 99;
+            }
+            .nav-links.active {
+                right: 0;
+            }
+            .auth-buttons {
+                display: none;
+            }
+            .wizard-stepper {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                padding: 20px;
+            }
+            .step-connector {
+                display: none; /* Hide connectors on stacked layout */
+            }
+            .actions-shelf {
+                grid-template-columns: 1fr;
+                gap: 10px;
             }
         }
     </style>
 </head>
-
 <body>
 
+    <!-- ACTIVE PARTICLE BACKDROP CANVAS -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- SCANNING LASER sweep LINE -->
+    <div class="laser-scan-line"></div>
+
+    <!-- NAVBAR -->
     <nav class="navbar">
-        <div class="logo">AI Safety</div>
-        <ul class="nav-links">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+            </svg>
+            <span>AI Safety Shield</span>
+        </a>
+
+        <ul class="nav-links" id="navLinks">
             <li><a href="index.html">Home</a></li>
-            <li><a href="contact.html">Contact</a></li>
             <li><a href="solution.html">Solution</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="contact.html">Contact</a></li>
         </ul>
+
+        <div class="auth-buttons" id="auth-buttons">
+            <a href="login.html">Log In</a>
+            <a href="signup.html">Sign Up</a>
+        </div>
+
+        <div id="profile-section" style="display:none;" class="profile-box">
+            <span id="profile-name" class="profile-name">User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
     </nav>
 
-    <section class="hero setup-hero">
-        <div class="setup-container">
-            <h1>System Configuration</h1>
+    <!-- MAIN CONFIGURATION CONTENT -->
+    <section class="setup-section">
+        
+        <!-- STEPPING DIAGRAM -->
+        <div class="wizard-stepper">
+            <div class="step-item active">
+                <div class="step-number">1</div>
+                <span>Gateway Configuration</span>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <span>Video Sensor Uplink</span>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <span>Core Safety Shield</span>
+            </div>
+        </div>
 
-            <div class="config-grid">
+        <div class="setup-grid">
+            
+            <!-- LEFT PANEL: SYSTEM CONFIG CARD -->
+            <div class="setup-card">
+                <h2>Gateway Controllers</h2>
+                <p class="card-desc">Configure the AI Edge scheduling engine, monitoring modes, and active safety intercept boundaries.</p>
 
-                <div class="config-card" id="system-mode-card">
-                    <h3>System Mode</h3>
+                <div class="option-group">
+                    <!-- MODE SELECT -->
+                    <div class="option-item">
+                        <div class="option-label-wrapper">
+                            <span class="option-label">AI Surveillance Mode</span>
+                            <span class="option-hint">AUTO = Clock Scheduled &bull; MANUAL = Toggle Trigger</span>
+                        </div>
+                        <select id="modeSelect" class="setup-dropdown" onchange="updateTimeSlots()">
+                            <option value="AUTO">AUTOMATIC (SCHEDULED)</option>
+                            <option value="MANUAL">MANUAL (CONTINUOUS OVERLAY)</option>
+                        </select>
+                    </div>
 
-                    <!-- Mode Select -->
-                    <select id="modeSelect" class="setup-dropdown" onchange="updateTimeSlots()">
-                        <option value="AUTO">AUTO</option>
-                        <option value="MANUAL">MANUAL</option>
-                    </select>
+                    <!-- DYNAMIC TIME SLOT WRAPPER -->
+                    <div class="option-item">
+                        <span class="option-label">Active Temporal Envelope</span>
+                        <div id="timeSlotContainer">
+                            <!-- Injected dynamically via JS -->
+                        </div>
+                    </div>
 
-                    <!-- Dynamic Time Slot Container -->
-                    <div id="timeSlotContainer" style="margin-top: 10px;"></div>
+                    <!-- THRESHOLD ACTION SELECTIONS -->
+                    <div class="option-item">
+                        <span class="option-label">Edge Safety Violations Dispatch</span>
+                        <div class="actions-shelf">
+                            <div class="toggle-box active" onclick="toggleSafetyFeature(this, 'relay')">
+                                <div class="toggle-icon">🔌</div>
+                                <span class="toggle-title">PLC E-Stop Relay</span>
+                            </div>
+                            <div class="toggle-box active" onclick="toggleSafetyFeature(this, 'alarm')">
+                                <div class="toggle-icon">🚨</div>
+                                <span class="toggle-title">Buzzer Siren</span>
+                            </div>
+                            <div class="toggle-box" onclick="toggleSafetyFeature(this, 'cloud')">
+                                <div class="toggle-icon">📱</div>
+                                <span class="toggle-title">Cloud Dispatch</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="config-card">
-                    <h3>Safety Thresholds</h3>
-                    <p>Safe • Warning • Danger</p>
-                </div>
-
-                <div class="config-card">
-                    <h3>Device Status</h3>
-                    <p>Camera ✅ &nbsp; Sensor ✅</p>
-                </div>
-
-                <div class="config-card">
-                    <h3>Alerts</h3>
-                    <p>Auto Stop • Buzzer • Notification</p>
-                </div>
-
             </div>
 
+            <!-- RIGHT PANEL: NODE STATUS DECK -->
+            <div class="setup-card status-panel">
+                <div>
+                    <h2>Deployment Status</h2>
+                    <p class="card-desc">Real-time gateway telemetry and connection state with the mechanical shield PLC network.</p>
 
-            <div class="setup-cta">
-                <a onclick="startMonitoring()" class="get-started-btn" style="cursor: pointer;">Start Monitoring</a>
+                    <div class="status-matrix">
+                        <div class="status-row">
+                            <div class="status-meta">
+                                <span class="status-indicator stable"></span>
+                                <span class="status-text-label">Active Node Core</span>
+                            </div>
+                            <span class="status-value-pill green">LDRP_GATE_01</span>
+                        </div>
+
+                        <div class="status-row">
+                            <div class="status-meta">
+                                <span class="status-indicator stable"></span>
+                                <span class="status-text-label">PLC Contactor Links</span>
+                            </div>
+                            <span class="status-value-pill green">CONNECTED [STABLE]</span>
+                        </div>
+
+                        <div class="status-row">
+                            <div class="status-meta">
+                                <span class="status-indicator offline"></span>
+                                <span class="status-text-label">IP Camera Uplink</span>
+                            </div>
+                            <span class="status-value-pill red" id="camera-status-pill">OFFLINE (STEP 2 REQ)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gateway-cta-deck">
+                    <button class="proceed-btn" id="proceed-btn" onclick="saveAndProceed()">
+                        <span>Proceed to Video Uplink</span>
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
+
         </div>
     </section>
 
+    <!-- CUSTOM HUD TOAST NOTIFICATION CONTAINER -->
+    <div class="hud-toast-container" id="hudToastContainer"></div>
+
+    <!-- FOOTER -->
     <footer class="footer">
-        © 2025 AI Smart Safety System
+        <p>© 2026 AI Smart Safety System | Gateway Config Security</p>
     </footer>
+
+    <!-- SCRIPTS -->
     <script>
+        // ==========================================
+        // 1. ACTIVE PARTICLE BACKDROP CANVAS ENGINE
+        // ==========================================
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speedY = -(Math.random() * 0.4 + 0.15);
+                this.speedX = Math.random() * 0.3 - 0.15;
+                this.alpha = Math.random() * 0.35 + 0.1;
+                this.color = Math.random() > 0.45 ? '6, 182, 212' : '59, 130, 246';
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                if (this.y < -10) {
+                    this.y = canvas.height + 10;
+                    this.x = Math.random() * canvas.width;
+                }
+                if (this.x < -10 || this.x > canvas.width + 10) {
+                    this.speedX = -this.speedX;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const particlesArray = [];
+        const count = Math.min(45, Math.floor(window.innerWidth / 28));
+        for (let i = 0; i < count; i++) {
+            particlesArray.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ==========================================
+        // 2. HUD GLASSMOPHISM HUD TOAST NOTIFIER
+        // ==========================================
+        const toastContainer = document.getElementById('hudToastContainer');
+
+        function showHUDToast(title, message, type = 'success') {
+            if (!toastContainer) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `hud-toast ${type}`;
+            
+            toast.innerHTML = `
+                <div class="hud-toast-icon" style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: rgba(16, 185, 129, 0.15);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--safe-green);
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid rgba(16, 185, 129, 0.35);
+                ">✓</div>
+                <div class="hud-toast-content">
+                    <span class="hud-toast-title" style="color: var(--safe-green)">${title}</span>
+                    <span class="hud-toast-msg">${message}</span>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 4000);
+        }
+
+        // ==========================================
+        // 3. GATEWAY SCHEDULER & CONFIG LOGIC
+        // ==========================================
         const modeSelect = document.getElementById("modeSelect");
-        consttimeSelect = document.getElementById("timeSelect");
+
+        function toggleSafetyFeature(element, feature) {
+            element.classList.toggle('active');
+            saveConfig();
+        }
 
         function updateTimeSlots() {
             const mode = modeSelect.value;
             const container = document.getElementById("timeSlotContainer");
 
-            container.innerHTML = ""; // Clear container
+            container.innerHTML = ""; // Clear
 
             if (mode === "AUTO") {
-                // Create Select Dropdown
                 const sel = document.createElement("select");
                 sel.id = "timeSelect";
                 sel.className = "setup-dropdown";
@@ -126,22 +1137,25 @@
                 });
 
                 sel.addEventListener("change", saveConfig);
-                container.appendChild(sel);
+                
+                const timeBox = document.createElement("div");
+                timeBox.className = "time-slot-box";
+                timeBox.appendChild(sel);
+                container.appendChild(timeBox);
 
             } else {
-                // Create Time Inputs
                 container.innerHTML = `
-                    <div style="display: flex; gap: 10px;">
-                        <input type="time" id="startTime" class="setup-dropdown" onchange="saveConfig()">
-                        <span style="align-self: center; color: white;">to</span>
-                        <input type="time" id="endTime" class="setup-dropdown" onchange="saveConfig()">
+                    <div class="time-slot-box" style="display: flex; gap: 15px; align-items: center;">
+                        <input type="time" id="startTime" class="setup-dropdown" style="margin-top:0;" onchange="saveConfig()" value="08:00">
+                        <span style="color: var(--text-muted); font-size:12px; font-weight:700; font-family:'Space Grotesk';">TO</span>
+                        <input type="time" id="endTime" class="setup-dropdown" style="margin-top:0;" onchange="saveConfig()" value="18:00">
                     </div>
                 `;
             }
             saveConfig();
         }
 
-        // Save to LocalStorage
+        // Save configs to LocalStorage
         function saveConfig() {
             const mode = modeSelect.value;
             let timeVal = "";
@@ -157,26 +1171,32 @@
                 }
             }
 
+            // Capture safety features
+            const features = [];
+            document.querySelectorAll('.toggle-box.active').forEach(box => {
+                features.push(box.querySelector('.toggle-title').textContent);
+            });
+
             const config = {
                 mode: mode,
-                timeSlot: timeVal
+                timeSlot: timeVal,
+                safetyActions: features
             };
             localStorage.setItem("systemConfig", JSON.stringify(config));
         }
 
-        // Load from LocalStorage
+        // Load configs from LocalStorage
         function loadConfig() {
             const saved = localStorage.getItem("systemConfig");
             if (saved) {
                 const config = JSON.parse(saved);
                 modeSelect.value = config.mode;
-                updateTimeSlots(); // Re-render UI based on mode
+                updateTimeSlots();
 
                 if (config.mode === "AUTO") {
                     const sel = document.getElementById("timeSelect");
-                    if (sel) sel.value = config.timeSlot;
+                    if (sel && config.timeSlot) sel.value = config.timeSlot;
                 } else {
-                    // Parse "HH:MM - HH:MM"
                     if (config.timeSlot && config.timeSlot.includes(" - ")) {
                         const [s, e] = config.timeSlot.split(" - ");
                         const startInput = document.getElementById("startTime");
@@ -185,36 +1205,69 @@
                         if (endInput) endInput.value = e;
                     }
                 }
+
+                // Restore toggles
+                if (config.safetyActions) {
+                    document.querySelectorAll('.toggle-box').forEach(box => {
+                        const title = box.querySelector('.toggle-title').textContent;
+                        if (config.safetyActions.includes(title)) {
+                            box.classList.add('active');
+                        } else {
+                            box.classList.remove('active');
+                        }
+                    });
+                }
             } else {
-                updateTimeSlots(); // Default init
+                updateTimeSlots(); // Init defaults
+            }
+            
+            // Check if camera was already connected
+            const camSaved = localStorage.getItem("connectedCamera");
+            if (camSaved) {
+                const camPill = document.getElementById("camera-status-pill");
+                if (camPill) {
+                    camPill.className = "status-value-pill green";
+                    camPill.textContent = "CONNECTED (ONLINE)";
+                    const ind = camPill.parentElement.querySelector(".status-indicator");
+                    if (ind) {
+                        ind.className = "status-indicator stable";
+                    }
+                }
             }
         }
 
-        // Listeners
-        modeSelect.addEventListener("change", updateTimeSlots);
+        // Save & Proceed
+        function saveAndProceed() {
+            saveConfig();
+            
+            const btn = document.getElementById("proceed-btn");
+            btn.innerHTML = `
+                <svg style="animation: spin 1s linear infinite;" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                </svg>
+                <span>SAVING UPLINK SCHEDULER...</span>
+            `;
+            btn.disabled = true;
 
-
-        // Start Monitoring Redirect
-        function startMonitoring() {
-            const saved = localStorage.getItem("systemConfig");
-            if (saved) {
-                const config = JSON.parse(saved);
-                if (config.mode === "MANUAL") {
+            showHUDToast("Gateway Config Cached", "Operational thresholds successfully locked. Redirecting to Step 2...");
+            
+            setTimeout(() => {
+                const config = JSON.parse(localStorage.getItem("systemConfig"));
+                if (config && config.mode === "MANUAL") {
                     localStorage.setItem("targetDashboard", "dashboard2.html");
                 } else {
                     localStorage.setItem("targetDashboard", "dashboard.html");
                 }
-            } else {
-                localStorage.setItem("targetDashboard", "dashboard.html");
-            }
-            
-            // Redirect to Camera Setup before entering the dashboard
-            location.href = "camera_setup.html";
+                location.href = "camera_setup.html";
+            }, 1300);
         }
 
         // Init
         loadConfig();
     </script>
-</body>
 
+    <!-- GLOBAL USER AUTH & SESSION SCRIPTS -->
+    <script src="../js/auth.js"></script>
+
+</body>
 </html>

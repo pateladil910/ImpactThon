@@ -942,9 +942,7 @@ footer p {
         padding: 16px 20px;
     }
     
-    .nav-links {
-        display: none; /* Hide nav links on mobile for simplicity */
-    }
+    /* Allow standard mobile flyout menu from 768px query to handle nav links display */
     
     .hero-text h1 {
         font-size: 32px;

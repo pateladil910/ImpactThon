@@ -1,77 +1,1302 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Add IP Camera - AI Safety</title>
-  <link rel="stylesheet" href="../css/camera_setup.css" />
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Safety Shield | Video Sensor Uplink</title>
+    
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --primary-neon: #06b6d4;
+            --primary-blue: #3b82f6;
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dark: #0f172a;
+            
+            --border-glow: rgba(6, 182, 212, 0.15);
+            --border-glow-focus: rgba(56, 189, 248, 0.55);
+            
+            --bg-glass: rgba(10, 15, 30, 0.5);
+            --bg-glass-heavy: rgba(6, 9, 21, 0.85);
+            
+            --safe-green: #10b981;
+            --safe-green-glow: rgba(16, 185, 129, 0.15);
+            --danger-red: #ef4444;
+            --danger-red-glow: rgba(239, 68, 68, 0.15);
+            --warning-yellow: #f59e0b;
+            --warning-yellow-glow: rgba(245, 158, 11, 0.15);
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-dark);
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+                linear-gradient(180deg, #020617 0%, #070a13 100%);
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ===== ACTIVE PARTICLE BACKDROP CANVAS ===== */
+        #particle-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== SCANNING LASER sweep LINE ===== */
+        .laser-scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+            box-shadow: 0 0 12px 1px var(--primary-neon);
+            animation: screenScan 9s infinite linear;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @keyframes screenScan {
+            0% { top: 0%; opacity: 0.05; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0.05; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 60px;
+            background: rgba(2, 6, 23, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.12);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            color: var(--text-main);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            color: var(--primary-neon);
+            filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4));
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 35px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.25s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            padding: 4px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-neon);
+            transition: width 0.25s ease;
+            box-shadow: 0 0 8px var(--primary-neon);
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .auth-buttons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .auth-buttons a {
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 22px;
+            border-radius: 30px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .auth-buttons a:first-child {
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .auth-buttons a:first-child:hover {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.18);
+            transform: translateY(-1.5px);
+        }
+
+        .auth-buttons a:last-child {
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+        }
+
+        .auth-buttons a:last-child:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
+        }
+
+        .profile-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .profile-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            padding: 8px 18px;
+            border-radius: 30px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+            cursor: default;
+        }
+
+        .logout-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+            transition: all 0.25s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+        }
+
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 18px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 110;
+        }
+
+        .menu-toggle span {
+            width: 100%;
+            height: 2px;
+            background-color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(4px, 5px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -6px);
+        }
+
+        /* ===== SYSTEM CONFIG CONTAINER ===== */
+        .setup-section {
+            min-height: calc(100vh - 72px);
+            padding: 130px 8% 60px;
+            max-width: 1450px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        /* WIZARD FLOW STEPPER */
+        .wizard-stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(6, 9, 21, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(6, 182, 212, 0.12);
+            border-radius: 12px;
+            padding: 18px 40px;
+            width: 100%;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .step-item.active {
+            color: var(--primary-neon);
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+
+        .step-item.completed {
+            color: var(--safe-green);
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: inherit;
+        }
+
+        .step-item.active .step-number {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.2);
+        }
+
+        .step-item.completed .step-number {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--safe-green);
+            color: var(--safe-green);
+        }
+
+        .step-connector {
+            flex-grow: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.06);
+            margin: 0 20px;
+        }
+
+        .step-connector.active {
+            background: linear-gradient(90deg, var(--safe-green), var(--primary-neon));
+        }
+
+        /* CONFIGURATION CONTENT GRID */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 40px;
+            width: 100%;
+        }
+
+        .setup-card {
+            background: rgba(6, 9, 21, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 
+                0 30px 80px -20px rgba(0, 0, 0, 0.6),
+                0 0 25px rgba(6, 182, 212, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            position: relative;
+        }
+
+        .setup-card::before, .setup-card::after {
+            content: "";
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: var(--primary-neon);
+            border-style: solid;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .setup-card::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .setup-card::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+        .setup-card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 60%, var(--primary-neon));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .setup-card p.card-desc {
+            color: var(--text-muted);
+            font-size: 13.5px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        /* ----- VIEWPORT VIEW FINDER SCOPE (LEFT CARD) ----- */
+        .scope-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(6, 182, 212, 0.08);
+        }
+
+        .scope-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+            background-size: 25px 25px;
+            background-position: center;
+        }
+
+        .scope-corner {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-color: var(--primary-neon);
+            border-style: solid;
+            opacity: 0.65;
+        }
+        .scope-corner-tl { top: 15px; left: 15px; border-width: 2px 0 0 2px; }
+        .scope-corner-tr { top: 15px; right: 15px; border-width: 2px 2px 0 0; }
+        .scope-corner-bl { bottom: 15px; left: 15px; border-width: 0 0 2px 2px; }
+        .scope-corner-br { bottom: 15px; right: 15px; border-width: 0 2px 2px 0; }
+
+        .scope-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.6;
+        }
+
+        .scope-crosshair::before, .scope-crosshair::after {
+            content: '';
+            position: absolute;
+            background-color: var(--primary-neon);
+        }
+        .scope-crosshair::before { width: 100%; height: 1px; }
+        .scope-crosshair::after { width: 1px; height: 100%; }
+
+        .scope-circle {
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--primary-neon);
+            border-radius: 50%;
+            background: transparent;
+            position: absolute;
+            z-index: 2;
+        }
+
+        .scope-laser-sweep {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.4), transparent);
+            box-shadow: 0 0 8px 1px var(--primary-neon);
+            animation: scopeScan 3s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes scopeScan {
+            0% { top: 5%; opacity: 0.3; }
+            50% { top: 95%; opacity: 0.8; }
+            100% { top: 5%; opacity: 0.3; }
+        }
+
+        .scope-overlay-tag {
+            position: absolute;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--primary-neon);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(4, 8, 20, 0.85);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+        .tag-feed-status { top: 15px; left: 40px; display: flex; align-items: center; gap: 6px; }
+        .tag-resolution { top: 15px; right: 40px; }
+        .tag-lens-details { bottom: 15px; left: 40px; color: var(--safe-green); border-color: rgba(16, 185, 129, 0.2); }
+
+        .status-pulse-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-neon);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--primary-neon);
+            animation: statusPulse 1.5s infinite alternate;
+        }
+
+        @keyframes statusPulse {
+            from { opacity: 0.3; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* GUIDELINES LIST */
+        .guide-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .guide-box {
+            display: flex;
+            gap: 16px;
+            background: rgba(2, 6, 23, 0.45);
+            border: 1px solid rgba(6, 182, 212, 0.08);
+            border-radius: 12px;
+            padding: 16px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .guide-box:hover {
+            border-color: rgba(6, 182, 212, 0.25);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.05);
+            transform: translateX(3px);
+        }
+
+        .guide-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(6, 182, 212, 0.06);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            color: var(--primary-neon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.05);
+        }
+
+        .guide-content {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .guide-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
+
+        .guide-desc {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* DYNAMIC FORM SHELF */
+        .setup-form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .input-group {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 12px;
+            outline: none;
+            color: var(--text-main);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .input-group select {
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%2306b6d4' stroke-width='2.5' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 20px center;
+            background-size: 14px;
+        }
+
+        .input-group select option {
+            background-color: #060915;
+            color: var(--text-main);
+            padding: 10px;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            background: rgba(2, 6, 23, 0.85);
+        }
+
+        .input-group label {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 13.5px;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group select ~ label {
+            top: 0;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: var(--primary-neon);
+            background: #040814;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label {
+            top: 0;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: var(--primary-neon);
+            background: #040814;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Private IP warning details */
+        .warning-text {
+            display: block;
+            margin-top: 8px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            background: rgba(245, 158, 11, 0.06);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: var(--warning-yellow);
+            font-size: 11.5px;
+            line-height: 1.4;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .warning-text.hidden {
+            display: none;
+        }
+
+        /* GRID CREDENTIAL WRAPPER */
+        .form-row-half {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* DYNAMIC telemetry TESTING BOX */
+        .status-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            background: rgba(2, 6, 23, 0.55);
+            border: 1px solid rgba(6, 182, 212, 0.1);
+            color: var(--text-main);
+            font-size: 13px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            min-height: 52px;
+            transition: all 0.3s ease;
+        }
+
+        .status-box.hidden {
+            display: none !important;
+        }
+
+        .status-box.testing {
+            border-color: rgba(6, 182, 212, 0.35);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
+            color: var(--primary-neon);
+        }
+
+        .status-box.success {
+            border-color: rgba(16, 185, 129, 0.35);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+            color: var(--safe-green);
+        }
+
+        .status-box.error {
+            border-color: rgba(239, 68, 68, 0.35);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+            color: var(--danger-red);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid rgba(6, 182, 212, 0.15);
+            border-top-color: var(--primary-neon);
+            border-radius: 50%;
+            animation: spin 0.8s infinite linear;
+            flex-shrink: 0;
+        }
+
+        .spinner.hidden {
+            display: none;
+        }
+
+        /* ACTION CTA BUTTON SHELF */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1.25fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 16px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            outline: none;
+        }
+
+        .btn-outline {
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            color: var(--primary-neon);
+        }
+
+        .btn-outline:hover:not(:disabled) {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--primary-neon);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
+            transform: translateY(-1.5px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            border: none;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.38);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.25);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* ===== CUSTOM HUD TOAST NOTIFICATION ===== */
+        .hud-toast-container {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .hud-toast {
+            pointer-events: auto;
+            background: rgba(6, 9, 21, 0.92);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 4px solid var(--primary-neon);
+            border-top: 1px solid rgba(6, 182, 212, 0.25);
+            border-right: 1px solid rgba(6, 182, 212, 0.15);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 6px;
+            padding: 16px 24px;
+            color: var(--text-main);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 15px rgba(6, 182, 212, 0.12);
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 340px;
+            max-width: 450px;
+        }
+
+        .hud-toast.show {
+            transform: translateX(0);
+        }
+
+        .hud-toast.success {
+            border-left-color: var(--safe-green);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 15px rgba(16, 185, 129, 0.15);
+        }
+
+        .hud-toast.error {
+            border-left-color: var(--danger-red);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 15px rgba(239, 68, 68, 0.15);
+        }
+
+        .hud-toast-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .hud-toast-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hud-toast-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hud-toast-msg {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            line-height: 1.4;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 30px 15px;
+            font-size: 13px;
+            opacity: 0.6;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(2, 6, 23, 0.4);
+            position: relative;
+            z-index: 10;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== RESPONSIVENESS ===== */
+        @media (max-width: 1024px) {
+            .navbar {
+                padding: 16px 30px;
+            }
+            .setup-section {
+                padding: 120px 5% 50px;
+            }
+            .setup-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            .wizard-stepper {
+                padding: 18px 25px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: flex;
+            }
+            .nav-links {
+                position: fixed;
+                top: 72px;
+                right: -100%;
+                width: 70%;
+                height: calc(100vh - 72px);
+                background: var(--bg-glass-heavy);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                flex-direction: column;
+                padding: 40px;
+                gap: 30px;
+                transition: right 0.4s ease;
+                border-left: 1px solid rgba(6, 182, 212, 0.15);
+                align-items: flex-start;
+                z-index: 99;
+            }
+            .nav-links.active {
+                right: 0;
+            }
+            .auth-buttons {
+                display: none;
+            }
+            .wizard-stepper {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                padding: 20px;
+            }
+            .step-connector {
+                display: none;
+            }
+            .button-group {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .form-row-half {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+        }
+    </style>
+</head>
 <body>
-  <div class="page">
+
+    <!-- ACTIVE PARTICLE BACKDROP CANVAS -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- SCANNING LASER sweep LINE -->
+    <div class="laser-scan-line"></div>
+
+    <!-- NAVBAR -->
     <nav class="navbar">
-      <div class="logo">AI Safety</div>
-      <ul class="nav-links">
-        <li onclick="location.href='index.html'">Home</li>
-        <li onclick="location.href='dashboard.html'">Dashboard</li>
-        <li onclick="location.href='setup.html'">Config</li>
-      </ul>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+            </svg>
+            <span>AI Safety Shield</span>
+        </a>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="solution.html">Solution</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+
+        <div class="auth-buttons" id="auth-buttons">
+            <a href="login.html">Log In</a>
+            <a href="signup.html">Sign Up</a>
+        </div>
+
+        <div id="profile-section" style="display:none;" class="profile-box">
+            <span id="profile-name" class="profile-name">User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
     </nav>
 
-    <main class="main">
-      <div class="setup-container glass-card">
-        <h1>Connect New Camera</h1>
-        <p class="subtitle">Add IP, RTSP, or CCTV cameras to your surveillance network.</p>
-
-        <form id="cameraForm" class="setup-form">
-          <div class="form-group">
-            <label>Camera Name</label>
-            <input type="text" id="camName" placeholder="e.g. Factory Entrance" required />
-          </div>
-
-          <div class="form-group">
-            <label>Camera Type</label>
-            <select id="camType" required>
-              <option value="RTSP">RTSP Camera</option>
-              <option value="IP_CAMERA">IP Camera (HTTP)</option>
-              <option value="CCTV">DVR/NVR</option>
-              <option value="WEBCAM">Local Webcam (USB)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Stream URL / IP Address</label>
-            <input type="text" id="camUrl" placeholder="rtsp://192.168.1.100/stream" required />
-            <small id="urlWarning" class="warning-text hidden"></small>
-          </div>
-
-          <div class="form-group half-width">
-            <div>
-              <label>Username (Optional)</label>
-              <input type="text" id="camUser" placeholder="admin" />
+    <!-- MAIN CONFIGURATION CONTENT -->
+    <section class="setup-section">
+        
+        <!-- STEPPING DIAGRAM -->
+        <div class="wizard-stepper">
+            <div class="step-item completed">
+                <div class="step-number">✓</div>
+                <span>Gateway Configuration</span>
             </div>
-            <div>
-              <label>Password (Optional)</label>
-              <input type="password" id="camPass" placeholder="••••••••" />
+            <div class="step-connector active"></div>
+            <div class="step-item active">
+                <div class="step-number">2</div>
+                <span>Video Sensor Uplink</span>
             </div>
-          </div>
+            <div class="step-connector"></div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <span>Core Safety Shield</span>
+            </div>
+        </div>
 
-          <div class="status-box hidden" id="statusBox">
-            <div class="spinner hidden" id="spinner"></div>
-            <span id="statusMessage"></span>
-          </div>
+        <div class="setup-grid">
+            
+            <!-- LEFT PANEL: SYSTEM DIAGNOSTICS & TUTORIAL -->
+            <div class="setup-card">
+                <h2>Sensor Diagnostics</h2>
+                <p class="card-desc">Preview optical calibration guides, check private subnet connectivity thresholds, and verify sensor parameters.</p>
 
-          <div class="button-group">
-            <button type="button" class="btn btn-outline" id="btnTest">Test Connection</button>
-            <button type="submit" class="btn btn-primary" id="btnConnect" disabled>Connect Camera</button>
-          </div>
-        </form>
-      </div>
-    </main>
-  </div>
+                <!-- Glowing interactive camera view finder scope -->
+                <div class="scope-container">
+                    <div class="scope-grid"></div>
+                    <div class="scope-corner scope-corner-tl"></div>
+                    <div class="scope-corner scope-corner-tr"></div>
+                    <div class="scope-corner scope-corner-bl"></div>
+                    <div class="scope-corner scope-corner-br"></div>
+                    
+                    <div class="scope-crosshair">
+                        <div class="scope-circle"></div>
+                    </div>
+                    
+                    <div class="scope-laser-sweep"></div>
+                    
+                    <div class="scope-overlay-tag tag-feed-status">
+                        <div class="status-pulse-dot"></div>
+                        <span>INGEST_CORE: ACTIVE</span>
+                    </div>
+                    <div class="scope-overlay-tag tag-resolution">
+                        <span>1920x1080 @ 60 FPS</span>
+                    </div>
+                    <div class="scope-overlay-tag tag-lens-details">
+                        <span>NEURAL_SURVEILLANCE_UPLINK</span>
+                    </div>
+                </div>
 
-  <script src="../js/camera_setup.js"></script>
+                <div class="guide-list">
+                    <!-- GUIDE ITEM 1 -->
+                    <div class="guide-box">
+                        <span class="guide-num">01</span>
+                        <div class="guide-content">
+                            <span class="guide-label">Stream Protocol Guidelines</span>
+                            <span class="guide-desc">Enter raw network addresses for CCTV cameras. Recommended formatting for standard RTSP streams: <code>rtsp://[username]:[password]@[ip]:[port]/h264</code>.</span>
+                        </div>
+                    </div>
+
+                    <!-- GUIDE ITEM 2 -->
+                    <div class="guide-box">
+                        <span class="guide-num">02</span>
+                        <div class="guide-content">
+                            <span class="guide-label">Private Subnet Intercepts</span>
+                            <span class="guide-desc">If using local IP blocks (e.g. <code>192.168.x.x</code> or <code>10.x.x.x</code>), ensure the system's local edge agent daemon is running in the same intranet segment.</span>
+                        </div>
+                    </div>
+
+                    <!-- GUIDE ITEM 3 -->
+                    <div class="guide-box">
+                        <span class="guide-num">03</span>
+                        <div class="guide-content">
+                            <span class="guide-label">USB Webcam Diagnostics</span>
+                            <span class="guide-desc">To verify the neural safety system using a local USB webcam, select <b>Local Webcam</b> and enter the device index <code>0</code> or <code>1</code> as the Stream URL.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: CAMERA CONNECTIONS FORM -->
+            <div class="setup-card">
+                <h2>Connect Sensor Node</h2>
+                <p class="card-desc">Assign a unique optical feed input to the YOLOv8 neural hazard tracking envelope.</p>
+
+                <form id="cameraForm" class="setup-form" novalidate>
+                    <!-- CAMERA NAME INPUT -->
+                    <div class="input-group">
+                        <input type="text" id="camName" placeholder=" " required autocomplete="off" />
+                        <label for="camName">Camera Node Name</label>
+                    </div>
+
+                    <!-- CAMERA SURVEILLANCE TYPE -->
+                    <div class="input-group">
+                        <select id="camType" required>
+                            <option value="RTSP">RTSP Camera (Network Stream)</option>
+                            <option value="IP_CAMERA">IP Camera (HTTP Feed)</option>
+                            <option value="CCTV">DVR / NVR Encoder Segment</option>
+                            <option value="WEBCAM">Local Webcam (USB Peripheral)</option>
+                        </select>
+                        <label for="camType">Sensor Protocol Type</label>
+                    </div>
+
+                    <!-- STREAM ADDRESS OR IP -->
+                    <div class="input-group">
+                        <input type="text" id="camUrl" placeholder=" " required autocomplete="off" />
+                        <label for="camUrl">Stream URL / Network IP Address</label>
+                        <small id="urlWarning" class="warning-text hidden"></small>
+                    </div>
+
+                    <!-- HALF WIDTH: USERNAME & PASSWORD -->
+                    <div class="form-row-half">
+                        <div class="input-group">
+                            <input type="text" id="camUser" placeholder=" " autocomplete="off" />
+                            <label for="camUser">Access Username</label>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="camPass" placeholder=" " autocomplete="new-password" />
+                            <label for="camPass">Access Password</label>
+                        </div>
+                    </div>
+
+                    <!-- DYNAMIC UPLINK STATUS TELEMETRY -->
+                    <div class="status-box hidden" id="statusBox">
+                        <div class="spinner hidden" id="spinner"></div>
+                        <span id="statusMessage">Telemetry standby.</span>
+                    </div>
+
+                    <!-- CTA SHELF ACTION BUTTONS -->
+                    <div class="button-group">
+                        <button type="button" class="btn btn-outline" id="btnTest">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5"></path>
+                            </svg>
+                            <span>Test Connection</span>
+                        </button>
+                        
+                        <button type="submit" class="btn btn-primary" id="btnConnect" disabled>
+                            <span>Deploy Neural Shield</span>
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CUSTOM HUD TOAST NOTIFICATION CONTAINER -->
+    <div class="hud-toast-container" id="hudToastContainer"></div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>© 2026 AI Smart Safety System | Optical Network Uplink Portal</p>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script>
+        // ==========================================
+        // 1. ACTIVE PARTICLE BACKDROP CANVAS ENGINE
+        // ==========================================
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speedY = -(Math.random() * 0.4 + 0.15);
+                this.speedX = Math.random() * 0.3 - 0.15;
+                this.alpha = Math.random() * 0.35 + 0.1;
+                this.color = Math.random() > 0.45 ? '6, 182, 212' : '59, 130, 246';
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                if (this.y < -10) {
+                    this.y = canvas.height + 10;
+                    this.x = Math.random() * canvas.width;
+                }
+                if (this.x < -10 || this.x > canvas.width + 10) {
+                    this.speedX = -this.speedX;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const particlesArray = [];
+        const count = Math.min(45, Math.floor(window.innerWidth / 28));
+        for (let i = 0; i < count; i++) {
+            particlesArray.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ==========================================
+        // 2. HUD GLASSMOPHISM HUD TOAST NOTIFIER
+        // ==========================================
+        const toastContainer = document.getElementById('hudToastContainer');
+
+        function showHUDToast(title, message, type = 'success') {
+            if (!toastContainer) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `hud-toast ${type}`;
+            
+            const icon = type === 'success' ? '✓' : '⚠️';
+            const iconBg = type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+            const iconColor = type === 'success' ? 'var(--safe-green)' : 'var(--danger-red)';
+            const iconBorder = type === 'success' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)';
+            
+            toast.innerHTML = `
+                <div class="hud-toast-icon" style="
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: ${iconBg};
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: ${iconColor};
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid ${iconBorder};
+                ">${icon}</div>
+                <div class="hud-toast-content">
+                    <span class="hud-toast-title" style="color: ${iconColor}">${title}</span>
+                    <span class="hud-toast-msg">${message}</span>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 4000);
+        }
+
+        // Cache connected states inside LocalStorage to feedback setup.html status matrix
+        document.getElementById('cameraForm').addEventListener('submit', () => {
+            localStorage.setItem('connectedCamera', 'true');
+        });
+    </script>
+
+    <!-- Master Uplink controller and auth integrations -->
+    <script src="../js/camera_setup.js"></script>
+    <script src="../js/auth.js"></script>
+
 </body>
-
 </html>
