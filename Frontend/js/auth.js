@@ -804,16 +804,30 @@ function checkAuthUI() {
     }
   }
 
-  // Dynamic admin details filter
-  const isAdmin = isLoggedIn === "true" && userRole === "admin";
+  // 1. Case-Insensitive Admin Details Filter (Strict selectors to prevent page collisions)
+  const isAdmin = isLoggedIn === "true" && userRole && userRole.toLowerCase() === "admin";
   const adminPages = ["admin.html", "diagnostics.html", "notifications.html", "incident_log.html"];
 
   adminPages.forEach(page => {
-    const links = document.querySelectorAll(`a[href*="${page}"]`);
+    const links = document.querySelectorAll(`.nav-menu a[href*="${page}"], .nav-links a[href*="${page}"]`);
     links.forEach(link => {
       const li = link.closest("li");
       if (li) {
-        li.style.display = isAdmin ? "" : "none";
+        li.style.display = isAdmin ? "block" : "none";
+      }
+    });
+  });
+
+  // 2. Strict Camera Session Lock Filter (Dashboard, Danger Analytics, Detection Logs)
+  const isCameraActive = localStorage.getItem("cameraActive") === "true";
+  const cameraPages = ["dashboard.html", "dashboard2.html", "chart.html", "history.html"];
+
+  cameraPages.forEach(page => {
+    const links = document.querySelectorAll(`.nav-menu a[href*="${page}"], .nav-links a[href*="${page}"]`);
+    links.forEach(link => {
+      const li = link.closest("li");
+      if (li) {
+        li.style.display = isCameraActive ? "block" : "none";
       }
     });
   });
