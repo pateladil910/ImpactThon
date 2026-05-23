@@ -7,6 +7,7 @@
     
     <!-- GOOGLE FONTS -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/navbar_responsive.css">
     
     <style>
         :root {
@@ -197,185 +198,7 @@
             100% { transform: translate(-12px, 12px) scale(0.99); }
         }
 
-        /* ===== NAVBAR ===== */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 60px;
-            background: rgba(2, 6, 23, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(6, 182, 212, 0.12);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 100;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            color: var(--text-main);
-            text-decoration: none;
-            letter-spacing: -0.5px;
-        }
-
-        .logo-icon {
-            width: 28px;
-            height: 28px;
-            color: var(--primary-neon);
-            filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4));
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 35px;
-            align-items: center;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-muted);
-            font-weight: 500;
-            font-size: 15px;
-            transition: all 0.25s ease;
-            letter-spacing: 0.5px;
-            position: relative;
-            padding: 4px 0;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background-color: var(--primary-neon);
-            transition: width 0.25s ease;
-            box-shadow: 0 0 8px var(--primary-neon);
-        }
-
-        .nav-links a:hover {
-            color: var(--text-main);
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        .nav-links a.active {
-            color: var(--text-main);
-        }
-        .nav-links a.active::after {
-            width: 100%;
-        }
-
-        .auth-buttons {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .auth-buttons a {
-            text-decoration: none;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
-            font-size: 14px;
-            padding: 10px 22px;
-            border-radius: 30px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .auth-buttons a:first-child {
-            color: var(--primary-neon);
-            background: rgba(6, 182, 212, 0.05);
-            border: 1px solid rgba(6, 182, 212, 0.2);
-        }
-
-        .auth-buttons a:first-child:hover {
-            background: rgba(6, 182, 212, 0.15);
-            border-color: var(--primary-neon);
-            box-shadow: 0 0 12px rgba(6, 182, 212, 0.18);
-            transform: translateY(-1.5px);
-        }
-
-        .auth-buttons a:last-child {
-            color: #ffffff;
-            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
-            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
-        }
-
-        .auth-buttons a:last-child:hover {
-            transform: translateY(-1.5px);
-            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
-        }
-
-        .profile-box {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .profile-name {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--primary-neon);
-            background: rgba(6, 182, 212, 0.05);
-            border: 1px solid rgba(6, 182, 212, 0.25);
-            padding: 8px 18px;
-            border-radius: 30px;
-            box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
-            cursor: default;
-        }
-
-        .logout-btn {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            color: #ffffff;
-            background: linear-gradient(135deg, #ef4444, #b91c1c);
-            border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
-            transition: all 0.25s ease;
-        }
-
-        .logout-btn:hover {
-            transform: translateY(-1.5px);
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
-        }
-
-        .menu-toggle {
-            display: none;
-            flex-direction: column;
-            justify-content: space-between;
-            width: 24px;
-            height: 18px;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            z-index: 110;
-        }
-
-        .menu-toggle span {
-            width: 100%;
-            height: 2px;
-            background-color: var(--text-main);
-            transition: all 0.3s ease;
-        }
+        /* Navbar styles externalized to navbar_responsive.css */
 
         /* ===== HERO AREA (Clean and Elegant) ===== */
         .hero {
@@ -1366,9 +1189,7 @@
             background: rgba(2, 6, 23, 0.9);
         }
 
-        /* ===== RESPONSIVE MEDIA QUERIES ===== */
         @media (max-width: 1024px) {
-            .navbar { padding: 16px 30px; }
             .hero { flex-direction: column; gap: 50px; text-align: center; padding-top: 120px; }
             .hero-text { max-width: 100%; }
             .hero-actions { justify-content: center; }
@@ -1377,26 +1198,6 @@
         }
 
         @media (max-width: 768px) {
-            .menu-toggle { display: flex; }
-            .nav-links {
-                position: fixed;
-                top: 72px;
-                right: -100%;
-                width: 70%;
-                height: calc(100vh - 72px);
-                background: var(--bg-glass-heavy);
-                backdrop-filter: blur(25px);
-                -webkit-backdrop-filter: blur(25px);
-                flex-direction: column;
-                padding: 40px;
-                gap: 30px;
-                transition: right 0.4s ease;
-                border-left: 1px solid rgba(6, 182, 212, 0.15);
-                align-items: flex-start;
-                z-index: 99;
-            }
-            .nav-links.active { right: 0; }
-            .auth-buttons { display: none; }
             .hero-text h1 { font-size: 34px; }
             .configurator-card { padding: 25px; }
             .config-title h2 { font-size: 26px; }

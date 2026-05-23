@@ -6,25 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Smart Safety System</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/navbar_responsive.css">
 
     <style>
-        #profile-name {
-            margin-right: 15px;
-            font-weight: bold;
-            color: white;
-        }
-
-        .logout-btn {
-            padding: 8px 16px;
-            margin-left: 0px;
-            margin-right: 0px;
-            background-color: #ff4d4d;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            cursor: pointer;
-        }
-
         .nav-btn {
             padding: 8px 16px;
             margin-left: 10px;
@@ -36,28 +20,6 @@
             cursor: pointer;
             text-decoration: none;
         }
-
-        @media (max-width: 768px) {
-            #profile-section {
-                flex-direction: row;
-                gap: 6px;
-                margin-top: 0;
-                align-items: center;
-                order: 2;
-            }
-
-            #profile-name {
-                margin-right: 0;
-                padding: 4px 10px;
-                font-size: 12px;
-            }
-            
-            .logout-btn {
-                padding: 6px 12px;
-                font-size: 12px;
-                border-radius: 12px;
-            }
-        }
     </style>
 </head>
 
@@ -66,25 +28,38 @@
    
     <!-- NAVBAR -->
     <nav class="navbar">
-        <div class="logo">AI Safety</div>
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+            </svg>
+            <span>AI Safety Shield</span>
+        </a>
 
-        <ul class="nav-links">
+        <ul class="nav-links" id="navLinks">
             <li><a href="solution.html">Solution</a></li>
             <li><a href="dashboard.html">Dashboard</a></li>
             <li><a href="contact.html">Contact</a></li>
+            <li><a href="diagnostics.html">Diagnostics</a></li>
+            <li><a href="notifications.html">Alerts</a></li>
+            <li><a href="incident_log.html">Incident Logs</a></li>
+            <li><a href="admin.html">Admin</a></li>
         </ul>
 
-        <!-- FIXED LINKS -->
         <div class="auth-buttons" id="auth-buttons">
-            <a href="login.html">Login</a>
+            <a href="login.html">Log In</a>
             <a href="signup.html">Sign Up</a>
         </div>
 
-        <!-- Profile / Logout -->
-        <div id="profile-section" style="display:none;">
+        <div id="profile-section" style="display:none;" class="profile-box">
             <span id="profile-name" class="profile-name">User</span>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
     </nav>
 
     <!-- HERO -->
