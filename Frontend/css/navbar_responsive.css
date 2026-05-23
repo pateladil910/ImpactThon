@@ -51,6 +51,15 @@
     font-family: 'Space Grotesk', sans-serif;
 }
 
+/* Unified Navigation Wrapper */
+.nav-menu {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-grow: 1;
+    margin-left: 60px;
+}
+
 .nav-links {
     display: flex;
     list-style: none;
@@ -224,48 +233,40 @@
     .nav-links {
         gap: 20px;
     }
+    .nav-menu {
+        margin-left: 30px;
+    }
 }
 
-/* Tablets & Cross-Orientations (Under 1024px) */
+/* Tablets & Mobile Drawer Collapse (Under 1024px) */
 @media (max-width: 1024px) {
+    .menu-toggle {
+        display: flex; /* Bring the hamburger engine alive */
+    }
+
     .navbar {
         padding: 14px 24px;
     }
-    
-    .nav-links {
-        gap: 18px;
-    }
-    
-    .nav-links a {
-        font-size: 14px;
-    }
-}
 
-/* Mobile & Hamburger shifts (Under 768px) */
-@media (max-width: 768px) {
-    .menu-toggle {
-        display: flex; /* Bring the 3 lines alive */
-    }
-
-    /* Transform desktop link layout into a premium flyout pane */
-    .nav-links {
+    /* Transform desktop menu wrapper into a premium vertical sliding pane */
+    .nav-menu {
         position: fixed;
         top: 0;
         right: 0;
-        width: 280px;
+        width: 290px;
         height: 100vh;
-        background: rgba(4, 8, 16, 0.95);
+        background: rgba(4, 8, 16, 0.98);
         backdrop-filter: blur(25px);
         -webkit-backdrop-filter: blur(25px);
         border-left: 1px solid rgba(6, 182, 212, 0.2);
-        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.8);
+        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.85);
         
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        justify-content: flex-start;
-        padding: 100px 40px 40px 40px;
-        gap: 30px;
+        justify-content: space-between;
+        padding: 100px 30px 40px 30px;
+        margin-left: 0; /* Clear desktop flex margin */
         
         transform: translateX(100%);
         transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -273,12 +274,22 @@
     }
 
     /* Target state when menu is clicked open */
-    .nav-links.active {
+    .nav-menu.active {
         transform: translateX(0) !important;
     }
 
+    /* Links inside mobile panel */
+    .nav-links {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 25px;
+        width: 100%;
+    }
+
     .nav-links a {
-        font-size: 18px;
+        font-size: 17px;
         width: 100%;
         display: block;
         font-family: 'Space Grotesk', sans-serif;
@@ -293,41 +304,24 @@
         padding-left: 10px !important;
     }
 
-    .navbar {
-        padding: 12px 20px;
-    }
-
-    .auth-buttons a {
-        padding: 8px 16px;
-        font-size: 13px;
-    }
-    
-    .profile-name {
-        padding: 6px 14px;
-        font-size: 13px;
-    }
-    
-    .logout-btn {
-        padding: 6px 16px;
-        font-size: 13px;
-    }
-    
+    /* Move buttons vertically to bottom inside drawer with separation divider */
     .auth-buttons, .profile-box {
-        position: absolute;
-        bottom: 40px;
-        left: 40px;
-        width: calc(100% - 80px);
-    }
-
-    .auth-buttons {
+        display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
+        width: 100%;
+        margin-top: auto;
+        padding-top: 25px;
+        border-top: 1px solid rgba(6, 182, 212, 0.15); /* Premium cyber separation line */
     }
 
     .auth-buttons a, .logout-btn, .profile-name {
         width: 100%;
         text-align: center;
         display: block;
+        font-size: 13px;
+        padding: 10px 20px;
+        border-radius: 30px;
     }
 }
 
@@ -348,32 +342,25 @@
         height: 20px;
     }
 
+    .nav-menu {
+        width: 260px;
+        padding: 90px 20px 30px 20px;
+    }
+
     .profile-name {
-        padding: 6px 12px;
-        font-size: 11px;
-        max-width: 130px;
+        max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-    }
-
-    .logout-btn, .auth-buttons a {
-        padding: 6px 12px;
-        font-size: 11px;
     }
 }
 
 /* Narrow legacy phones (Under 340px) */
 @media (max-width: 340px) {
     .navbar {
-        flex-direction: column;
-        gap: 10px;
-        padding: 12px;
-    }
-    
-    .auth-buttons {
-        width: 100%;
-        justify-content: center;
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 10px;
     }
 }
 
