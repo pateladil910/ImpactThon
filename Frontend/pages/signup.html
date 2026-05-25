@@ -158,23 +158,55 @@
         </button>
     </form>
     
+    <!-- Custom CSS Overrides for Re-balanced Full Width Social Button -->
+    <style>
+        .social-btn-full:hover {
+            background: rgba(6, 182, 212, 0.12) !important;
+            border-color: rgba(6, 182, 212, 0.45) !important;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+            transform: translateY(-2px);
+        }
+        .social-btn-full:hover #googleBtnIcon {
+            transform: scale(1.1);
+        }
+        .social-btn-full:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    </style>
+
     <!-- Premium Social Sign Up Integrations -->
     <div class="social-separator">
         <span>or continue with</span>
     </div>
-    <div class="social-login-grid" style="grid-template-columns: repeat(2, 1fr);">
-        <button type="button" class="social-btn" title="Sign up with Google" onclick="triggerGoogleOAuth()">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <div class="social-login-single" style="margin-bottom: 20px; width: 100%;">
+        <button type="button" class="social-btn-full" id="googleAuthBtn" title="Sign up with Google" onclick="triggerGoogleOAuth()" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px;
+            background: rgba(8, 14, 27, 0.55);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 12px;
+            cursor: pointer;
+            color: #ffffff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        ">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="googleBtnIcon" style="width: 20px; height: 20px; flex-shrink: 0; transition: transform 0.25s ease;">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.77c-.98.66-2.23 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
             </svg>
-        </button>
-        <button type="button" class="social-btn" title="Sign up with Facebook" onclick="triggerFacebookOAuth()">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" fill="#1877F2"/>
-            </svg>
+            <span id="googleBtnText" style="letter-spacing: 0.5px;">Continue with Google</span>
+            <div class="social-btn-loader" id="googleBtnLoader" style="display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.25); border-top-color: #ffffff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
         </button>
     </div>
     
@@ -418,10 +450,10 @@
 </script>
 
 <!-- ========================================== -->
-<!--   AUTHENTIC GOOGLE & FACEBOOK INTEGRATIONS -->
+<!--     REAL FIREBASE SURVEILLANCE GATEWAY     -->
 <!-- ========================================== -->
 
-<!-- High-Tech Cyber Toast Alert Element (remains for dynamic HUD feedback) -->
+<!-- High-Tech Cyber Toast Alert Element (for dynamic HUD feedback) -->
 <div class="cyber-toast" id="oauthCyberToast">
     <div class="cyber-toast-bar"></div>
     <span id="oauthToastText">SECURE LINK ESTABLISHED</span>
@@ -456,6 +488,14 @@
         transform: translateY(0) scale(1);
         opacity: 1;
     }
+    .cyber-toast.error-toast {
+        border-color: var(--danger-red) !important;
+        box-shadow: 0 0 25px rgba(239, 68, 68, 0.45) !important;
+    }
+    .cyber-toast.error-toast .cyber-toast-bar {
+        background: var(--danger-red) !important;
+        box-shadow: 0 0 10px var(--danger-red) !important;
+    }
     .cyber-toast-bar {
         width: 4px;
         height: 24px;
@@ -463,174 +503,123 @@
         border-radius: 2px;
         box-shadow: 0 0 10px var(--primary-neon);
     }
+    
+    /* Loading spinner animation */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 
-<script>
-    // Developer Client/App IDs Configuration
-    // Replace these values with your actual Google Client ID and Facebook App ID
-    const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
-    const FACEBOOK_APP_ID = "YOUR_FACEBOOK_APP_ID";
+<!-- Load Firebase ES Module Client Asynchronously -->
+<script type="module">
+    import { auth, provider, signInWithPopup, signOut, onAuthStateChanged } from '../js/firebase.js';
 
-    let googleTokenClient;
+    // Hook up trigger to the window so the inline onclick works seamlessly
+    window.triggerGoogleOAuth = async function() {
+        const btn = document.getElementById('googleAuthBtn');
+        const icon = document.getElementById('googleBtnIcon');
+        const text = document.getElementById('googleBtnText');
+        const loader = document.getElementById('googleBtnLoader');
 
-    // Initialize Google Identity Services token client
-    function initGoogleAuth() {
-        if (typeof google === 'undefined' || !google.accounts) {
-            console.warn("Google SDK is still loading...");
-            setTimeout(initGoogleAuth, 500);
+        // Check if Firebase is running in mock/demo fallback mode (API key not configured yet)
+        if (auth.app.options.apiKey === "YOUR_FIREBASE_API_KEY") {
+            runLocalDemoSimulation();
             return;
         }
 
-        if (GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
-            console.warn("Please configure a valid GOOGLE_CLIENT_ID to enable real Google authentication.");
-            return;
+        // Show loading state
+        if (btn) btn.disabled = true;
+        if (icon) icon.style.display = 'none';
+        if (text) text.textContent = 'Connecting Google Securely...';
+        if (loader) loader.style.display = 'block';
+
+        showCyberToast("LAUNCHING SECURE OAUTH GATEWAY...");
+
+        try {
+            // Trigger authentic OIDC/OAuth 2.0 browser-isolated Google popup
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            console.log("Firebase Auth Success:", user);
+
+            // Update button UI on success
+            if (text) text.textContent = 'Uplink Established!';
+            if (loader) loader.style.display = 'none';
+            showCyberToast(`GOOGLE LINKED: ${user.email} - Redirecting...`);
+
+            // Securely capture user profile credentials and persist session locally
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("username", user.email);
+            localStorage.setItem("displayName", user.displayName || "");
+            localStorage.setItem("profilePhoto", user.photoURL || "");
+            localStorage.setItem("uid", user.uid);
+            localStorage.setItem("userRole", "viewer"); // Default role setting
+
+            // Direct Redirect to index.html after a slight visual delay
+            setTimeout(() => {
+                window.location.replace("index.html");
+            }, 1200);
+
+        } catch (error) {
+            console.error("Firebase Login Error:", error);
+            handleAuthError(error);
+
+            // Restore button UI state on failure
+            if (btn) btn.disabled = false;
+            if (icon) icon.style.display = 'block';
+            if (text) text.textContent = 'Continue with Google';
+            if (loader) loader.style.display = 'none';
         }
-
-        googleTokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-            callback: async (tokenResponse) => {
-                if (tokenResponse && tokenResponse.access_token) {
-                    showCyberToast("AUTHENTICATING WITH GOOGLE...");
-                    
-                    try {
-                        // Securely fetch verified profile info directly from Google UserInfo endpoint
-                        const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                            headers: {
-                                Authorization: `Bearer ${tokenResponse.access_token}`
-                            }
-                        });
-                        const userInfo = await response.json();
-                        console.log("Authenticated Google User:", userInfo);
-
-                        if (userInfo.email) {
-                            // Autofill the signup form inputs with verified data
-                            document.getElementById('signup-name').value = userInfo.name || "";
-                            document.getElementById('signup-email').value = userInfo.email || "";
-                            
-                            // Generate username from email
-                            const localPart = userInfo.email.split('@')[0];
-                            document.getElementById('signup-username').value = localPart.toLowerCase().replace(/[^a-z0-9]/g, "");
-                            document.getElementById('signup-company').value = "Google Secure Corp";
-                            
-                            // Autofill a secure generated password
-                            const generatedPass = "SecureSafetyLink99#";
-                            document.getElementById('signup-password').value = generatedPass;
-                            document.getElementById('signup-confirm').value = generatedPass;
-
-                            // Float standard inputs correctly
-                            document.querySelectorAll('.input-wrapper input').forEach(input => {
-                                if (input.value) input.classList.add('has-value');
-                            });
-
-                            // Run standard UI strength and matching checkers
-                            if (typeof checkPasswordStrength === 'function') checkPasswordStrength(generatedPass);
-                            if (typeof checkPasswordMatch === 'function') checkPasswordMatch();
-                            if (typeof checkInputs === 'function') checkInputs();
-
-                            // Alert UI status locally
-                            localStorage.setItem("isLoggedIn", "true");
-                            localStorage.setItem("username", userInfo.email);
-
-                            showCyberToast(`GOOGLE LINKED: ${userInfo.email}`);
-                        }
-                    } catch (error) {
-                        console.error("Google UserInfo request error:", error);
-                        alert("Secure Google verification failed.");
-                    }
-                }
-            }
-        });
-        console.log("Google Token Client initialized successfully.");
-    }
-
-    // Initialize Facebook Javascript SDK
-    window.fbAsyncInit = function() {
-        if (FACEBOOK_APP_ID.startsWith("YOUR_")) {
-            console.warn("Please configure a valid FACEBOOK_APP_ID to enable real Facebook authentication.");
-            return;
-        }
-
-        FB.init({
-            appId      : FACEBOOK_APP_ID,
-            cookie     : true,
-            xfbml      : true,
-            version    : 'v18.0'
-        });
-        console.log("Facebook SDK initialized successfully.");
     };
 
-    // Trigger authentic Google account chooser popup
-    function triggerGoogleOAuth() {
-        if (GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
-            // Local presentation mode simulation if they haven't configured their developer ID yet
-            runLocalDemoSimulation("google");
-            return;
+    // Professional Switch-Case Firebase Auth Error Handlers
+    function handleAuthError(error) {
+        let msg = "AUTHENTICATION ERROR OCCURRED";
+        switch (error.code) {
+            case 'auth/popup-closed-by-user':
+                msg = "SECURE POPUP CLOSED BY USER";
+                break;
+            case 'auth/network-request-failed':
+                msg = "NETWORK TIMEOUT: CONNECTION REFUSED";
+                break;
+            case 'auth/cancelled-popup-request':
+                msg = "HANDSHAKE TIMEOUT: CONFLICT ENCOUNTERED";
+                break;
+            case 'auth/unauthorized-domain':
+                msg = "SURVEILLANCE ERROR: DOMAIN UNAUTHORIZED";
+                break;
+            case 'auth/internal-error':
+                msg = "INTERNAL GATEWAY PROTOCOL MALFUNCTION";
+                break;
+            default:
+                msg = error.message.toUpperCase();
         }
-
-        if (!googleTokenClient) {
-            initGoogleAuth();
-        }
-
-        if (googleTokenClient) {
-            // Open official, secure Google Account Chooser popup
-            googleTokenClient.requestAccessToken({ prompt: 'select_account' });
-        } else {
-            alert("Google Auth is loading, please try again in a few seconds.");
-        }
+        showCyberToast(msg, true);
     }
 
-    // Trigger authentic Facebook secure popup login
-    function triggerFacebookOAuth() {
-        if (FACEBOOK_APP_ID.startsWith("YOUR_")) {
-            runLocalDemoSimulation("facebook");
-            return;
+    // Maintain login state on refresh / dynamic session checker
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("Active Firebase session persisted for:", user.email);
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("username", user.email);
+            localStorage.setItem("displayName", user.displayName || "");
+            localStorage.setItem("profilePhoto", user.photoURL || "");
+            localStorage.setItem("uid", user.uid);
         }
+    });
 
-        FB.login(function(response) {
-            if (response.authResponse) {
-                showCyberToast("AUTHENTICATING WITH FACEBOOK...");
-                
-                // Retrieve verified name and email from Graph API
-                FB.api('/me', {fields: 'name,email'}, function(userInfo) {
-                    if (userInfo.email) {
-                        document.getElementById('signup-name').value = userInfo.name || "";
-                        document.getElementById('signup-email').value = userInfo.email || "";
-                        
-                        const localPart = userInfo.email.split('@')[0];
-                        document.getElementById('signup-username').value = localPart.toLowerCase().replace(/[^a-z0-9]/g, "");
-                        document.getElementById('signup-company').value = "FB Secure Org";
-                        
-                        const generatedPass = "SecureSafetyLink99#";
-                        document.getElementById('signup-password').value = generatedPass;
-                        document.getElementById('signup-confirm').value = generatedPass;
-
-                        document.querySelectorAll('.input-wrapper input').forEach(input => {
-                            if (input.value) input.classList.add('has-value');
-                        });
-
-                        if (typeof checkPasswordStrength === 'function') checkPasswordStrength(generatedPass);
-                        if (typeof checkPasswordMatch === 'function') checkPasswordMatch();
-                        if (typeof checkInputs === 'function') checkInputs();
-
-                        localStorage.setItem("isLoggedIn", "true");
-                        localStorage.setItem("username", userInfo.email);
-
-                        showCyberToast(`FACEBOOK LINKED: ${userInfo.email}`);
-                    }
-                });
-            } else {
-                console.log('Facebook login cancelled or not fully authorized.');
-            }
-        }, {scope: 'email,public_profile'});
-    }
-
-    // High-Tech Toast display helper
-    function showCyberToast(text) {
+    // High-Tech Cyber Toast Alert Display Helper
+    function showCyberToast(text, isError = false) {
         const toast = document.getElementById('oauthCyberToast');
         const toastText = document.getElementById('oauthToastText');
         if (toast && toastText) {
             toastText.textContent = text;
+            if (isError) {
+                toast.classList.add('error-toast');
+            } else {
+                toast.classList.remove('error-toast');
+            }
             toast.classList.add('active');
             setTimeout(() => {
                 toast.classList.remove('active');
@@ -638,70 +627,40 @@
         }
     }
 
-    // Initialize GIS SDK on load
-    window.addEventListener('load', () => {
-        setTimeout(initGoogleAuth, 1000);
-    });
+    // =========================================================================
+    // LOCAL PRESENTATION DEMO FALLBACK (Enables gorgeous demo if API Key is omitted)
+    // =========================================================================
+    function runLocalDemoSimulation() {
+        const btn = document.getElementById('googleAuthBtn');
+        const icon = document.getElementById('googleBtnIcon');
+        const text = document.getElementById('googleBtnText');
+        const loader = document.getElementById('googleBtnLoader');
 
-    // =========================================================================
-    // LOCAL PRESENTATION DEMO FALLBACK (Enables gorgeous demo if App IDs are omitted)
-    // =========================================================================
-    function runLocalDemoSimulation(provider) {
-        console.log(`Running premium hackathon fallback simulation for ${provider}...`);
-        
-        if (provider === "google") {
-            showCyberToast("SIMULATING GOOGLE AUTH POPUP...");
-            
+        if (btn) btn.disabled = true;
+        if (icon) icon.style.display = 'none';
+        if (text) text.textContent = 'Simulating Google Secure Login...';
+        if (loader) loader.style.display = 'block';
+
+        showCyberToast("SIMULATING OAUTH POPUP...");
+
+        setTimeout(() => {
+            if (text) text.textContent = 'Google Connected!';
+            if (loader) loader.style.display = 'none';
+            showCyberToast("GOOGLE UPLINK SECURED: adilp4534@gmail.com - Redirecting...");
+
+            // Persist the mock adil patel session parameters
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("username", "adilp4534@gmail.com");
+            localStorage.setItem("displayName", "adil patel");
+            localStorage.setItem("profilePhoto", "");
+            localStorage.setItem("uid", "simulated_uid_adil_patel_99");
+            localStorage.setItem("userRole", "viewer");
+
+            // Redirect automatically after 1.2 seconds
             setTimeout(() => {
-                const name = "adil patel";
-                const email = "adilp4534@gmail.com";
-                
-                document.getElementById('signup-name').value = name;
-                document.getElementById('signup-email').value = email;
-                document.getElementById('signup-username').value = "adilp";
-                document.getElementById('signup-company').value = "AI Safety Corp";
-                
-                const generatedPass = "SecureSafetyLink99#";
-                document.getElementById('signup-password').value = generatedPass;
-                document.getElementById('signup-confirm').value = generatedPass;
-                
-                document.querySelectorAll('.input-wrapper input').forEach(input => {
-                    if (input.value) input.classList.add('has-value');
-                });
-                
-                if (typeof checkPasswordStrength === 'function') checkPasswordStrength(generatedPass);
-                if (typeof checkPasswordMatch === 'function') checkPasswordMatch();
-                if (typeof checkInputs === 'function') checkInputs();
-                
-                showCyberToast("GOOGLE UPLINK SECURED: adilp4534@gmail.com linked successfully.");
-            }, 1000);
-        } else if (provider === "facebook") {
-            showCyberToast("SIMULATING FACEBOOK AUTH POPUP...");
-            
-            setTimeout(() => {
-                const email = "operator@codevortex.in";
-                const name = "Vortex Operator";
-                
-                document.getElementById('signup-name').value = name;
-                document.getElementById('signup-email').value = email;
-                document.getElementById('signup-username').value = "vortexop";
-                document.getElementById('signup-company').value = "FB Secure Org";
-                
-                const generatedPass = "SecureSafetyLink99#";
-                document.getElementById('signup-password').value = generatedPass;
-                document.getElementById('signup-confirm').value = generatedPass;
-                
-                document.querySelectorAll('.input-wrapper input').forEach(input => {
-                    if (input.value) input.classList.add('has-value');
-                });
-                
-                if (typeof checkPasswordStrength === 'function') checkPasswordStrength(generatedPass);
-                if (typeof checkPasswordMatch === 'function') checkPasswordMatch();
-                if (typeof checkInputs === 'function') checkInputs();
-                
-                showCyberToast(`FACEBOOK UPLINK ESTABLISHED: ${email} linked successfully.`);
-            }, 1000);
-        }
+                window.location.replace("index.html");
+            }, 1200);
+        }, 1500);
     }
 </script>
 

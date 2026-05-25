@@ -375,8 +375,45 @@
     }, 4000);
 </script>
 
-<!-- Existing Auth Module Integration -->
-<script src="../js/auth.js"></script>
+  <!-- Secure Firebase Session Verification & Logout Controller -->
+  <script type="module">
+    import { auth, signOut, onAuthStateChanged } from '../js/firebase.js';
+
+    // Verify auth persistence and sync session
+    onAuthStateChanged(auth, (user) => {
+      if (!user && localStorage.getItem("isLoggedIn") === "true" && auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
+        console.warn("Firebase session expired. Logging out...");
+        window.logout();
+      }
+    });
+
+    // Override global logout function to securely handle Firebase signOut
+    window.logout = async function() {
+      console.log("Executing secure gateway termination...");
+      
+      try {
+        if (auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
+          await signOut(auth);
+        }
+      } catch (err) {
+        console.error("Firebase signOut failed:", err);
+      }
+
+      // Safe clean clear of local storages
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("username");
+      localStorage.removeItem("displayName");
+      localStorage.removeItem("profilePhoto");
+      localStorage.removeItem("uid");
+      localStorage.removeItem("userRole");
+
+      // Redirect immediately back to login gateway
+      window.location.replace("login.html");
+    };
+  </script>
+
+  <!-- Existing Auth Module Integration -->
+  <script src="../js/auth.js"></script>
 
 </body>
 </html>

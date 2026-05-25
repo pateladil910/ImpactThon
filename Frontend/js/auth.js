@@ -948,21 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
         verifyResetForm.addEventListener("submit", handleVerifyReset);
     }
 
-    // Social buttons
-    const googleBtn = document.querySelector('button[title*="Google"]');
-    if (googleBtn) {
-        googleBtn.addEventListener("click", () => openSocialModal("google"));
-    }
-
-    const facebookBtn = document.querySelector('button[title*="Facebook"]');
-    if (facebookBtn) {
-        facebookBtn.addEventListener("click", () => openSocialModal("facebook"));
-    }
-
-    const appleBtn = document.querySelector('button[title*="Apple"]');
-    if (appleBtn) {
-        appleBtn.addEventListener("click", () => openSocialModal("apple"));
-    }
+    // Social buttons click listeners removed to prevent conflicts with official Firebase SDK triggers
 
     // Runs your UI check (make sure this function is defined elsewhere in your project!)
     if (typeof checkAuthUI === "function") {

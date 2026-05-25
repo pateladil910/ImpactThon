@@ -2,6 +2,13 @@
 <html lang="en">
 
 <head>
+  <!-- Protected Route Gatekeeper: Instant Guest Firewall -->
+  <script>
+    if (localStorage.getItem("isLoggedIn") !== "true") {
+      console.warn("Unauthorized access blocked. Redirecting to login gateway...");
+      window.location.replace("login.html");
+    }
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Safety Dashboard | Live Control Console</title>
@@ -485,6 +492,43 @@
 
     setInterval(updateLastDetection, 1000);
     updateLastDetection();
+  </script>
+
+  <!-- Secure Firebase Session Verification & Logout Controller -->
+  <script type="module">
+    import { auth, signOut, onAuthStateChanged } from '../js/firebase.js';
+
+    // Verify auth persistence and sync session
+    onAuthStateChanged(auth, (user) => {
+      if (!user && localStorage.getItem("isLoggedIn") === "true" && auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
+        console.warn("Firebase session expired. Logging out...");
+        window.logout();
+      }
+    });
+
+    // Override global logout function to securely handle Firebase signOut
+    window.logout = async function() {
+      console.log("Executing secure gateway termination...");
+      
+      try {
+        if (auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
+          await signOut(auth);
+        }
+      } catch (err) {
+        console.error("Firebase signOut failed:", err);
+      }
+
+      // Safe clean clear of local storages
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("username");
+      localStorage.removeItem("displayName");
+      localStorage.removeItem("profilePhoto");
+      localStorage.removeItem("uid");
+      localStorage.removeItem("userRole");
+
+      // Redirect immediately back to login gateway
+      window.location.replace("login.html");
+    };
   </script>
 
   <!-- Auth and Mobile Menu Handler -->
