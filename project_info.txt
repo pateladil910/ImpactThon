@@ -1,0 +1,7 @@
+google authentication --> Firebase
+
+backend live --> Render
+
+Hostinger --> Domain
+
+Mail --> Mailcloud
