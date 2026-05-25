@@ -133,7 +133,7 @@ app.get("/", (req, res) => {
   if (req.cookies.token) {
     return res.redirect("/index.html");
   }
-  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "login.html"));
+  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "home.html"));
 });
 
 app.get("/login.html", (req, res) => {
