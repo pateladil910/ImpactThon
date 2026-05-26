@@ -1441,22 +1441,8 @@
 
             <!-- Video Player with Toggleable HUD bounding boxes -->
             <div class="video-box-wrapper">
-                <div class="diagnostic-overlay" id="diagHudOverlay">
-                    <!-- Worker bounding box -->
-                    <div class="overlay-bounding-box" style="top: 22%; left: 42%; width: 22%; height: 58%;" data-label="Worker (99.1%)"></div>
-                    <!-- Proximity buffer box -->
-                    <div class="overlay-bounding-box" style="top: 30%; left: 18%; width: 20%; height: 50%; border-color: var(--warning-yellow);" data-label="Caution Buffer"></div>
-                    
-                    <div class="reticle reticle-tl"></div>
-                    <div class="reticle reticle-tr"></div>
-                    <div class="reticle reticle-bl"></div>
-                    <div class="reticle reticle-br"></div>
-                </div>
-
-                <video id="demoVideo" controls muted autoplay loop>
-                    <source src="../../Demo_video.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
+                <div class="diagnostic-overlay" id="diagHudOverlay" style="opacity: 1; display: none; pointer-events: none;"></div>
+                <canvas id="demoVideoSim" style="width: 100%; height: 100%; display: block; background: #020617;"></canvas>
             </div>
 
             <!-- Dashboard controls -->
@@ -1793,6 +1779,348 @@
             addLog("Diagnostic overlay layers disabled.");
         }
     });
+
+    // ============================================
+    // DYNAMIC FACTORY FLOOR AI VIDEO SIMULATION
+    // ============================================
+    const videoCanvas = document.getElementById('demoVideoSim');
+    const videoCtx = videoCanvas.getContext('2d');
+    
+    // Set internal resolution matching standard HD aspect ratio
+    videoCanvas.width = 1280;
+    videoCanvas.height = 720;
+
+    // Simulation states matching the 1-minute storyboard
+    let simTime = 0;
+    let sparks = [];
+
+    // Create sparks helper
+    function createSpark(x, y) {
+        for (let i = 0; i < 6; i++) {
+            sparks.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6 - 3,
+                life: 1.0,
+                decay: 0.04 + Math.random() * 0.04
+            });
+        }
+    }
+
+    function updateSparks() {
+        for (let i = sparks.length - 1; i >= 0; i--) {
+            let s = sparks[i];
+            s.x += s.vx;
+            s.y += s.vy;
+            s.vy += 0.15; // gravity
+            s.life -= s.decay;
+            if (s.life <= 0) sparks.splice(i, 1);
+        }
+    }
+
+    function drawSparks(ctx) {
+        ctx.fillStyle = 'rgba(251, 146, 60, 0.9)'; // bright orange sparks
+        for (let s of sparks) {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, Math.random() * 2 + 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function runVideoSimulation() {
+        simTime += 0.015; // update rate
+
+        // Render factory backdrop: deep grid perspectives
+        videoCtx.fillStyle = '#020617';
+        videoCtx.fillRect(0, 0, 1280, 720);
+
+        // Draw 3D floor perspective grids
+        videoCtx.strokeStyle = 'rgba(6, 182, 212, 0.06)';
+        videoCtx.lineWidth = 1.5;
+        
+        // Horizontal lines
+        for (let y = 300; y < 720; y += 40) {
+            videoCtx.beginPath();
+            videoCtx.moveTo(0, y);
+            videoCtx.lineTo(1280, y);
+            videoCtx.stroke();
+        }
+        // Perspective vertical lines
+        const vanishingX = 640;
+        const vanishingY = 240;
+        for (let x = -400; x <= 1680; x += 120) {
+            videoCtx.beginPath();
+            videoCtx.moveTo(vanishingX, vanishingY);
+            videoCtx.lineTo(x, 720);
+            videoCtx.stroke();
+        }
+
+        // Draw background factory structural pillars & windows
+        videoCtx.fillStyle = '#0b0f19';
+        videoCtx.fillRect(0, 0, 1280, 240);
+        videoCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        videoCtx.strokeRect(0, 0, 1280, 240);
+
+        // Draw windows
+        videoCtx.fillStyle = 'rgba(6, 182, 212, 0.03)';
+        for (let w = 80; w < 1200; w += 240) {
+            videoCtx.fillRect(w, 40, 120, 140);
+            videoCtx.strokeRect(w, 40, 120, 140);
+        }
+
+        // --- SIMULATED OPERATOR COORDINATES ---
+        // 1-minute loop (30s simulation period based on progress wave)
+        const cyclePeriod = 30; // seconds for a full sweep
+        const progress = (simTime % cyclePeriod) / cyclePeriod;
+        
+        let operatorX, operatorY, status, distance, colorTheme;
+
+        // Path logic based on storyboard phase
+        if (progress < 0.25) {
+            // Phase 1 (0% - 25%): Secure Safe Zone. Walks slowly outside yellow boundary.
+            operatorX = 250 + (progress / 0.25) * 150;
+            operatorY = 480 + Math.sin(simTime * 2) * 15;
+            distance = 5.2 - (progress / 0.25) * 1.5; // distance reduces from 5.2m to 3.7m
+            status = "SAFE";
+            colorTheme = '#10b981'; // green
+        } else if (progress < 0.5) {
+            // Phase 2 (25% - 50%): Enters Caution Zone. Flashing lights.
+            const ratio = (progress - 0.25) / 0.25;
+            operatorX = 400 + ratio * 200;
+            operatorY = 480 + Math.sin(simTime * 2) * 10;
+            distance = 3.7 - ratio * 2.0; // distance reduces from 3.7m to 1.7m
+            status = "WARNING";
+            colorTheme = '#f59e0b'; // warning yellow
+        } else if (progress < 0.75) {
+            // Phase 3 (50% - 75%): Breaches Critical Exclusion Danger Zone. Robot freezes!
+            const ratio = (progress - 0.5) / 0.25;
+            operatorX = 600 + ratio * 150;
+            operatorY = 480 + Math.sin(simTime * 2) * 5;
+            distance = 1.7 - ratio * 1.4; // distance reduces to 0.3m
+            status = "DANGER";
+            colorTheme = '#ef4444'; // critical red
+        } else {
+            // Phase 4 (75% - 100%): Retracts back out to safe sector. System resumes normal.
+            const ratio = (progress - 0.75) / 0.25;
+            operatorX = 750 - ratio * 500;
+            operatorY = 480 + Math.sin(simTime * 2) * 15;
+            distance = 0.3 + ratio * 4.9; // distance increases back to 5.2m
+            status = "SAFE";
+            colorTheme = '#10b981'; // green
+        }
+
+        // --- DRAW ROBOT ARM MACHINE CORE ---
+        const rBaseX = 960;
+        const rBaseY = 460;
+
+        // Draw warning & danger radius rings around base
+        videoCtx.lineWidth = 2;
+        
+        // Warning radius ring (Caution boundary)
+        videoCtx.strokeStyle = 'rgba(245, 158, 11, 0.15)';
+        videoCtx.beginPath();
+        videoCtx.ellipse(rBaseX, rBaseY, 320, 160, 0, 0, Math.PI * 2);
+        videoCtx.stroke();
+        
+        // Danger radius ring (Exclusion boundary)
+        videoCtx.strokeStyle = 'rgba(239, 68, 68, 0.25)';
+        videoCtx.beginPath();
+        videoCtx.ellipse(rBaseX, rBaseY, 160, 80, 0, 0, Math.PI * 2);
+        videoCtx.stroke();
+
+        // Draw machine pedestal
+        videoCtx.fillStyle = '#1e293b';
+        videoCtx.fillRect(rBaseX - 35, rBaseY - 10, 70, 40);
+        videoCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        videoCtx.strokeRect(rBaseX - 35, rBaseY - 10, 70, 40);
+
+        // Draw animated rotating robotic arm joints
+        let jointAngle1 = Math.sin(simTime * 0.8) * 0.4 - 0.2;
+        let jointAngle2 = Math.cos(simTime * 1.2) * 0.5 - 0.8;
+        
+        if (status === "DANGER") {
+            // Freeze arm instantly during danger override
+            jointAngle1 = -0.1;
+            jointAngle2 = -0.9;
+        }
+
+        const arm1X = rBaseX + Math.cos(jointAngle1) * 100;
+        const arm1Y = (rBaseY - 10) + Math.sin(jointAngle1) * 100 - 40;
+
+        const toolX = arm1X + Math.cos(jointAngle2) * 80;
+        const toolY = arm1Y + Math.sin(jointAngle2) * 80;
+
+        // Draw robotic segment 1
+        videoCtx.strokeStyle = '#475569';
+        videoCtx.lineWidth = 14;
+        videoCtx.lineCap = 'round';
+        videoCtx.beginPath();
+        videoCtx.moveTo(rBaseX, rBaseY - 10);
+        videoCtx.lineTo(arm1X, arm1Y);
+        videoCtx.stroke();
+
+        // Draw robotic segment 2
+        videoCtx.strokeStyle = '#64748b';
+        videoCtx.lineWidth = 8;
+        videoCtx.beginPath();
+        videoCtx.moveTo(arm1X, arm1Y);
+        videoCtx.lineTo(toolX, toolY);
+        videoCtx.stroke();
+
+        // Draw joint capsules
+        videoCtx.fillStyle = '#06b6d4';
+        videoCtx.beginPath();
+        videoCtx.arc(rBaseX, rBaseY - 10, 10, 0, Math.PI*2);
+        videoCtx.arc(arm1X, arm1Y, 8, 0, Math.PI*2);
+        videoCtx.fill();
+
+        // If system is running (not in danger), create gorgeous sparks at the tip tool
+        if (status !== "DANGER" && Math.random() > 0.4) {
+            createSpark(toolX, toolY);
+        }
+        updateSparks();
+        drawSparks(videoCtx);
+
+        // --- DRAW THE OPERATOR (Worker) ---
+        // Draw operator body path
+        videoCtx.fillStyle = '#0f172a';
+        // Base feet
+        videoCtx.beginPath();
+        videoCtx.ellipse(operatorX, operatorY, 15, 6, 0, 0, Math.PI * 2);
+        videoCtx.fill();
+        // Body vest
+        videoCtx.fillStyle = '#f97316'; // safety orange jacket
+        videoCtx.fillRect(operatorX - 10, operatorY - 48, 20, 42);
+        // Head
+        videoCtx.fillStyle = '#ffedd5';
+        videoCtx.beginPath();
+        videoCtx.arc(operatorX, operatorY - 56, 7, 0, Math.PI * 2);
+        videoCtx.fill();
+        // Hardhat
+        videoCtx.fillStyle = '#eab308'; // safety yellow hardhat
+        videoCtx.beginPath();
+        videoCtx.arc(operatorX, operatorY - 60, 8, Math.PI, 0);
+        videoCtx.fill();
+        videoCtx.fillRect(operatorX - 12, operatorY - 60, 24, 2);
+
+        // --- RENDER DYNAMIC AI VISION OVERLAYS ---
+        // Only draw if the diagnostics toggle is active (opacity === '1')
+        const overlayOpacity = window.getComputedStyle(diagHudOverlay).opacity;
+        if (overlayOpacity !== '0') {
+            
+            // Draw Corner Target Reticles
+            videoCtx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+            videoCtx.lineWidth = 2;
+            const rSize = 35;
+            // TL
+            videoCtx.beginPath(); videoCtx.moveTo(40 + rSize, 40); videoCtx.lineTo(40, 40); videoCtx.lineTo(40, 40 + rSize); videoCtx.stroke();
+            // TR
+            videoCtx.beginPath(); videoCtx.moveTo(1240 - rSize, 40); videoCtx.lineTo(1240, 40); videoCtx.lineTo(1240, 40 + rSize); videoCtx.stroke();
+            // BL
+            videoCtx.beginPath(); videoCtx.moveTo(40 + rSize, 680); videoCtx.lineTo(40, 680); videoCtx.lineTo(40, 680 - rSize); videoCtx.stroke();
+            // BR
+            videoCtx.beginPath(); videoCtx.moveTo(1240 - rSize, 680); videoCtx.lineTo(1240, 680); videoCtx.lineTo(1240, 680 - rSize); videoCtx.stroke();
+
+            // Draw Operator AI Bounding Box overlay
+            videoCtx.strokeStyle = colorTheme;
+            videoCtx.lineWidth = 3;
+            const boxW = 54;
+            const boxH = 90;
+            const boxX = operatorX - boxW/2;
+            const boxY = operatorY - boxH + 10;
+            videoCtx.strokeRect(boxX, boxY, boxW, boxH);
+
+            // Bounding box label
+            videoCtx.fillStyle = colorTheme;
+            videoCtx.fillRect(boxX, boxY - 24, 130, 24);
+            videoCtx.fillStyle = '#040714';
+            videoCtx.font = 'bold 11px "Space Grotesk", sans-serif';
+            videoCtx.fillText(`Worker (99.2%)`, boxX + 6, boxY - 8);
+
+            // Bounding box corner ticks
+            videoCtx.strokeStyle = '#ffffff';
+            videoCtx.lineWidth = 2;
+            const tL = 10;
+            videoCtx.beginPath(); videoCtx.moveTo(boxX, boxY+tL); videoCtx.lineTo(boxX, boxY); videoCtx.lineTo(boxX+tL, boxY); videoCtx.stroke();
+            videoCtx.beginPath(); videoCtx.moveTo(boxX+boxW-tL, boxY); videoCtx.lineTo(boxX+boxW, boxY); videoCtx.lineTo(boxX+boxW, boxY+tL); videoCtx.stroke();
+            videoCtx.beginPath(); videoCtx.moveTo(boxX, boxY+boxH-tL); videoCtx.lineTo(boxX, boxY+boxH); videoCtx.lineTo(boxX+tL, boxY+boxH); videoCtx.stroke();
+            videoCtx.beginPath(); videoCtx.moveTo(boxX+boxW-tL, boxY+boxH); videoCtx.lineTo(boxX+boxW, boxY+boxH); videoCtx.lineTo(boxX+boxW, boxY+boxH-tL); videoCtx.stroke();
+
+            // Draw dynamic distance vector lines
+            videoCtx.strokeStyle = colorTheme;
+            videoCtx.lineWidth = 2.5;
+            videoCtx.setLineDash([6, 6]);
+            videoCtx.beginPath();
+            videoCtx.moveTo(operatorX, operatorY - 30);
+            videoCtx.lineTo(rBaseX, rBaseY - 10);
+            videoCtx.stroke();
+            videoCtx.setLineDash([]); // clear dash
+
+            // Draw vector distance numerical badge
+            const midX = (operatorX + rBaseX) / 2;
+            const midY = (operatorY - 30 + rBaseY - 10) / 2;
+            videoCtx.fillStyle = 'rgba(4, 7, 20, 0.95)';
+            videoCtx.strokeStyle = colorTheme;
+            videoCtx.lineWidth = 1.5;
+            videoCtx.fillRect(midX - 35, midY - 12, 70, 24);
+            videoCtx.strokeRect(midX - 35, midY - 12, 70, 24);
+            videoCtx.fillStyle = '#ffffff';
+            videoCtx.font = 'bold 11px "Space Grotesk", sans-serif';
+            videoCtx.textAlign = 'center';
+            videoCtx.fillText(`${distance.toFixed(1)}m`, midX, midY + 4);
+            videoCtx.textAlign = 'start'; // restore default
+
+            // Alert dispatch status badge (top center)
+            const bannerY = 80;
+            const bannerW = 340;
+            const bannerX = 640 - bannerW/2;
+            
+            videoCtx.fillStyle = 'rgba(4, 8, 20, 0.9)';
+            videoCtx.strokeStyle = colorTheme;
+            videoCtx.lineWidth = 2;
+            videoCtx.fillRect(bannerX, bannerY, bannerW, 44);
+            videoCtx.strokeRect(bannerX, bannerY, bannerW, 44);
+
+            // Flashing pulsing dot inside status badge
+            if (simTime % 0.8 > 0.4) {
+                videoCtx.fillStyle = colorTheme;
+                videoCtx.beginPath();
+                videoCtx.arc(bannerX + 24, bannerY + 22, 6, 0, Math.PI * 2);
+                videoCtx.fill();
+            }
+
+            videoCtx.fillStyle = '#ffffff';
+            videoCtx.font = 'bold 12px "Space Grotesk", sans-serif';
+            let statusText = "";
+            if (status === "SAFE") statusText = "SYSTEM SECURE - ARM RUNNING";
+            else if (status === "WARNING") statusText = "PROXIMITY WARNING - BUZZER ACTIVE";
+            else statusText = "CRITICAL SHUTDOWN - E-STOP ENGAGED";
+            
+            videoCtx.fillText(statusText, bannerX + 44, bannerY + 26);
+        }
+
+        // Live Scanning Laser line
+        const laserY = (Math.sin(simTime * 1.5) + 1) * 360;
+        const grad = videoCtx.createLinearGradient(0, laserY - 10, 0, laserY + 10);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(0.5, 'rgba(6, 182, 212, 0.2)');
+        grad.addColorStop(1, 'transparent');
+        videoCtx.fillStyle = grad;
+        videoCtx.fillRect(0, laserY - 10, 1280, 20);
+
+        videoCtx.strokeStyle = 'rgba(6, 182, 212, 0.6)';
+        videoCtx.lineWidth = 1;
+        videoCtx.beginPath();
+        videoCtx.moveTo(0, laserY);
+        videoCtx.lineTo(1280, laserY);
+        videoCtx.stroke();
+
+        requestAnimationFrame(runVideoSimulation);
+    }
+
+    // Start the gorgeous simulation loop immediately!
+    runVideoSimulation();
 
     // Logging simulation helper
     function addLog(text) {

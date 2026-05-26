@@ -1,0 +1,775 @@
+Day - 21
+
+Learn how to perform Create, Read, Update, and Delete operations using Node.js's built-in fs module. We'll also handle terminal inputs to do these operations dynamically.
+
+
+
+Basic File Operations
+const fs = require("fs");
+
+
+Create New Files
+fs.writeFileSync("files/apple.txt", "This is fruit");
+fs.writeFileSync("files/banana.txt", "This is fruit");
+writeFileSync() creates files. If file already exists, it will overwrite.
+
+
+
+Delete a File
+fs.unlinkSync("files/banana.txt");
+unlinkSync() removes a file.
+
+
+
+Read a File
+const data = fs.readFileSync("files/apple.txt", "utf-8");
+console.log(data);
+readFileSync() reads file content. "utf-8" ensures readable string output.
+
+
+
+Update a File
+fs.appendFileSync("files/apple.txt", " and this is good for health");
+appendFileSync() adds new content to existing file.
+
+
+
+CRUD Operations with Terminal Input
+Now let’s make this dynamic — use terminal commands like Write, Read, update, or delete.
+
+const fs = require("fs");
+const operation = process.argv[2];
+process.argv[] gives command-line input.
+
+
+
+Create File from Terminal
+node index.js Write fileName "your content"
+
+
+if (operation === "Write") {
+  const name = process.argv[3];
+  const content = process.argv[4];
+  fs.writeFileSync(`files/${name}.txt`, content);
+  console.log("File Created");
+}
+
+
+Read File from Terminal
+node index.js Read fileName
+
+
+else if (operation === "Read") {
+  const name = process.argv[3];
+  const data = fs.readFileSync(`files/${name}.txt`, "utf-8");
+  console.log(data);
+}
+
+
+Update File from Terminal
+node index.js update fileName "new content"
+
+
+
+
+else if (operation === "update") {
+  const name = process.argv[3];
+  const content = process.argv[4];
+  fs.appendFileSync(`files/${name}.txt`, content);
+}
+
+
+Delete File from Terminal
+node index.js delete fileName
+
+
+else if (operation === "delete") {
+  const name = process.argv[3];
+  fs.unlinkSync(`files/${name}.txt`);
+}
+
+
+Fallback Case
+else {
+  console.log("Operation not found");
+}
+
+
+
+
+Example Test
+node index.js Write hello "This is demo"
+node index.js Read hello
+node index.js update hello " updated!"
+node index.js delete hello
+
+Day - 22
+
+In most programming languages, operations run synchronously — one task at a time. But in JavaScript and Node.js, we often use asynchronous programming for better speed and performance.
+
+
+
+Synchronous Programming
+Executes one task at a time.
+The next line waits until the current one finishes.
+Slower in terms of overall performance.
+
+
+console.log("Apple1");
+console.log("Apple2");
+console.log("Apple3");
+Each task waits for the previous one to complete.
+
+
+
+Asynchronous Programming
+Doesn’t wait for a task to finish before moving on.
+Great for I/O operations (file, API, database).
+Faster in real-world applications.
+
+
+console.log("Apple1");
+
+setTimeout(() => {
+  console.log("Apple2");
+}, 2000);
+
+console.log("Apple3");
+setTimeout() runs separately and doesn’t block the next line.
+
+
+
+When Not to Use Asynchronous Code?
+Sometimes, we want code to wait until one step is complete.
+
+let a = 20;
+let b = 0;
+
+setTimeout(() => {
+  b = 100;
+}, 2000);
+
+console.log(a + b); // Output: 20 (Not 120!)
+Here, we don’t need async because we want b before using it.
+
+
+
+Real-Life Async Example
+Reading a file without blocking the main thread:
+
+onst fs = require("fs");
+
+fs.readFile("text/peter.txt", "utf-8", (err, data) => {
+  if (err) return false;
+  console.log(data);
+});
+
+console.log("End Script");
+
+
+Read FIle in Sync
+const data = fs.readFileSync("text/peter.txt", "utf-8");
+
+console.log(data);
+
+Day - 23
+
+Create a basic website with HTML and CSS using Node.js. We’ll load different HTML pages and a CSS file using the fs (File System) module and http core module.
+
+
+
+Create a server file
+website.js
+
+const http = require("http");
+
+http
+  .createServer((req, resp) => {
+    resp.write("page check");
+    resp.end();
+  })
+  .listen(3200);
+This creates a simple HTTP server.
+
+
+
+Load HTML file using fs
+const http = require("http");
+const fs = require("fs");
+
+http
+  .createServer((req, resp) => {
+    fs.readFile("html/home.html", "utf-8", (error, data) => {
+      if (error) {
+        resp.writeHead(500, { "content-type": "text/plain" });
+        resp.end("Internal Server Error");
+        return false;
+      }
+
+      resp.write(data);
+      resp.end();
+    });
+  })
+  .listen(3200);
+This loads the home.html file and displays its content on the browser using asynchronous fs.readFile().
+
+
+
+Sync vs Async in fs (Used in Header)
+In the code below, we use:
+
+let collectHeaderData = fs.readFileSync("html/header.html", 'utf-8');
+
+
+Synchronous (Sync)
+
+fs.readFileSync() blocks further execution until the file is fully read.
+
+Use it for small files like header.html where immediate availability is needed.
+
+
+
+
+Later in the same code:
+fs.readFile("html"+file+".html", 'utf-8', (error, data) => {
+  ...
+});
+
+
+Asynchronous (Async)
+
+fs.readFile() does not block the code. It continues and runs the callback when data is ready.
+
+Better for performance, especially for larger or external files.
+
+
+
+Handle HTML and CSS File Together
+const http = require('http');
+const fs = require('fs');
+
+http.createServer((req, resp) => {
+
+    //  Sync: Header file loaded before anything else
+    let collectHeaderData = fs.readFileSync("html/header.html", 'utf-8');
+
+    let file = "/home";
+    if (req.url !== '/') {
+        file = req.url;
+    }
+
+    // Async: Load HTML file with callback
+    if (req.url !== '/style.css') {
+        fs.readFile("html" + file + ".html", 'utf-8', (error, data) => {
+            if (error) {
+                resp.writeHead(500, { "content-type": "text/plain" });
+                resp.end("internal server error");
+                return false;
+            }
+
+            resp.write(collectHeaderData + "" + data);
+            resp.end();
+        });
+    } 
+    // Serve CSS with correct content-type
+    else if (req.url === '/style.css') {
+        fs.readFile("html/style.css", 'utf-8', (error, data) => {
+            if (error) {
+                resp.writeHead(500, { "content-type": "text/plain" });
+                resp.end("css not found");
+                return false;
+            }
+
+            resp.writeHead(200, { "content-type": "text/css" });
+            resp.end(data);
+        });
+    }
+
+}).listen(3200);
+
+
+Why CSS Didn’t Load Earlier?
+Because we didn’t set "Content-Type": "text/css".
+
+Browsers need the correct header to apply styles.
+
+Day - 24
+
+What is Path module?
+In Node.js, the path module is a built-in core module that provides utilities for working with file and directory paths.
+
+
+
+
+
+What is Global constant?
+In Node.js, a global constant is a value that is always available in your code without requiring an import or declaration.
+
+
+
+Example of both:
+const path = require("path");
+const file = "text/peter.txt";
+
+console.log(path.extname(file)); // Output: .txt
+console.log(path.dirname(file)); // Output: text
+console.log(path.basename(file)); // Output: peter.txt
+console.log(path.resolve("text", "peter.text")); // Output: absolute path to text/peter.text
+console.log(path.isAbsolute(file)); // Output: false (if the path is not absolute)
+
+
+This are the global constants in Node.js
+console.log(__dirname); // Output: current directory path
+console.log(__filename); // Output: current file path
+
+
+Why do we need global constants?
+This is very helpful when you're working with file systems (like reading HTML or CSS files), especially when your project is running on different machines or environments. It ensures your file paths are always accurate.
+
+Day - 25
+
+What is Express.js?
+Express.js is a fast, minimal, and flexible web application framework built on Node.js. It helps you easily create web servers, APIs, and routes.
+
+
+
+Why Use Express.js?
+Simple Routing
+Middleware Support
+Template Engines
+REST API Ready
+Lightweight and Fast
+Easy to Learn
+
+
+How to Set Up Express.js
+
+Create a New Project Folder
+Express-2025
+
+
+
+Initialize Node.js Project
+npm init
+Fill the details like:
+
+Package Name: node-js-2025
+Description: node js and express js tutorials in hindi 2025
+Entry Point: index.js (default)
+
+
+Install Express
+npm install express --save
+
+
+Create Entry File – index.js
+Basic Express Server
+const express = require("express");
+
+const app = express();
+
+app.get("", (req, resp) => {
+  resp.send("<h1>Basic Node js example</h1>");
+});
+
+app.get("/about", (req, resp) => {
+  resp.send("<h1>This is about page</h1>");
+});
+
+app.get("/contact", (req, resp) => {
+  resp.send("<h1>This is contact page</h1>");
+});
+
+app.listen(3200);
+Explanation:
+
+app.get() – Handles GET requests.
+resp.send() – Sends HTML or plain text response.
+app.listen(3200) – Server listens on port 3200.
+
+
+Auto Restart with Nodemon
+To avoid restarting the server manually every time:
+
+
+
+Install Nodemon
+npm i nodemon --save-dev
+
+
+Then run your project using:
+
+npx nodemon index.js
+Now your server will auto-refresh on every file save.
+
+
+Day - 26
+
+Understand Express.js Flow
+
+
+Require Express
+const express = require("express");
+We use require("express") to include the Express module.
+
+Why we can’t use Express directly?
+
+Because Express returns a function. To use it, we need to call it:
+
+const app = express();
+
+
+Alternatively, you can do it like this in one line:
+
+const app = require("express")();
+This creates an Express application and stores it in the app variable.
+
+
+
+Start the Server
+app.listen(3200);
+This tells Express to start a server on port 3200.
+
+
+
+Check app Object
+If you want to inspect what’s inside the Express app, use:
+
+console.log(app);
+This will show all the available methods and properties of the Express app.
+
+
+
+Express.js Routes and Flow
+Basic Route Example
+app.get("", (req, resp) => {
+  resp.send("<h1>Home Page</h1>");
+});
+.get() is used to handle GET requests.
+It takes two parameters: a path ("" or "/about") and a callback function.
+
+
+Multiple Routes Example
+app.get("", (req, resp) => {
+  resp.send("<h1>Home Page</h1>");
+});
+
+app.get("about", (req, resp) => {
+  resp.send("<h1>About Page</h1>");
+});
+
+app.get("/", (req, resp) => {
+  resp.send("<h1>Home Page 2</h1>");
+});
+Note:
+
+Express matches and executes the first matching route. So if "" and "/" look similar, only the first one is executed.
+
+
+Day - 27
+
+
+Why ES Modules?
+By default, Node.js uses CommonJS syntax (require, module.exports).
+
+If you try:
+
+import express from 'express';
+You'll get an error, because Node doesn’t recognize import/export without proper setup.
+
+
+
+Enable ES Module Support
+In your package.json, add this line:
+
+"type": "module"
+This tells Node.js to interpret your files using ES module syntax.
+
+
+
+Before (CommonJS Syntax)
+const express = require("express")();
+
+
+After (ES Module Syntax)
+import express from 'express';
+const app = express();
+
+
+Create Pages Using Export/Import
+Create home.js
+
+pages/home.js
+
+export default function home() {
+  return `<h1>Home Page with ES export way</h1>`;
+}
+
+
+Create about.js
+
+File: pages/about.js
+
+export default function about() {
+  return `<h1>About Page</h1>`;
+}
+
+
+Create contact.js
+
+pages/contact.js
+
+export default function contact() {
+  return `<h1>Contact Page</h1>`;
+}
+
+
+Import and Use in Your Main File
+File: index.js
+
+import express from 'express';
+import home from './pages/home.js';
+import about from './pages/about.js';
+import contact from './pages/contact.js';
+
+const app = express();
+
+app.get("/", (req, res) => {
+  res.send(home());
+});
+
+app.get("/about", (req, res) => {
+  res.send(about());
+});
+
+app.get("/contact", (req, res) => {
+  res.send(contact());
+});
+
+app.listen(3200);
+
+
+Day - 28
+
+
+In this tutorial
+Render basic HTML elements
+Create and display a login form
+Handle POST requests
+Import HTML from other files and serve them using Express.js
+
+
+Setup Express
+Start by importing express and creating an app instance:
+
+import express from "express";
+const app = express();
+
+
+Render Basic Element on Home Page
+app.get("/", (req, resp) => {
+  resp.send("<h1>Home Page</h1>");
+});
+This will render a simple Home Page when you visit http://localhost:3200/.
+
+
+
+Make and Render a Login Form
+app.get("/login", (req, resp) => {
+  resp.send(`<form action="/submit" method="post">
+			<input type="text" placeholder="name">
+			<br/>
+			<br/>
+			<input type="password" placeholder="Enter Password">
+			<br/>
+			<br/>
+			<button>Login</button>
+			</form>`);
+});
+Visit http://localhost:3200/login to view a basic login form.
+
+
+
+Handle POST Request (Form Submission)
+app.post("/submit", (req, resp) => {
+  resp.send(`<h1>Data Sumitted</h1>`);
+});
+When the form is submitted, this route handles the POST request and returns a success message.
+
+
+
+Import HTML Elements From Other Files
+Organize our HTML into separate files and import them.
+
+
+home.js
+export default function home() {
+  return "<h1>Home Page</h1> <a href='/login'>Go to Login</a>";
+}
+
+
+login.js
+
+export default function login() {
+  return `<form action="/submit" method="post">
+			<input type="text" placeholder="name">
+			<br/>
+			<br/>
+			<input type="password" placeholder="Enter Password">
+			<br/>
+			<br/>
+			<button>Login</button>
+			<a href='/'>Go to Home</a>
+			</form>`;
+}
+
+
+submit.js
+
+export default function submit() {
+  return "<h1>Data Sumitted</h1> <a href='/'>Go to Home</a>";
+}
+
+
+Final Code — index.js
+
+import home from "./pages/home.js";
+import login from "./pages/login.js";
+import submit from "./pages/submit.js";
+
+const app = express();
+
+app.get("/", (req, resp) => {
+  resp.send(home());
+});
+app.get("/login", (req, resp) => {
+  resp.send(login());
+});
+
+app.post("/submit", (req, resp) => {
+  resp.send(submit());
+});
+
+app.listen(3200, () => {
+  console.log("Server is running on port 3200");
+});
+Visit / to see the home page.
+Visit /login for the login form.
+Submit the form and it will show the confirmation from /submit.
+
+
+
+Day - 29
+
+Create and render HTML files
+home.html
+
+ <h1>Home Page</h1>
+ <a href="login">Go to Login Page</a>
+
+
+login.html
+
+<h1>Login Page</h1>
+<a href="/">Go to Home Page</a>
+
+about.html
+ <h1>About Page</h1>
+ <a href="/">Go to Home Page</a>
+
+
+Make node server with express js
+import express from "express";
+
+const app = express();
+
+app.get("/", (req, resp) => {
+  resp.sendFile("view/home.html");
+});
+app.listen(3200);
+
+
+
+
+resp.sendFile("view/home.html");
+This gives you an error because you need an absolute path.
+
+
+
+Get Absolute Path
+Use the path module to get absolute path.
+
+import express from "express";
+import path from "path";
+
+const app = express();
+
+app.get("/", (req, resp) => {
+  const absPath = path.resolve("view/home.html");
+  resp.sendFile(absPath);
+});
+
+app.get("/login", (req, resp) => {
+  const absPath = path.resolve("view/login.html");
+  resp.sendFile(absPath);
+});
+
+app.get("/about", (req, resp) => {
+  const absPath = path.resolve("view/about.html");
+  resp.sendFile(absPath);
+});
+app.listen(3200);
+We used path.resolve() to get the absolute path of HTML files.
+
+
+Now you're ready to open the browser:
+Home → http://localhost:3200/
+Login → http://localhost:3200/login
+About → http://localhost:3200/about
+
+
+Day - 30
+
+What is a 404 Page?
+A 404 page means "Page Not Found". This shows up when a user tries to visit a page on your website that doesn't actually exist.
+
+
+
+Why is 404 Page Important?
+Without a 404 page:
+
+User sees a blank or error page.
+They may think your website is broken or not working.
+With a 404 page:
+
+You can show a friendly message.
+Tell the user that the website is fine, but the page they requested doesn't exist.
+
+
+Make a File for 404 Page
+Create a new HTML file named 404.html inside the view folder.
+
+You can use ChatGPT to generate a beautiful and simple 404 HTML template.
+
+
+
+Use Function for 404 Page in Express
+Express provides a special function app.use() — it's a multi-purpose middleware and is also used to handle 404 errors.
+
+
+
+app.use((req, resp) => {
+  const absPath = path.resolve("view/404.html");
+  resp.status(404).sendFile(absPath);
+});
+
+
+Improvement: Make Common Absolute Path
+To avoid repeating path.resolve() again and again, create a common absolute path for the whole folder (not individual files):'
+
+const absPath = path.resolve("view");
+Then use it like this:
+
+app.use((req, resp) => {
+  resp.status(404).sendFile(absPath + "/404.html");
+});

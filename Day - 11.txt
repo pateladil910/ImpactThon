@@ -1,0 +1,618 @@
+Day - 11
+
+How to run:
+Save as app.js
+Run: nodemon app.js or node app.js
+Open your browser and go to: http://localhost:4800
+
+
+Passing Variables and Functions in Response
+You can also include variables, functions, or dynamic values (like current time):
+
+const http = require("http");
+
+const age = 29;
+
+http
+  .createServer((req, resp) => {
+    resp.setHeader("Content-Type", "text/html");
+
+    resp.write(`
+      <html>
+        <head>
+          <title>Code Step by Step</title>
+        </head>
+        <body>
+          <h1>Hello Anil Sidhu</h1>
+          <h2>Age: ${age}</h2>
+          <h2>Current Date & Time: ${Date()}</h2>
+        </body>
+      </html>
+    `);
+
+    resp.end();
+  })
+  .listen(4800);
+
+
+
+resp.setHeader("Content-Type", "text/html"): Tells the browser that we’re sending back HTML.
+Template literals (` `): Used to inject JavaScript variables like age and Date() into the HTML.
+
+
+Day - 12
+
+Create Server in simpleAPI.js
+We’ll use Node.js http module to create a basic server.
+
+
+
+Define Static API Data
+const userData = [
+{
+name: "Anil",
+age: 30,
+email: "anil@test.com",
+},
+{
+name: "sam",
+age: 20,
+email: "sam@test.com",
+},
+{
+name: "peter",
+age: 30,
+email: "peter@test.com",
+},
+];
+This is sample static data to simulate API response.
+
+
+
+Use This Data in Server Response
+const http = require("http");
+
+http
+.createServer((req, resp) => {
+resp.setHeader("Content-Type", "application/json"); // Set the content type to JSON
+resp.write(JSON.stringify(userData)); // Convert the userData array to a JSON string
+resp.end(); // End the response
+})
+.listen(6000);
+
+
+How to Test the API
+Run the file using:
+
+nodemon simpleAPI.js
+
+
+Open browser and go to:
+
+http://localhost:6000
+
+
+Test API using Thunder Client
+You can also use Thunder Client (VS Code extension) or Postman:
+
+Method: GET
+URL: http://localhost:6000
+You will get the JSON response.
+
+Day - 13
+
+What is a Client Request?
+A client request is the action performed by the client (browser or any API testing tool) when it tries to access a URL or send data to the server.
+
+Whenever you open a website or call an API, you're sending a request to the server, and in return, the server sends a response.
+
+
+
+Code to Access Client Request
+const http = require("http");
+
+http
+  .createServer((req, resp) => {
+    console.log(req.url); // Log the requested URL
+    console.log(req.headers); // Log the request headers
+    console.log(req.headers.host); // Log the host
+    console.log(req.method); // Log the HTTP method (GET, POST, etc.)
+  })
+  .listen(5000);
+Now open localhost:5000/, and check the terminal — you’ll see the request data being logged.
+
+
+
+Make Pages with Client Request
+const http = require("http");
+
+http
+  .createServer((req, resp) => {
+    if (req.url == "/") {
+      resp.write("<h1>Home page</h1>");
+    } else if (req.url == "/login") {
+      resp.write("<h1>Login page</h1>");
+    } else {
+      resp.write("<h1>Other page</h1>");
+    }
+    resp.end(); // End the response
+  })
+  .listen(5000);
+
+
+How to Test It?
+Run the file:
+
+nodemon filename.js
+
+
+Open your browser:
+
+http://localhost:5000/ → Shows Home page
+http://localhost:5000/login → Shows Login page
+Any other route → Shows Other page
+
+Day - 14
+
+What is Command Line Input?
+Sometimes, we want to pass values directly while running a file from the terminal — like a username or a dynamic port number.
+
+
+
+Create File: command-line-input.js
+nodemon command-line-input.js anil sidhu
+This runs the file and passes "anil" and "sidhu" as input arguments.
+
+
+
+How to Get Command Line Input
+const arg = process.argv;
+
+console.log("-------", arg);
+
+
+Output:------- [
+  'C:\\Program Files\\nodejs\\node.exe',
+  'C:\\Users\\sheet\\OneDrive\\Desktop\\turorial\\node 2025\\command-line-input.js',
+  'anil',
+  'sidhu'
+]
+🧾 process.argv is an array:
+
+Index 0 → Node path
+Index 1 → File path
+Index 2 onwards → Actual input values
+
+
+Access Individual Input
+console.log("-------", arg[3]);
+
+
+Output:
+
+------- sidhu
+Note: Space-separated values are stored as separate elements in the array.
+
+
+Example Use Case: Dynamic Port
+const http = require("http");
+const arg = process.argv;
+const port = arg[2];
+
+http
+  .createServer((req, resp) => {
+    resp.write("test input from cmd");
+    resp.end();
+  })
+  .listen(port);
+
+
+Run this from Terminal:
+nodemon command-line-input.js 4100
+This will start a server on port 4100.
+
+Day - 15
+
+Why load an HTML file with fs?
+Instead of writing HTML as a string in resp.write(), it's more scalable and readable to keep HTML in a separate .html file.
+This approach is cleaner, especially for large or structured HTML.
+
+
+Server File (web.js)
+const http = require("http");
+
+http.createServer((req, resp) => {}).listen(3200);
+
+
+Creates a valid HTTP server.
+Listens on port 3200.
+
+
+HTML File (web.html)
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web page</title>
+  </head>
+  <body>
+    <h1>Web Page Heading</h1>
+    <input type="text" />
+    <button>Click</button>
+  </body>
+</html>
+Well-formed HTML structure.
+Proper title, meta tags, and UI elements.
+
+
+Read and Load HTML File Using fs Module
+const http = require("http");
+const fs = require("fs");
+
+http
+  .createServer((req, resp) => {
+    fs.readFile("html/web.html", "utf-8", (err, data) => {
+      if (err) {
+        resp.writeHead(500, {
+          "Content-Type": "text/plain",
+        });
+        resp.write("internal server error");
+        resp.end();
+        return;
+      }
+
+      resp.writeHead(200, {
+        "Content-Type": "text/html",
+      });
+      resp.write(data);
+      resp.end();
+    });
+  }).listen(3200);
+
+
+
+Correctly reads the file html/web.html (assuming the folder structure is correct).
+
+Sets appropriate status codes (500 for error, 200 for success).
+Handles errors gracefully.
+Sends the HTML content as response.
+
+
+Check Output
+When you run node web.js or nodemon web.js, and visit http://localhost:3200, the browser will correctly show the HTML content from web.html.
+
+Day - 16
+
+Form inside JS file
+You correctly created and served a basic HTML form directly via resp.write():
+
+const http = require("http");
+
+http
+  .createServer((req, resp) => {
+    resp.writeHead(200, {
+      "Content-Type": "text/html",
+    });
+    resp.write(`
+      <form action="/submit" method="POST">
+        <input type="text"  placeholder="Enter username" name="name" />
+        <input type="text"  placeholder="Enter email" name="email" />
+        <button>Submit</button>
+      </form>
+    `);
+    resp.end();
+  })
+  .listen(3200);
+This works fine, though you're not handling the actual POST data yet — just confirming routing works.
+
+
+
+Conditional Handling of /submit
+if (req.url === "/") {
+  // form page
+} else if (req.url === "/submit") {
+  // confirmation message
+}
+This conditional routing is correct for handling basic URL-based navigation.
+
+
+
+Using a separate form.html file
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form page</title>
+</head>
+<body>
+  <form action="/submit" method="POST">
+    <input type="text" placeholder="Enter username" name="name" />
+    <input type="text" placeholder="Enter email" name="email" />
+    <button>Submit</button>
+  </form>
+</body>
+</html
+Perfectly structured form with POST method and inputs.
+
+
+
+Load HTML File via fs
+const http = require('http');
+const fs = require('fs');
+
+http.createServer((req, resp) => {
+  fs.readFile('html/form.html', 'utf-8', (error, data) => {
+    if (error) {
+      resp.writeHead(500, { "content-type": 'text/plain' });
+      resp.end('internal server error');
+      return;
+    }
+
+    resp.writeHead(200, { "content-type": 'text/html' });
+
+    if (req.url == '/') {
+      resp.write(data);
+    } else if (req.url == '/submit') {
+      resp.write('<h1>Data submitted</h1>');
+    }
+
+    resp.end();
+  });
+}).listen(3200);
+Everything is correct:
+Loads HTML file when GET /
+Shows confirmation message when /submit is requested
+Responds with correct headers
+Properly handles fs.readFile errors
+
+Day - 17
+
+When a form is submitted using the POST method, data is sent in chunks. To handle this in Node.js, we use two important events: on('data') and on('end').
+
+
+
+Get data from request
+We collect incoming data chunks into a buffer:
+
+let dataBody = [];
+req.on("data", (chunk) => {
+  dataBody.push(chunk);
+});
+
+
+Handle data with Buffer
+Once all data is received, we combine and convert it to a string:
+
+req.on("end", () => {
+  let rawData = Buffer.concat(dataBody).toString();
+  console.log(rawData);
+});
+resp.write(`<h1> Data Submitted </h1>`);
+
+
+Make request data readable
+To parse this string into key-value pairs, use Node's built-in querystring module:
+
+const querystring = require("querystring");
+
+req.on("end", () => {
+  let rawData = Buffer.concat(dataBody).toString();
+  let readableData = querystring.parse(rawData);
+  console.log(readableData);
+});
+
+
+
+Notes
+on('data') collects the chunks
+on('end') finalizes the data
+querystring.parse() makes the data easier to use
+
+Day - 18
+
+When users submit form data, we can save it in a file using Node.js. There are two ways to create files: Synchronous and Asynchronous.
+
+
+
+Synchronous File Creation
+let dataString =
+  "My name is " +
+  readableData.name +
+  " and my email is " +
+  readableData.email;
+
+fs.writeFileSync("text/" + readableData.name + ".txt", dataString);
+console.log("File Created");
+dataString: combines name and email from the form.
+writeFileSync: writes data to file in a blocking way (waits till complete).
+"text/" + readableData.name + ".txt": file name is based on user input.
+
+
+Asynchronous File Creation
+fs.writeFile(
+  "text/" + readableData.name + ".txt",
+  dataString,
+  "utf-8",
+  (err) => {
+    if (err) {
+      resp.end("Internal Server Error");
+      return false;
+    } else {
+      console.log("File Created");
+    }
+  }
+);
+writeFile: non-blocking (code runs while file is being created).
+"utf-8": encoding type.
+Callback handles success or error.
+
+Day - 19
+
+Let’s understand how Node.js works behind the scenes — especially how the Call Stack, Node APIs, and Event Loop come together.
+
+
+
+Main Function Execution
+When Node.js runs code, it first registers the main() function in the call stack. Then other functions are called in order.
+
+const x = 1;
+const y = x + 2;
+console.log("sum is " + y);
+main() is added to the call stack automatically.
+After console.log(), it exits the stack.
+Only main() remains and exits last.
+
+
+Example with a Function
+const listLocations = (locations) => {
+  locations.forEach((location) => {
+    console.log(location);
+  });
+};
+
+const myLocations = ["philly", "nyc"];
+
+listLocations(myLocations);
+Call Stack Flow:
+
+listLocations enters call stack
+forEach runs each item
+console.log("philly")
+Stack clears, then next item:
+console.log("nyc")
+Stack becomes empty
+
+
+Node APIs & setTimeout
+Node APIs handle asynchronous code like setTimeout.
+
+console.log("Starting up");
+
+setTimeout(() => {
+  console.log("Two Seconds");
+}, 2000);
+
+setTimeout(() => {
+  console.log("Zero Seconds");
+}, 0);
+
+console.log("Finishing up");
+Call Stack Output Order:
+
+Starting up
+Finishing up
+(then Node APIs hold timers)
+Event Loop then executes callbacks when the call stack is empty:
+
+3. Zero Seconds
+
+4. Two Seconds
+
+
+
+Event Loop
+Keeps checking if the call stack is empty.
+If empty, moves code from callback queue to call stack.
+
+Day - 20
+
+Node.js is great for creating modular server-side applications. In this post, we’ll create a simple project using modules, routing, and form handling.
+
+
+
+Project Structure
+Create 3 files:
+
+root.js (main server file)
+userForm.js (HTML form)
+userDataSubmit.js (handle form data)
+
+
+root.js (Main Server File)
+const http = require("http");
+const userForm = require("./userForm");
+const userDataSubmit = require("./userDataSubmit");
+
+http
+  .createServer((req, resp) => {
+    resp.writeHead(200, { "Content-Type": "text/html" });
+
+    if (req.url === "/") {
+      userForm(req, resp);
+    } else if (req.url === "/submit") {
+      userDataSubmit(req, resp);
+    }
+
+    resp.end();
+  })
+  .listen(3200);
+
+
+This file:
+Creates the HTTP server
+Routes / to form and /submit to form handler
+Sends HTML response based on the route
+
+
+userForm.js (HTML Form)
+function userForm(req, resp) {
+  resp.write(`
+    <form action="/submit" method="POST">
+      <input type="text" placeholder="Enter username" name="name" />
+      <input type="text" placeholder="Enter email" name="email" />
+      <button>Submit</button>
+    </form>
+  `);
+}
+
+module.exports = userForm;
+This file:
+Displays a form with two input fields
+Sends data to /submit via POST method
+
+
+userDataSubmit.js (Handle Form Data)
+const querystring = require("querystring");
+
+function userDataSubmit(req, resp) {
+  let dataBody = [];
+
+  req.on("data", (chunk) => {
+    dataBody.push(chunk);
+  });
+
+  req.on("end", () => {
+    let rawData = Buffer.concat(dataBody).toString();
+    let readableData = querystring.parse(rawData);
+
+    let dataString =
+      "My name is " +
+      readableData.name +
+      " and my email is " +
+      readableData.email;
+
+    console.log(dataString);
+  });
+
+  resp.write(`<h1>You can get data from user form here</h1>`);
+}
+
+module.exports = userDataSubmit;
+This file:
+
+Listens to data from the form
+Collects data chunks using Buffer
+Converts it to a readable object using querystring
+Logs name and email in the console
+
+
+Output Demo
+node root.js
+
+
+Open browser at:
+
+http://localhost:3200/
+
