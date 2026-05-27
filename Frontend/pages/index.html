@@ -6,6 +6,62 @@
     <title>AI Smart Safety System | Next-Gen Industrial Guard</title>
     <link rel="stylesheet" href="../css/index_new.css">
     <link rel="stylesheet" href="../css/navbar_responsive.css">
+    
+    <!-- HIGH-SPEC MOBILITY OVERRIDE FOR CONFLICTING LAYOUTS -->
+    <style>
+        @media (max-width: 1024px) {
+            /* Force mobile drawer links container to be visible, static, and correctly laid out on mobile */
+            .nav-menu .nav-links {
+                display: flex !important;
+                position: static !important;
+                transform: none !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 20px !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 0 !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+            
+            /* Force list items to be visible by default (allow auth.js display: none overrides) */
+            .nav-menu .nav-links li {
+                display: block;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+            
+            .nav-menu .nav-links a {
+                color: var(--text-muted) !important;
+                font-size: 16px !important;
+                display: block !important;
+                width: 100% !important;
+                padding: 6px 0 !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+            
+            .nav-menu .nav-links a.active {
+                color: var(--primary-neon) !important;
+                border-left: 3px solid var(--primary-neon) !important;
+                padding-left: 10px !important;
+            }
+
+            /* Ensure profile section and auth buttons align beautifully at the bottom of the drawer */
+            .nav-menu .profile-box, .nav-menu .auth-buttons {
+                margin-top: auto !important;
+                width: 100% !important;
+                flex-direction: column !important;
+                gap: 12px !important;
+                padding-top: 25px !important;
+                border-top: 1px solid rgba(6, 182, 212, 0.15) !important;
+            }
+        }
+    </style>
 </head>
 <body>
 
