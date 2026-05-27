@@ -2,6 +2,13 @@
 <html lang="en">
 
 <head>
+  <!-- Protected Route Gatekeeper: Instant Guest Firewall -->
+  <script>
+    if (localStorage.getItem("isLoggedIn") !== "true") {
+      console.warn("Unauthorized access blocked. Redirecting to login gateway...");
+      window.location.replace("login.html");
+    }
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -233,6 +240,60 @@ s
         width: 100%;
         justify-content: center;
       }
+    }
+
+    /* HIGH-SPEC MOBILITY OVERRIDE FOR CONFLICTING LAYOUTS */
+    @media (max-width: 1300px) {
+        /* Force mobile drawer links container to be visible, static, and correctly laid out on mobile */
+        .nav-menu .nav-links {
+            display: flex !important;
+            position: static !important;
+            transform: none !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 20px !important;
+            width: 100% !important;
+            height: auto !important;
+            padding: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Force list items to be visible by default (allow auth.js display: none overrides) */
+        .nav-menu .nav-links li {
+            display: block;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .nav-menu .nav-links a {
+            color: var(--text-muted) !important;
+            font-size: 16px !important;
+            display: block !important;
+            width: 100% !important;
+            padding: 6px 0 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .nav-menu .nav-links a.active {
+            color: var(--primary-neon) !important;
+            border-left: 3px solid var(--primary-neon) !important;
+            padding-left: 10px !important;
+        }
+
+        /* Ensure profile section and auth buttons align beautifully at the bottom of the drawer */
+        .nav-menu .profile-box, .nav-menu .auth-buttons {
+            margin-top: auto !important;
+            width: 100% !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            padding-top: 25px !important;
+            border-top: 1px solid rgba(6, 182, 212, 0.15) !important;
+        }
     }
   </style>
 </head>
@@ -602,6 +663,43 @@ s
       document.getElementById("dateFilter").valueAsDate = new Date();
       toggleFilterType();
       setInterval(fetchData, 5000);
+    };
+  </script>
+
+  <!-- Secure Firebase Session Verification & Logout Controller -->
+  <script type="module">
+    import { auth, signOut, onAuthStateChanged } from '../js/firebase.js';
+
+    // Verify auth persistence and sync session
+    onAuthStateChanged(auth, (user) => {
+      if (!user && localStorage.getItem("isLoggedIn") === "true" && auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
+        console.warn("Firebase session expired. Logging out...");
+        window.logout();
+      }
+    });
+
+    // Override global logout function to securely handle Firebase signOut
+    window.logout = async function() {
+      console.log("Executing secure gateway termination...");
+      
+      try {
+        if (auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
+          await signOut(auth);
+        }
+      } catch (err) {
+        console.error("Firebase signOut failed:", err);
+      }
+
+      // Safe clean clear of local storages
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("username");
+      localStorage.removeItem("displayName");
+      localStorage.removeItem("profilePhoto");
+      localStorage.removeItem("uid");
+      localStorage.removeItem("userRole");
+
+      // Redirect immediately back to login gateway
+      window.location.replace("login.html");
     };
   </script>
 

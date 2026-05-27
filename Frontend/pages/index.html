@@ -9,7 +9,7 @@
     
     <!-- HIGH-SPEC MOBILITY OVERRIDE FOR CONFLICTING LAYOUTS -->
     <style>
-        @media (max-width: 1024px) {
+        @media (max-width: 1300px) {
             /* Force mobile drawer links container to be visible, static, and correctly laid out on mobile */
             .nav-menu .nav-links {
                 display: flex !important;
@@ -210,36 +210,158 @@
     </div>
 </section>
 
-<!-- CORE FEATURES SECTION -->
-<section class="features-section">
+<!-- CYBERNETIC MASTER COMMAND PORTAL -->
+<section class="portal-section">
     <div class="section-header">
-        <h2>Industrial Defense Core</h2>
-        <p>Automated safety barriers driven by custom vision algorithms and deep neural monitors</p>
+        <h2>Cybernetic Master Command Portal</h2>
+        <p>Unified access gateway to all visual monitoring streams, real-time analytics, hardware controllers, and operator logs</p>
     </div>
 
-    <div class="feature-grid">
-        <div class="feature-card-premium">
-            <div class="feature-icon">🧠</div>
-            <h3>AI Surveillance</h3>
-            <p>Utilizes custom-trained YOLOv8 computer vision models to detect operator incursions into mechanical hazard sectors instantly.</p>
+    <div class="portal-grid">
+        <!-- Compartment A: Real-Time Operations -->
+        <div class="portal-compartment compartment-a">
+            <h3 class="compartment-title">
+                <span class="compartment-dot dot-cyan"></span> Real-Time Operations
+            </h3>
+            <div class="portal-cards">
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">🎥</span>
+                            <h4>Live AI Stream</h4>
+                        </div>
+                        <p>Pose tracking confidence engine, joint estimation canvas, and exclusion zone configuration.</p>
+                    </div>
+                    <a href="solution.html" class="portal-card-btn">Launch Live Feed</a>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">📈</span>
+                            <h4>Danger Analytics</h4>
+                        </div>
+                        <p>Real-time graphical charts, threat frequencies, and system latency timelines.</p>
+                    </div>
+                    <a href="chart.html" class="portal-card-btn">Examine Analytics</a>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">⚙️</span>
+                            <h4>Diagnostics Hub</h4>
+                        </div>
+                        <p>Active ESP32 serial heartbeat tests and hardware e-stop relay diagnostics.</p>
+                    </div>
+                    <a href="diagnostics.html" class="portal-card-btn">Run Diagnostics</a>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">🖥️</span>
+                            <h4>Operator Dashboard</h4>
+                        </div>
+                        <p>Consolidated operator overview screen showing active machine states and telemetry triggers.</p>
+                    </div>
+                    <a href="dashboard.html" class="portal-card-btn">Open Dashboard</a>
+                </div>
+            </div>
         </div>
 
-        <div class="feature-card-premium">
-            <div class="feature-icon">⚡</div>
-            <h3>Millisecond Intercept</h3>
-            <p>High-priority safety logic triggers hardware e-stops and emergency relay shutoffs in less than 300 milliseconds on violation.</p>
+        <!-- Compartment B: Historical Data & Audits -->
+        <div class="portal-compartment compartment-b">
+            <h3 class="compartment-title">
+                <span class="compartment-dot dot-purple"></span> Historical Data & Audits
+            </h3>
+            <div class="portal-cards">
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">📁</span>
+                            <h4>Detection Database</h4>
+                        </div>
+                        <p>Searchable tabular data logs containing historical coordinates and frame captures.</p>
+                    </div>
+                    <a href="history.html" class="portal-card-btn">Query Database</a>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">📝</span>
+                            <h4>Incident Override Logs</h4>
+                        </div>
+                        <p>Trip records, contactor activations, and physical operator bypass logs.</p>
+                    </div>
+                    <a href="incident_log.html" class="portal-card-btn">Audit Shutdowns</a>
+                </div>
+            </div>
         </div>
 
-        <div class="feature-card-premium">
-            <div class="feature-icon">📊</div>
-            <h3>Unified Dashboard</h3>
-            <p>Live stream analytics, heat maps, latency monitors, and automated detection reports consolidated in a single glass portal.</p>
+        <!-- Compartment C: Setup & Architecture -->
+        <div class="portal-compartment compartment-c">
+            <h3 class="compartment-title">
+                <span class="compartment-dot dot-blue"></span> Setup & Architecture
+            </h3>
+            <div class="portal-cards">
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">🔌</span>
+                            <h4>Gateway Config</h4>
+                        </div>
+                        <p>Configure Arduino COM ports, set baud rates, and wire local PLC relay outputs.</p>
+                    </div>
+                    <a href="setup.html" class="portal-card-btn">Configure Port</a>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">📷</span>
+                            <h4>AI Camera Setup</h4>
+                        </div>
+                        <p>Feed RTSP streams, calibrate coordinate metrics, and define safety zone radii.</p>
+                    </div>
+                    <a href="camera_setup.html" class="portal-card-btn">Map Coordinates</a>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">📚</span>
+                            <h4>System Specs</h4>
+                        </div>
+                        <p>Detailed architecture, ESP32 relay schematics, and model training instructions.</p>
+                    </div>
+                    <a href="learn-more.html" class="portal-card-btn">Read Specs</a>
+                </div>
+            </div>
         </div>
 
-        <div class="feature-card-premium">
-            <div class="feature-icon">🔒</div>
-            <h3>Enterprise Ready</h3>
-            <p>Built to interface seamlessly with PLC controllers, Raspberry Pi hardware blocks, industrial buzzers, and surveillance rigs.</p>
+        <!-- Compartment D: Administration -->
+        <div class="portal-compartment compartment-d" id="compartment-admin" style="display: none;">
+            <h3 class="compartment-title">
+                <span class="compartment-dot dot-yellow"></span> Administration
+            </h3>
+            <div class="portal-cards">
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">🔔</span>
+                            <h4>Alerts & Sirens</h4>
+                        </div>
+                        <p>Configure warning buzzers, visual sirens, and automated email alerts.</p>
+                    </div>
+                    <a href="notifications.html" class="portal-card-btn">Manage Alarms</a>
+                </div>
+                <div class="portal-card">
+                    <div class="portal-card-body">
+                        <div class="portal-card-header">
+                            <span class="portal-card-icon">🗝️</span>
+                            <h4>Portal Gatekeeper</h4>
+                        </div>
+                        <p>Manage operator access roles, Firebase credentials, and security clearance logs.</p>
+                    </div>
+                    <a href="admin.html" class="portal-card-btn">Open Gate</a>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -248,26 +370,38 @@
 <section class="zones-section">
     <div class="section-header">
         <h2>Safety Zone Classifications</h2>
-        <p>Three-tier hazard scanning logic that regulates automated industrial shutoff grids</p>
+        <p>Three-tier hazard scanning logic that regulates automated industrial speed governors and PLC relays</p>
     </div>
 
     <div class="zones-grid">
         <div class="zone-card-premium zone-safe">
-            <span class="zone-badge">🟢 Secure</span>
+            <span class="zone-badge">🟢 SECURE</span>
             <h3>Safe Zone</h3>
-            <p>No operators detected near machine cells. Normal production speed and full system operation allowed.</p>
+            <p>No operators detected near machine cells. Normal high-speed production and full capacity system operations allowed.</p>
+            <div class="zone-modbus-indicator">
+                <span class="modbus-label">Modbus VFD Status:</span>
+                <span class="modbus-val value-safe">100% Full Frequency (60.0Hz)</span>
+            </div>
         </div>
 
         <div class="zone-card-premium zone-warning">
-            <span class="zone-badge">🟡 Warning</span>
+            <span class="zone-badge">🟡 WARNING</span>
             <h3>Warning Zone</h3>
-            <p>Human detected inside the secondary hazard buffer. System triggers local buzzer and sends safety warnings to operations.</p>
+            <p>Operator detected inside the secondary hazard buffer. System triggers local warning buzzer and decelerates motors.</p>
+            <div class="zone-modbus-indicator">
+                <span class="modbus-label">Modbus VFD Status:</span>
+                <span class="modbus-val value-warning">30% Reduced Speed (18.0Hz)</span>
+            </div>
         </div>
 
         <div class="zone-card-premium zone-danger">
-            <span class="zone-badge">🔴 Critical Danger</span>
+            <span class="zone-badge">🔴 CRITICAL DANGER</span>
             <h3>Danger Zone</h3>
-            <p>Operator enters the immediate mechanical contact area. System triggers immediate emergency machine STOP override.</p>
+            <p>Operator enters the immediate mechanical contact area. Hardware intercepts trigger immediate e-stops under 300ms.</p>
+            <div class="zone-modbus-indicator">
+                <span class="modbus-label">Modbus VFD Status:</span>
+                <span class="modbus-val value-danger">0.0Hz Emergency Halt (E-STOP)</span>
+            </div>
         </div>
     </div>
 </section>
@@ -304,9 +438,9 @@
             this.x = Math.random() * canvas.width;
             this.y = canvas.height + Math.random() * 100;
             this.size = Math.random() * 2 + 0.5;
-            this.speedY = -(Math.random() * 0.7 + 0.2);
-            this.speedX = Math.random() * 0.4 - 0.2;
-            this.alpha = Math.random() * 0.5 + 0.1;
+            this.speedY = -(Math.random() * 0.35 + 0.1);
+            this.speedX = Math.random() * 0.2 - 0.1;
+            this.alpha = Math.random() * 0.4 + 0.1;
             // 60% cyan particles, 40% blue particles
             this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
         }

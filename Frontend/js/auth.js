@@ -700,7 +700,7 @@ async function handleSocialSubmit(event) {
       
     } else {
       alert(data.message || "Social verification failed.");
-    }
+    }ss
   } catch (error) {
     console.error("Social Linkage Error:", error);
     alert("Connection error occurred during social verification.");
@@ -818,6 +818,23 @@ function checkAuthUI() {
     });
   });
 
+  // Dynamic visual gating for admin-only portal compartments and individual cards
+  const adminCompartment = document.getElementById("compartment-admin");
+  if (adminCompartment) {
+    adminCompartment.style.display = isAdmin ? "block" : "none";
+  }
+
+  // Hide individual admin-only portal cards inside other compartments if not admin
+  adminPages.forEach(page => {
+    const gridButtons = document.querySelectorAll(`.portal-card-btn[href*="${page}"]`);
+    gridButtons.forEach(btn => {
+      const card = btn.closest(".portal-card");
+      if (card) {
+        card.style.display = isAdmin ? "flex" : "none";
+      }
+    });
+  });
+
   // 2. Strict Camera Session Lock Filter (Dashboard, Danger Analytics, Detection Logs)
   const isCameraActive = localStorage.getItem("cameraActive") === "true";
   const cameraPages = ["dashboard.html", "dashboard2.html", "chart.html", "history.html"];
@@ -895,7 +912,7 @@ function checkAuthUI() {
 //     }
 // });
 
-document.addEventListener('DOMContentLoaded', () => {
+function initUnifiedAuthEngine() {
     // ==========================================
     // 1. ELEMENT SELECTORS
     // ==========================================
@@ -964,4 +981,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add your button's actual functionality here if needed
         });
     }
-});
+}
+
+// Prevent race conditions under extremely fast file loading/parsing states (e.g. history.html)
+if (document.readyState === "loading") {
+    document.addEventListener('DOMContentLoaded', initUnifiedAuthEngine);
+} else {
+    initUnifiedAuthEngine();
+}

@@ -548,6 +548,42 @@
     updateLiveTime();
   </script>
 
+  <!-- Role-Gating Visibility Controller for Setup and Admin Links -->
+  <script>
+    (function() {
+      function gateAdminSetupLinks() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        const userRole = localStorage.getItem("userRole");
+        const isAdmin = isLoggedIn === "true" && userRole && userRole.toLowerCase() === "admin";
+
+        const restrictedPages = [
+          "setup.html",
+          "camera_setup.html",
+          "diagnostics.html",
+          "notifications.html",
+          "incident_log.html",
+          "admin.html"
+        ];
+
+        restrictedPages.forEach(page => {
+          const links = document.querySelectorAll(`.nav-menu a[href*="${page}"], .nav-links a[href*="${page}"]`);
+          links.forEach(link => {
+            const li = link.closest("li");
+            if (li) {
+              li.style.setProperty("display", isAdmin ? "block" : "none", "important");
+            }
+          });
+        });
+      }
+
+      // Run immediately to secure page during rendering
+      gateAdminSetupLinks();
+
+      // Also run on DOMContentLoaded to guarantee sync with external auth handler overrides
+      document.addEventListener("DOMContentLoaded", gateAdminSetupLinks);
+    })();
+  </script>
+
   <!-- Auth and Mobile Menu Handler -->
   <script src="../js/auth.js"></script>
 
