@@ -398,3 +398,400 @@
         position: absolute;
     }
 }
+
+/* ===== LAPTOP & DESKTOP CENTERED NAVBAR (1301px and above) ===== */
+@media (min-width: 1301px) {
+    .navbar {
+        position: relative; /* Fixed position context remains, this secures absolute centering context */
+    }
+
+    .nav-menu {
+        display: flex !important;
+        justify-content: flex-end !important; /* Push auth buttons and profile box to the far right */
+        align-items: center !important;
+        flex-grow: 1 !important;
+        margin-left: 0 !important; /* Clear old static margin */
+    }
+
+    .nav-links {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        display: flex !important;
+        gap: 20px !important; /* Premium spacing gap for laptop layout */
+        align-items: center !important;
+        list-style: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
+
+/* ===== TACTICAL LOW-PROFILE SYSTEMS FOOTER ===== */
+.footer {
+    background: rgba(2, 6, 23, 0.95) !important;
+    border-top: 1px solid rgba(6, 182, 212, 0.15) !important;
+    padding: 20px 5% !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    width: 100% !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4) !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+.footer-container {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    gap: 30px !important;
+}
+
+/* Left Brand Block */
+.footer-brand {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    text-align: left !important;
+}
+.footer-title {
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1px !important;
+    color: #ffffff !important;
+}
+.footer-subtitle {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 10.5px !important;
+    color: #94a3b8 !important;
+}
+
+/* Center Telemetry Console */
+.footer-telemetry {
+    display: grid !important;
+    grid-template-columns: repeat(2, auto) !important;
+    gap: 6px 24px !important;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 10.5px !important;
+}
+.telemetry-badge {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: #94a3b8 !important;
+}
+.telemetry-badge span {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+}
+
+/* Badge Glow Colors */
+.badge-green { 
+    background: #10b981 !important; 
+    box-shadow: 0 0 8px #10b981 !important; 
+}
+.badge-cyan { 
+    background: #06b6d4 !important; 
+    box-shadow: 0 0 8px #06b6d4 !important; 
+}
+.badge-blue { 
+    background: #3b82f6 !important; 
+    box-shadow: 0 0 8px #3b82f6 !important; 
+}
+
+/* Right Copyright & Tagline */
+.footer-copyright-block {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    text-align: right !important;
+}
+.footer-copyright-text {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 11.5px !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}
+.footer-motto {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 10.5px !important;
+    color: #94a3b8 !important;
+}
+
+/* --- Responsive Stacking Overrides --- */
+@media (max-width: 1024px) {
+    .footer-container {
+        flex-direction: column !important;
+        gap: 20px !important;
+        text-align: center !important;
+    }
+    .footer-brand, .footer-copyright-block {
+        text-align: center !important;
+        align-items: center !important;
+    }
+    .footer-telemetry {
+        justify-content: center !important;
+    }
+}
+@media (max-width: 480px) {
+    .footer-telemetry {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+}
+
+/* ==========================================================================
+   GLOBAL ENTERPRISE DESIGN SYSTEM & COSMETIC POLISH
+   ========================================================================== */
+:root {
+    --border-radius-enterprise: 16px;
+    --transition-premium: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Unified Premium Hover & Glassmorphism standardizer */
+.glass-panel, .box, .card, .portal-card, .metric-card, .table-box, .compartment-card, .health-card, .centerpiece-card, .timeline-card {
+    background: rgba(11, 19, 43, 0.82) !important;
+    border: 1px solid rgba(6, 182, 212, 0.15) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.16) !important; /* Premium glass-edge reflection */
+    border-radius: var(--border-radius-enterprise) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 
+        0 20px 45px rgba(0, 0, 0, 0.45), 
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 0 24px rgba(6, 182, 212, 0.05) !important;
+    transition: var(--transition-premium) !important;
+}
+
+/* Unified Premium Hover Animation */
+.glass-panel:hover, .box:hover, .card:hover, .portal-card:hover, .metric-card:hover, .table-box:hover, .compartment-card:hover, .health-card:hover, .centerpiece-card:hover, .timeline-card:hover {
+    transform: translateY(-5px) !important;
+    border-color: rgba(6, 182, 212, 0.38) !important;
+    box-shadow: 
+        0 30px 60px rgba(0, 0, 0, 0.55), 
+        0 0 30px rgba(6, 182, 212, 0.25),
+        inset 0 0 24px rgba(6, 182, 212, 0.1) !important;
+}
+
+/* ==========================================================================
+   TELEMETRY FOOTER - DUAL-STATE DYNAMIC READOUT
+   ========================================================================== */
+.telemetry-footer {
+    background: rgba(8, 14, 27, 0.88) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(6, 182, 212, 0.35) !important;
+    border-bottom: 1px solid rgba(6, 182, 212, 0.1) !important;
+    color: var(--text-main) !important;
+    font-family: 'Fira Code', monospace !important;
+    padding: 10px 4% !important;
+    min-height: 55px !important;
+    max-height: 75px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    position: relative !important;
+    z-index: 100 !important;
+    overflow: hidden !important;
+    box-shadow: 
+        0 -4px 20px rgba(6, 182, 212, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    transition: var(--transition-premium) !important;
+}
+
+.telemetry-footer::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 1px !important;
+    background: var(--primary-neon) !important;
+    box-shadow: 0 0 10px var(--primary-neon) !important;
+    opacity: 0.6 !important;
+}
+
+.footer-cluster {
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    transition: var(--transition-premium) !important;
+}
+
+.footer-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+    letter-spacing: 0.5px !important;
+    color: var(--text-muted) !important;
+    text-transform: uppercase !important;
+    transition: color 0.2s ease !important;
+}
+
+.footer-item:hover {
+    color: var(--primary-neon) !important;
+}
+
+.footer-item-label {
+    color: var(--primary-neon) !important;
+    font-weight: 600 !important;
+    opacity: 0.85 !important;
+    text-shadow: 0 0 5px rgba(6, 182, 212, 0.3) !important;
+}
+
+.footer-item-value {
+    color: var(--text-main) !important;
+    font-weight: 500 !important;
+}
+
+.footer-separator {
+    width: 4px !important;
+    height: 4px !important;
+    background: rgba(6, 182, 212, 0.4) !important;
+    border-radius: 50% !important;
+    display: block !important;
+}
+
+.center-cluster {
+    gap: 20px !important;
+}
+
+.status-dot-pulse {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    background-color: var(--primary-neon) !important;
+    box-shadow: 0 0 6px var(--primary-neon) !important;
+    display: inline-block !important;
+    animation: pulse-cyan-ref 2s infinite ease-in-out !important;
+}
+
+@keyframes pulse-cyan-ref {
+    0%, 100% {
+        opacity: 0.4;
+        transform: scale(0.9);
+        box-shadow: 0 0 4px var(--primary-neon);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.15);
+        box-shadow: 0 0 10px var(--primary-neon);
+    }
+}
+
+.utc-clock-wrapper {
+    background: rgba(2, 6, 23, 0.6) !important;
+    border: 1px solid rgba(6, 182, 212, 0.25) !important;
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    transition: var(--transition-premium) !important;
+    box-shadow: inset 0 0 8px rgba(6, 182, 212, 0.05) !important;
+}
+
+.utc-clock-wrapper:hover {
+    border-color: var(--primary-neon) !important;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.2), inset 0 0 8px rgba(6, 182, 212, 0.1) !important;
+}
+
+.utc-label {
+    font-size: 10px !important;
+    color: var(--primary-neon) !important;
+    font-weight: 700 !important;
+    letter-spacing: 1px !important;
+}
+
+.utc-time {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
+    font-variant-numeric: tabular-nums !important;
+    animation: subtle-time-pulse-ref 1s infinite alternate !important;
+}
+
+@keyframes subtle-time-pulse-ref {
+    0% {
+        opacity: 0.92;
+    }
+    100% {
+        opacity: 1;
+        text-shadow: 0 0 12px rgba(255, 255, 255, 0.75);
+    }
+}
+
+/* Visibility Control Helpers */
+.mobile-only {
+    display: none !important;
+}
+.desktop-only {
+    display: flex !important;
+}
+.desktop-only.footer-separator {
+    display: block !important;
+}
+
+/* Tablet view styling rules (Wrap Intelligently) */
+@media (max-width: 992px) {
+    .telemetry-footer {
+        max-height: none !important;
+        padding: 12px 6% !important;
+        gap: 12px !important;
+        justify-content: center !important;
+    }
+    .footer-cluster {
+        justify-content: center !important;
+        width: 100% !important;
+    }
+}
+
+/* Mobile Command-Console Styling Rules (Strict Layout Collapse) */
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none !important;
+    }
+    .mobile-only {
+        display: flex !important;
+    }
+    .mobile-only.footer-separator {
+        display: block !important;
+    }
+    .telemetry-footer {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 14px !important;
+        padding: 20px 16px !important;
+    }
+    .footer-cluster {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        padding-bottom: 12px !important;
+        border-bottom: 1px dashed rgba(6, 182, 212, 0.15) !important;
+    }
+    .footer-cluster:last-child {
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+    }
+    .footer-item {
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        font-size: 12px !important;
+    }
+}

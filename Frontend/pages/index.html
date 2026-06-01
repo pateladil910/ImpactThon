@@ -61,6 +61,191 @@
                 border-top: 1px solid rgba(6, 182, 212, 0.15) !important;
             }
         }
+
+        /* ==========================================================================
+           TELEMETRY FOOTER - INDUSTRIAL GLASS SYSTEM
+           ========================================================================== */
+        .telemetry-footer {
+            background: rgba(11, 19, 43, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(6, 182, 212, 0.35); /* Subtle cyan neon border on top */
+            border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+            color: var(--text-main);
+            font-family: var(--font-code), monospace;
+            padding: 10px 4%;
+            min-height: 55px;
+            max-height: 75px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 100;
+            overflow: hidden;
+            box-shadow: 
+                0 -4px 20px rgba(6, 182, 212, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        /* Subtle glowing scan line effect or neon tint */
+        .telemetry-footer::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--primary-neon);
+            box-shadow: 0 0 10px var(--primary-neon);
+            opacity: 0.6;
+        }
+
+        .footer-cluster {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .footer-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+        }
+
+        .footer-item:hover {
+            color: var(--primary-neon);
+        }
+
+        .footer-item-label {
+            color: var(--primary-neon);
+            font-weight: 600;
+            opacity: 0.85;
+            text-shadow: 0 0 5px rgba(6, 182, 212, 0.3);
+        }
+
+        .footer-item-value {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .footer-separator {
+            width: 4px;
+            height: 4px;
+            background: rgba(6, 182, 212, 0.4);
+            border-radius: 50%;
+        }
+
+        /* Center Cluster specific styling */
+        .center-cluster {
+            gap: 20px;
+        }
+
+        .status-dot-pulse {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--primary-neon);
+            box-shadow: 0 0 6px var(--primary-neon);
+            animation: pulse-cyan 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-cyan {
+            0%, 100% {
+                opacity: 0.4;
+                transform: scale(0.9);
+                box-shadow: 0 0 4px var(--primary-neon);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.15);
+                box-shadow: 0 0 10px var(--primary-neon);
+            }
+        }
+
+        /* UTC Clock styling */
+        .utc-clock-wrapper {
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            padding: 4px 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 8px rgba(6, 182, 212, 0.05);
+        }
+
+        .utc-clock-wrapper:hover {
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.2), inset 0 0 8px rgba(6, 182, 212, 0.1);
+        }
+
+        .utc-label {
+            font-size: 10px;
+            color: var(--primary-neon);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .utc-time {
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+            font-variant-numeric: tabular-nums;
+            animation: subtle-time-pulse 1s infinite alternate;
+        }
+
+        @keyframes subtle-time-pulse {
+            0% {
+                opacity: 0.92;
+            }
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 12px rgba(255, 255, 255, 0.75);
+            }
+        }
+
+        /* Responsive adaptation */
+        @media (max-width: 992px) {
+            .telemetry-footer {
+                max-height: none;
+                padding: 12px 6%;
+                gap: 12px;
+                justify-content: center;
+            }
+            .footer-cluster {
+                justify-content: center;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .telemetry-footer {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px 4%;
+            }
+            .footer-cluster {
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+            .footer-separator {
+                display: none;
+            }
+            .utc-clock-wrapper {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -105,8 +290,7 @@
     </div>
 </div>
 
-
-
+<!-- NAVIGATION SYSTEM -->
 <nav class="navbar">
     <a href="index.html" class="logo">
         <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -151,276 +335,445 @@
     </button>
 </nav>
 
-<!-- HERO SECTION -->
+<!-- SECTION 1: HERO COMMAND CENTER -->
 <section class="hero">
     <div class="hero-text">
-        <h1>AI-Based Smart Safety System</h1>
+        <h1>Industrial AI Safety<br>Command Center</h1>
         <p>
-            Securing next-generation machine cells and robotic stations. By blending computer vision intelligence, hardware sensor matrices, and millisecond-level shutoff overrides, we ensure humans and machinery operate in absolute harmony.
+            Autonomous sensor-gated industrial guard and machine safety matrix. By blending computer vision models, hardware contactor networks, and sub-300ms emergency VFD overrides, we ensure operators and robotics operate in absolute, unified harmony.
         </p>
         <div class="hero-actions">
-            <a href="solution.html" class="btn-primary">Explore Live Feed</a>
-            <a href="setup.html" class="btn-outline">Gateway Setup</a>
-            <a href="learn-more.html" class="btn-secondary">How It Works</a>
+            <a href="solution.html" class="btn-primary">Launch Monitoring</a>
+            <a href="setup.html" class="btn-danger" id="estop-trigger">EMERGENCY SHUTDOWN</a>
+            <a href="learn-more.html" class="btn-outline">How It Works</a>
         </div>
     </div>
 
-    <!-- LIVE AI STATUS TELEMETRY CARD (HERO RIGHT) -->
+    <!-- LIVE AI TELEMETRY PANEL -->
     <div class="hero-card-wrapper">
-        <div class="hero-card">
+        <div class="hero-card glass-panel">
             <h3>
-                <span>LIVE AI TELEMETRY</span>
+                <span>LIVE TELEMETRY STATION</span>
                 <span class="live-indicator">
-                    <span class="live-dot"></span> SCANNING
+                    <span class="live-dot"></span> SCANNING ACTIVE
                 </span>
             </h3>
 
             <div class="status-list">
+                <div class="status-item">
+                    <span>System State</span>
+                    <b class="glow-green" id="telemetry-status">ONLINE</b>
+                </div>
+
                 <div class="progress-bar-wrapper">
                     <div class="status-item">
                         <span>AI Vision Confidence</span>
-                        <b class="glow-cyan" id="confidence-value">98.4%</b>
+                        <b class="glow-cyan" id="confidence-counter">0.0%</b>
                     </div>
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" id="confidence-bar"></div>
+                        <div class="progress-bar-fill" id="confidence-bar" style="width: 0%;"></div>
                     </div>
+                </div>
+
+                <div class="status-item">
+                    <span>Active Operator Count</span>
+                    <b class="glow-cyan" id="operators-counter">0</b>
                 </div>
 
                 <div class="status-item">
                     <span>Threat Scan Latency</span>
-                    <b class="glow-cyan" id="response-time">0.08s</b>
+                    <b class="glow-cyan" id="latency-counter">0ms</b>
                 </div>
 
                 <div class="status-item">
-                    <span>System Overrides</span>
-                    <b class="glow-green" id="action-status">SECURED</b>
+                    <span>Protected Zones</span>
+                    <b class="glow-cyan" id="zones-counter">0</b>
                 </div>
 
                 <div class="status-item">
-                    <span>Safety Zone Status</span>
-                    <b class="glow-cyan" id="zone-status" style="color: var(--safe-green);">SAFE ZONE</b>
-                </div>
-
-                <div class="status-item">
-                    <span>Target Machine Status</span>
-                    <b class="glow-green" id="machine-status" style="color: var(--safe-green);">SYS_ONLINE [ON]</b>
+                    <span>Connected Cameras</span>
+                    <b class="glow-cyan" id="cameras-counter">0</b>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- CYBERNETIC MASTER COMMAND PORTAL -->
-<section class="portal-section">
-    <div class="section-header">
-        <h2>Cybernetic Master Command Portal</h2>
-        <p>Unified access gateway to all visual monitoring streams, real-time analytics, hardware controllers, and operator logs</p>
+<!-- SECTION 2: REAL-TIME METRICS BAR -->
+<section class="metrics-section">
+    <div class="metrics-grid">
+        <div class="metric-card glass-panel">
+            <h4>Active Cameras</h4>
+            <div class="metric-val" id="metric-cameras">0</div>
+        </div>
+        <div class="metric-card glass-panel">
+            <h4>Threats Detected Today</h4>
+            <div class="metric-val" id="metric-threats" style="color: var(--safe-green);">0</div>
+        </div>
+        <div class="metric-card glass-panel">
+            <h4>System Uptime</h4>
+            <div class="metric-val" id="metric-uptime">0.00%</div>
+        </div>
+        <div class="metric-card glass-panel">
+            <h4>Protected Zones</h4>
+            <div class="metric-val" id="metric-zones">0</div>
+        </div>
     </div>
+</section>
 
+<!-- SECTION 3 & 4: OPERATIONS & CONTROL CENTERS -->
+<section class="portal-section">
     <div class="portal-grid">
-        <!-- Compartment A: Real-Time Operations -->
+        
+        <!-- SECTION 3: OPERATIONS CENTER (Row 1) -->
         <div class="portal-compartment compartment-a">
             <h3 class="compartment-title">
-                <span class="compartment-dot dot-cyan"></span> Real-Time Operations
+                <span class="compartment-dot dot-cyan"></span> Real-Time AI Operations
             </h3>
             <div class="portal-cards">
-                <div class="portal-card">
+                <div class="portal-card glass-panel">
                     <div class="portal-card-body">
                         <div class="portal-card-header">
                             <span class="portal-card-icon">🎥</span>
                             <h4>Live AI Stream</h4>
                         </div>
-                        <p>Pose tracking confidence engine, joint estimation canvas, and exclusion zone configuration.</p>
+                        <p>Pose tracking confidence engine, joint estimation canvas, exclusion safety zoning, and active CCTV camera feeds.</p>
                     </div>
                     <a href="solution.html" class="portal-card-btn">Launch Live Feed</a>
                 </div>
-                <div class="portal-card">
+                
+                <div class="portal-card glass-panel">
                     <div class="portal-card-body">
                         <div class="portal-card-header">
                             <span class="portal-card-icon">📈</span>
                             <h4>Danger Analytics</h4>
                         </div>
-                        <p>Real-time graphical charts, threat frequencies, and system latency timelines.</p>
+                        <p>Real-time threat charts, safety zone frequency triggers, operator proximity graphs, and VFD V/Hz response timelines.</p>
                     </div>
                     <a href="chart.html" class="portal-card-btn">Examine Analytics</a>
                 </div>
-                <div class="portal-card">
-                    <div class="portal-card-body">
-                        <div class="portal-card-header">
-                            <span class="portal-card-icon">⚙️</span>
-                            <h4>Diagnostics Hub</h4>
-                        </div>
-                        <p>Active ESP32 serial heartbeat tests and hardware e-stop relay diagnostics.</p>
-                    </div>
-                    <a href="diagnostics.html" class="portal-card-btn">Run Diagnostics</a>
-                </div>
-                <div class="portal-card">
+                
+                <div class="portal-card glass-panel">
                     <div class="portal-card-body">
                         <div class="portal-card-header">
                             <span class="portal-card-icon">🖥️</span>
                             <h4>Operator Dashboard</h4>
                         </div>
-                        <p>Consolidated operator overview screen showing active machine states and telemetry triggers.</p>
+                        <p>Consolidated operational cockpit showing safety relay variables, active Modbus flags, and emergency shutdown states.</p>
                     </div>
                     <a href="dashboard.html" class="portal-card-btn">Open Dashboard</a>
                 </div>
             </div>
         </div>
 
-        <!-- Compartment B: Historical Data & Audits -->
-        <div class="portal-compartment compartment-b">
-            <h3 class="compartment-title">
-                <span class="compartment-dot dot-purple"></span> Historical Data & Audits
-            </h3>
-            <div class="portal-cards">
-                <div class="portal-card">
-                    <div class="portal-card-body">
-                        <div class="portal-card-header">
-                            <span class="portal-card-icon">📁</span>
-                            <h4>Detection Database</h4>
-                        </div>
-                        <p>Searchable tabular data logs containing historical coordinates and frame captures.</p>
-                    </div>
-                    <a href="history.html" class="portal-card-btn">Query Database</a>
-                </div>
-                <div class="portal-card">
-                    <div class="portal-card-body">
-                        <div class="portal-card-header">
-                            <span class="portal-card-icon">📝</span>
-                            <h4>Incident Override Logs</h4>
-                        </div>
-                        <p>Trip records, contactor activations, and physical operator bypass logs.</p>
-                    </div>
-                    <a href="incident_log.html" class="portal-card-btn">Audit Shutdowns</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Compartment C: Setup & Architecture -->
+        <!-- SECTION 4: CONTROL CENTER (Row 2) -->
         <div class="portal-compartment compartment-c">
             <h3 class="compartment-title">
-                <span class="compartment-dot dot-blue"></span> Setup & Architecture
+                <span class="compartment-dot dot-blue"></span> Enterprise Control Modules
             </h3>
             <div class="portal-cards">
-                <div class="portal-card">
+                <div class="portal-card glass-panel">
                     <div class="portal-card-body">
                         <div class="portal-card-header">
                             <span class="portal-card-icon">🔌</span>
                             <h4>Gateway Config</h4>
                         </div>
-                        <p>Configure Arduino COM ports, set baud rates, and wire local PLC relay outputs.</p>
+                        <p>Configure ESP32/Arduino COM ports, local Modbus VFD addresses, hardware serial handshakes, and PLC relay shields.</p>
                     </div>
-                    <a href="setup.html" class="portal-card-btn">Configure Port</a>
+                    <a href="setup.html" class="portal-card-btn">Configure Ports</a>
                 </div>
-                <div class="portal-card">
+                
+                <div class="portal-card glass-panel">
                     <div class="portal-card-body">
                         <div class="portal-card-header">
                             <span class="portal-card-icon">📷</span>
                             <h4>AI Camera Setup</h4>
                         </div>
-                        <p>Feed RTSP streams, calibrate coordinate metrics, and define safety zone radii.</p>
+                        <p>Feed network RTSP streams, map exclusion coordinate limits, and configure focal length safety radii parameters.</p>
                     </div>
                     <a href="camera_setup.html" class="portal-card-btn">Map Coordinates</a>
                 </div>
-                <div class="portal-card">
+                
+                <div class="portal-card glass-panel">
                     <div class="portal-card-body">
                         <div class="portal-card-header">
                             <span class="portal-card-icon">📚</span>
                             <h4>System Specs</h4>
                         </div>
-                        <p>Detailed architecture, ESP32 relay schematics, and model training instructions.</p>
+                        <p>Complete mechanical schematics, deep neural network validation datasets, and wiring parameters for industrial deployment.</p>
                     </div>
-                    <a href="learn-more.html" class="portal-card-btn">Read Specs</a>
+                    <a href="learn-more.html" class="portal-card-btn">Read Specifications</a>
                 </div>
             </div>
         </div>
+        
+    </div>
+</section>
 
-        <!-- Compartment D: Administration -->
-        <div class="portal-compartment compartment-d" id="compartment-admin" style="display: none;">
-            <h3 class="compartment-title">
-                <span class="compartment-dot dot-yellow"></span> Administration
-            </h3>
-            <div class="portal-cards">
-                <div class="portal-card">
-                    <div class="portal-card-body">
-                        <div class="portal-card-header">
-                            <span class="portal-card-icon">🔔</span>
-                            <h4>Alerts & Sirens</h4>
-                        </div>
-                        <p>Configure warning buzzers, visual sirens, and automated email alerts.</p>
+<!-- SECTION 5: DETECTION INTELLIGENCE CENTER (VISUAL CENTERPIECE) -->
+<section class="centerpiece-section">
+    <div class="centerpiece-card glass-panel">
+        <div class="centerpiece-grid">
+            
+            <!-- Statistics Panel (Left) -->
+            <div class="centerpiece-stats-panel">
+                <h3>Database Telemetry</h3>
+                <div class="centerpiece-widgets">
+                    <div class="centerpiece-widget">
+                        <span class="widget-label">Total Detections</span>
+                        <div class="widget-val glow-cyan" id="dic-detections">0</div>
                     </div>
-                    <a href="notifications.html" class="portal-card-btn">Manage Alarms</a>
+                    <div class="centerpiece-widget">
+                        <span class="widget-label">Today's Alerts</span>
+                        <div class="widget-val" id="dic-alerts" style="color: var(--warning-yellow);">0</div>
+                    </div>
+                    <div class="centerpiece-widget">
+                        <span class="widget-label">Threat Level</span>
+                        <div class="widget-val glow-green" id="dic-threat">SAFE</div>
+                    </div>
+                    <div class="centerpiece-widget">
+                        <span class="widget-label">Database Size</span>
+                        <div class="widget-val glow-cyan">4.28 MB</div>
+                    </div>
                 </div>
-                <div class="portal-card">
-                    <div class="portal-card-body">
-                        <div class="portal-card-header">
-                            <span class="portal-card-icon">🗝️</span>
-                            <h4>Portal Gatekeeper</h4>
-                        </div>
-                        <p>Manage operator access roles, Firebase credentials, and security clearance logs.</p>
-                    </div>
-                    <a href="admin.html" class="portal-card-btn">Open Gate</a>
+                <div style="margin-top: 10px;">
+                    <a href="history.html" class="btn-primary" style="width: 100%;">Query Central Logs</a>
                 </div>
             </div>
+
+            <!-- Mini Visualizer Chart (Right) -->
+            <div class="centerpiece-visualizer">
+                <div class="visualizer-header">
+                    <span>LIVE DETECT SCANNER FEED</span>
+                    <span id="dic-last-sync">SYNC: 14:26:08 UTC</span>
+                </div>
+                <div class="chart-canvas-wrapper">
+                    <div class="laser-grid-back"></div>
+                    <!-- Futuristic Neon Telemetry Line Overlay using simple SVG -->
+                    <svg viewBox="0 0 400 200" style="position: absolute; inset: 0; width: 100%; height: 100%;">
+                        <!-- Safety Zone Exclusion Bound -->
+                        <rect x="0" y="140" width="400" height="60" fill="rgba(239, 68, 68, 0.05)" stroke="rgba(239, 68, 68, 0.2)" stroke-dasharray="4 4" />
+                        <text x="10" y="155" fill="rgba(239, 68, 68, 0.5)" font-family="Fira Code" font-size="8">EXCLUSION DANGER BOUND</text>
+                        <!-- Telemetry coordinates plot line -->
+                        <path d="M 0 100 Q 80 50 160 120 T 320 80 L 400 135" fill="none" stroke="url(#cyan-grad)" stroke-width="2.5" stroke-linecap="round" />
+                        <path d="M 0 100 Q 80 50 160 120 T 320 80 L 400 135" fill="none" stroke="rgba(6, 182, 212, 0.3)" stroke-width="8" stroke-linecap="round" />
+                        <!-- Bounding sweep lines -->
+                        <line x1="160" y1="0" x2="160" y2="200" stroke="rgba(6, 182, 212, 0.15)" stroke-dasharray="2 4" />
+                        <circle cx="160" cy="120" r="5" fill="#06b6d4" />
+                        <circle cx="160" cy="120" r="10" fill="none" stroke="#06b6d4" stroke-width="1.5">
+                            <animate attributeName="r" values="5;15;5" dur="3s" repeatCount="indefinite" />
+                        </circle>
+                        <defs>
+                            <linearGradient id="cyan-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#3b82f6" />
+                                <stop offset="100%" stop-color="#06b6d4" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
         </div>
     </div>
 </section>
 
-<!-- SAFETY ZONES MATRIX -->
-<section class="zones-section">
+<!-- SECTION 6: LIVE INCIDENT TIMELINE -->
+<section class="timeline-section">
     <div class="section-header">
-        <h2>Safety Zone Classifications</h2>
-        <p>Three-tier hazard scanning logic that regulates automated industrial speed governors and PLC relays</p>
+        <h2>Live Incident Operations Log</h2>
+        <p>Chronological sequence of physical safety overrides, human detections, and hardware VFD triggers</p>
     </div>
 
-    <div class="zones-grid">
-        <div class="zone-card-premium zone-safe">
-            <span class="zone-badge">🟢 SECURE</span>
-            <h3>Safe Zone</h3>
-            <p>No operators detected near machine cells. Normal high-speed production and full capacity system operations allowed.</p>
-            <div class="zone-modbus-indicator">
-                <span class="modbus-label">Modbus VFD Status:</span>
-                <span class="modbus-val value-safe">100% Full Frequency (60.0Hz)</span>
+    <div class="timeline-wrapper">
+        <!-- Item 1 -->
+        <div class="timeline-item danger">
+            <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+            <div class="timeline-card glass-panel">
+                <div class="timeline-content">
+                    <span class="timeline-time">21:45:12 UTC</span>
+                    <span class="timeline-title">Operator Exceeded Buffer Limit (CNC Machine)</span>
+                </div>
+                <span class="timeline-status status-alert">Exclusion Breach</span>
             </div>
         </div>
 
-        <div class="zone-card-premium zone-warning">
-            <span class="zone-badge">🟡 WARNING</span>
-            <h3>Warning Zone</h3>
-            <p>Operator detected inside the secondary hazard buffer. System triggers local warning buzzer and decelerates motors.</p>
-            <div class="zone-modbus-indicator">
-                <span class="modbus-label">Modbus VFD Status:</span>
-                <span class="modbus-val value-warning">30% Reduced Speed (18.0Hz)</span>
+        <!-- Item 2 -->
+        <div class="timeline-item warning">
+            <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+            <div class="timeline-card glass-panel">
+                <div class="timeline-content">
+                    <span class="timeline-time">21:45:13 UTC</span>
+                    <span class="timeline-title">PLC Deceleration Speed Command Issued</span>
+                </div>
+                <span class="timeline-status status-active">Slowdown (18.0Hz)</span>
             </div>
         </div>
 
-        <div class="zone-card-premium zone-danger">
-            <span class="zone-badge">🔴 CRITICAL DANGER</span>
-            <h3>Danger Zone</h3>
-            <p>Operator enters the immediate mechanical contact area. Hardware intercepts trigger immediate e-stops under 300ms.</p>
-            <div class="zone-modbus-indicator">
-                <span class="modbus-label">Modbus VFD Status:</span>
-                <span class="modbus-val value-danger">0.0Hz Emergency Halt (E-STOP)</span>
+        <!-- Item 3 -->
+        <div class="timeline-item">
+            <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+            <div class="timeline-card glass-panel">
+                <div class="timeline-content">
+                    <span class="timeline-time">21:46:02 UTC</span>
+                    <span class="timeline-title">Visual Siren and Audible Warning Active</span>
+                </div>
+                <span class="timeline-status status-active">Alarm On</span>
+            </div>
+        </div>
+
+        <!-- Item 4 -->
+        <div class="timeline-item">
+            <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+            <div class="timeline-card glass-panel">
+                <div class="timeline-content">
+                    <span class="timeline-time">21:48:40 UTC</span>
+                    <span class="timeline-title">Operator Vacated exclusion boundaries</span>
+                </div>
+                <span class="timeline-status status-solved">Cleared</span>
+            </div>
+        </div>
+
+        <!-- Item 5 -->
+        <div class="timeline-item">
+            <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+            <div class="timeline-card glass-panel">
+                <div class="timeline-content">
+                    <span class="timeline-time">21:49:10 UTC</span>
+                    <span class="timeline-title">Contactor Reset: System Restored to Full Speed</span>
+                </div>
+                <span class="timeline-status status-solved">Nominal (60.0Hz)</span>
             </div>
         </div>
     </div>
 </section>
 
-<!-- TECH ACCESS CTA -->
-<section class="cta-section">
-    <div class="cta-card">
-        <h2>Secure Your Workplace Today</h2>
-        <p>Deploy real-time deep computer vision surveillance to safeguard high-risk machine cells and assembly zones.</p>
-        <button onclick="window.location.href='setup.html'">Initialize Setup Gateway</button>
+<!-- SECTION 7: AI SYSTEM HEALTH PANEL -->
+<section class="health-section">
+    <div class="section-header">
+        <h2>AI Co-Processor Telemetry</h2>
+        <p>Live health logs monitoring physical model weights processing latency and GPU thread cycles</p>
+    </div>
+
+    <div class="health-grid">
+        <!-- CPU Usage -->
+        <div class="health-card glass-panel">
+            <h4>CPU Thread Cycle</h4>
+            <div class="health-radial-placeholder">
+                <span class="health-metric-num" id="cpu-health">0%</span>
+            </div>
+            <div class="health-progress-wrapper">
+                <div class="health-progress-bar cyan-fill" id="cpu-health-bar" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- GPU Usage -->
+        <div class="health-card glass-panel">
+            <h4>GPU Safety Core</h4>
+            <div class="health-radial-placeholder">
+                <span class="health-metric-num" id="gpu-health">0%</span>
+            </div>
+            <div class="health-progress-wrapper">
+                <div class="health-progress-bar blue-fill" id="gpu-health-bar" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- RAM Allocation -->
+        <div class="health-card glass-panel">
+            <h4>RAM Cache Buffer</h4>
+            <div class="health-radial-placeholder">
+                <span class="health-metric-num" id="ram-health">0%</span>
+            </div>
+            <div class="health-progress-wrapper">
+                <div class="health-progress-bar cyan-fill" id="ram-health-bar" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- Network Latency -->
+        <div class="health-card glass-panel">
+            <h4>PLC Serial Ping</h4>
+            <div class="health-radial-placeholder">
+                <span class="health-metric-num" id="latency-health">0ms</span>
+            </div>
+            <div class="health-progress-wrapper">
+                <div class="health-progress-bar green-fill" id="latency-health-bar" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- Model Accuracy -->
+        <div class="health-card glass-panel">
+            <h4>Model Safety Weights</h4>
+            <div class="health-radial-placeholder">
+                <span class="health-metric-num" id="accuracy-health">0%</span>
+            </div>
+            <div class="health-progress-wrapper">
+                <div class="health-progress-bar green-fill" id="accuracy-health-bar" style="width: 0%;"></div>
+            </div>
+        </div>
     </div>
 </section>
 
-<!-- FOOTER -->
-<footer>
-    <p>&copy; 2026 AI Smart Safety System | Cybernetic Surveillance & Industrial Defense</p>
+<!-- SECTION 8: TELEMETRY FOOTER -->
+<footer class="telemetry-footer">
+    <!-- LEFT CLUSTER -->
+    <div class="footer-cluster left-cluster">
+        <!-- Desktop/Tablet Version -->
+        <div class="footer-item desktop-only">
+            <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
+            <span class="footer-item-label">SAFETY CORE</span>
+            <span class="footer-item-value">v4.2.1</span>
+        </div>
+        <div class="footer-separator desktop-only"></div>
+        <div class="footer-item desktop-only">
+            <span class="footer-item-label">VISION MODEL</span>
+            <span class="footer-item-value">v3.0</span>
+        </div>
+        <!-- Mobile Version -->
+        <div class="footer-item mobile-only" style="color: var(--safe-green); font-weight: bold; text-shadow: 0 0 8px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 8px;">
+            <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
+            <span class="footer-item-label" style="color: var(--safe-green); font-weight: 700;">SYSTEM ONLINE</span>
+        </div>
+    </div>
+
+    <!-- CENTER CLUSTER -->
+    <div class="footer-cluster center-cluster">
+        <!-- Desktop/Tablet Version -->
+        <div class="footer-item desktop-only">
+            <span class="footer-item-label">PLC NETWORK</span>
+            <span class="footer-item-value">×4</span>
+        </div>
+        <div class="footer-separator desktop-only"></div>
+        <div class="footer-item desktop-only">
+            <span class="footer-item-label">CAMERA GRID</span>
+            <span class="footer-item-value">×4</span>
+        </div>
+        <div class="footer-separator desktop-only"></div>
+        <div class="footer-item desktop-only">
+            <span class="footer-item-label">LATENCY</span>
+            <span class="footer-item-value">8.24ms</span>
+        </div>
+        <!-- Mobile Version -->
+        <div class="footer-item mobile-only">
+            <span class="footer-item-label">NETWORK</span>
+            <span class="footer-item-value">×4</span>
+        </div>
+        <div class="footer-separator mobile-only"></div>
+        <div class="footer-item mobile-only">
+            <span class="footer-item-label">CAMERAS</span>
+            <span class="footer-item-value">×4</span>
+        </div>
+    </div>
+
+    <!-- RIGHT CLUSTER -->
+    <div class="footer-cluster right-cluster">
+        <div class="utc-clock-wrapper">
+            <span class="utc-label desktop-only">UTC</span>
+            <span class="utc-time" id="footer-live-clock">--:--:--</span>
+        </div>
+    </div>
 </footer>
 
-<!-- Cyber-Interactive Particles, 3D card tilts, and UTC ticker clocks -->
+
+<!-- CYBER-INTERACTIVE PARTICLES, RADAR TICKERS, AND ANIMATED COUNTERS -->
 <script>
     // Particle Backdrop Generator
     const canvas = document.getElementById('particle-canvas');
@@ -441,169 +794,176 @@
             this.speedY = -(Math.random() * 0.35 + 0.1);
             this.speedX = Math.random() * 0.2 - 0.1;
             this.alpha = Math.random() * 0.4 + 0.1;
-            // 60% cyan particles, 40% blue particles
             this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
         }
 
         update() {
             this.y += this.speedY;
             this.x += this.speedX;
-            if (this.y < -10) {
-                this.y = canvas.height + 10;
+            if (this.y < 0) {
+                this.y = canvas.height;
                 this.x = Math.random() * canvas.width;
             }
         }
 
         draw() {
-            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgb(${this.color})`;
             ctx.fill();
+            ctx.restore();
         }
     }
 
     const particlesArray = [];
-    const count = Math.min(60, Math.floor(window.innerWidth / 20));
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 60; i++) {
         particlesArray.push(new Particle());
     }
 
     function animateParticles() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (let i = 0; i < particlesArray.length; i++) {
-            particlesArray[i].update();
-            particlesArray[i].draw();
-        }
+        particlesArray.forEach(p => {
+            p.update();
+            p.draw();
+        });
         requestAnimationFrame(animateParticles);
     }
     animateParticles();
 
-    // Real-time ticking system clock inside HUD
-    const clockElement = document.getElementById('system-clock');
-    function updateClock() {
-        if (!clockElement) return;
-        const now = new Date();
-        const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
-        clockElement.textContent = `SYSTEM TIME: ${timeString} UTC`;
+    // DYNAMIC METRICS AND HUD COUNT-UP ANIMATION MODULE
+    function animateCounters() {
+        // Animation Targets Configuration
+        const targets = [
+            { id: 'confidence-counter', val: 98.7, suffix: '%', decimals: 1, step: 2.5 },
+            { id: 'operators-counter', val: 3, suffix: '', decimals: 0, step: 1 },
+            { id: 'latency-counter', val: 8, suffix: 'ms', decimals: 0, step: 1 },
+            { id: 'zones-counter', val: 7, suffix: '', decimals: 0, step: 1 },
+            { id: 'cameras-counter', val: 4, suffix: '', decimals: 0, step: 1 },
+            
+            { id: 'metric-cameras', val: 4, suffix: '', decimals: 0, step: 1 },
+            { id: 'metric-threats', val: 0, suffix: ' / NOMINAL', decimals: 0, step: 1 },
+            { id: 'metric-uptime', val: 99.98, suffix: '%', decimals: 2, step: 2.15 },
+            { id: 'metric-zones', val: 7, suffix: '', decimals: 0, step: 1 },
+            
+            { id: 'dic-detections', val: 2847, suffix: '', decimals: 0, step: 85 },
+            { id: 'dic-alerts', val: 2, suffix: '', decimals: 0, step: 1 },
+
+            { id: 'cpu-health', val: 34, suffix: '%', decimals: 0, step: 2, bar: 'cpu-health-bar' },
+            { id: 'gpu-health', val: 68, suffix: '%', decimals: 0, step: 3, bar: 'gpu-health-bar' },
+            { id: 'ram-health', val: 42, suffix: '%', decimals: 0, step: 2, bar: 'ram-health-bar' },
+            { id: 'latency-health', val: 8, suffix: 'ms', decimals: 0, step: 1, bar: 'latency-health-bar', valMax: 100 },
+            { id: 'accuracy-health', val: 99, suffix: '%', decimals: 0, step: 3, bar: 'accuracy-health-bar' }
+        ];
+
+        targets.forEach(item => {
+            const el = document.getElementById(item.id);
+            if (!el) return;
+            let current = 0;
+            const timer = setInterval(() => {
+                current += item.step;
+                if (current >= item.val) {
+                    current = item.val;
+                    clearInterval(timer);
+                }
+                el.textContent = current.toFixed(item.decimals) + item.suffix;
+                
+                // If health/confidence visual bar exists, fill it inline
+                if (item.bar) {
+                    const barEl = document.getElementById(item.bar);
+                    if (barEl) {
+                        const pct = item.valMax ? (current / item.valMax) * 100 : current;
+                        barEl.style.width = `${pct}%`;
+                    }
+                }
+                
+                // Set confidence fill bar specifically
+                if (item.id === 'confidence-counter') {
+                    const confBar = document.getElementById('confidence-bar');
+                    if (confBar) confBar.style.width = `${current}%`;
+                }
+            }, 25);
+        });
     }
-    updateClock();
-    setInterval(updateClock, 1000);
 
-    // 3D perspective card tilt effect (background image stabilized to prevent stuttering/jumping)
-    document.addEventListener('mousemove', (e) => {
-        if (window.innerWidth < 1024) return; // Disable on tablet/mobile for raw performance
-        
-        const card = document.querySelector('.hero-card');
-        if (!card) return;
-        
-        const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2;
-        const dx = e.clientX - cx;
-        const dy = e.clientY - cy;
-        
-        const tiltX = (dy / cy) * -8; // max 8 degrees
-        const tiltY = (dx / cx) * 8;  // max 8 degrees
-        
-        card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    window.addEventListener('load', () => {
+        animateCounters();
     });
 
-    // Reset card perspective when mouse leaves screen
-    document.addEventListener('mouseleave', () => {
-        const card = document.querySelector('.hero-card');
-        if (card) {
-            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+    // FUTURISTIC LIVE TELEMETRY CLOCK
+    function updateHUDClocks() {
+        const utcClock = document.getElementById('footer-live-clock');
+        const sysClock = document.getElementById('system-clock');
+        
+        function tick() {
+            const now = new Date();
+            const timeStr = now.toISOString().substr(11, 8) + ' UTC';
+            if (utcClock) utcClock.textContent = timeStr;
+            if (sysClock) sysClock.textContent = 'UTC TIME: ' + timeStr;
         }
-    });
+        tick();
+        setInterval(tick, 1000);
+    }
+    updateHUDClocks();
 
-    // Dynamic Telemetry Simulator (simulates live monitoring changes in confidence, speed)
-    setInterval(() => {
-        const confidenceVal = document.getElementById('confidence-value');
-        const confidenceBar = document.getElementById('confidence-bar');
-        const responseTime = document.getElementById('response-time');
-        const actionStatus = document.getElementById('action-status');
-        const zoneStatus = document.getElementById('zone-status');
-        const machineStatus = document.getElementById('machine-status');
+    // INTERACTIVE GUEST OR REGISTERED CLEARANCE SIMULATOR
+    window.addEventListener('DOMContentLoaded', () => {
+        const username = localStorage.getItem('username');
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const profileSection = document.getElementById('profile-section');
+        const authButtons = document.getElementById('auth-buttons');
+        const profileName = document.getElementById('profile-name');
 
-        if (!confidenceVal || !confidenceBar) return;
-
-        // Random safety events
-        const isHazardTriggered = Math.random() > 0.85;
-
-        if (isHazardTriggered) {
-            // Hazard triggered simulation
-            confidenceVal.textContent = (89.5 + Math.random() * 3).toFixed(1) + '%';
-            confidenceBar.style.width = confidenceVal.textContent;
-            confidenceBar.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b)';
-            confidenceBar.style.boxShadow = '0 0 8px var(--danger-red)';
-            responseTime.textContent = '0.24s';
+        if (isLoggedIn && username) {
+            if (profileSection) profileSection.style.display = 'flex';
+            if (authButtons) authButtons.style.display = 'none';
+            if (profileName) profileName.textContent = username;
             
-            actionStatus.textContent = 'STOP OVERRIDE';
-            actionStatus.className = 'glow-red';
-            
-            zoneStatus.textContent = 'CRITICAL DANGER';
-            zoneStatus.style.color = 'var(--danger-red)';
-            
-            machineStatus.textContent = 'SYS_HALTED [OFF]';
-            machineStatus.style.color = 'var(--danger-red)';
+            // Set operator status to active
+            const opsText = document.getElementById('profile-name');
+            if (opsText) console.log("Operator Clearance Profile active: " + username);
         } else {
-            // Secure operations simulation
-            confidenceVal.textContent = (97.8 + Math.random() * 1.8).toFixed(1) + '%';
-            confidenceBar.style.width = confidenceVal.textContent;
-            confidenceBar.style.background = 'linear-gradient(90deg, var(--primary-blue), var(--primary-neon))';
-            confidenceBar.style.boxShadow = '0 0 8px var(--primary-neon)';
-            responseTime.textContent = (0.07 + Math.random() * 0.03).toFixed(2) + 's';
-            
-            actionStatus.textContent = 'SECURED';
-            actionStatus.className = 'glow-green';
-            
-            zoneStatus.textContent = 'SAFE ZONE';
-            zoneStatus.style.color = 'var(--safe-green)';
-            
-            machineStatus.textContent = 'SYS_ONLINE [ON]';
-            machineStatus.style.color = 'var(--safe-green)';
+            if (profileSection) profileSection.style.display = 'none';
+            if (authButtons) authButtons.style.display = 'flex';
         }
-    }, 4000);
+    });
+
+    function logout() {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('cameraActive');
+        window.location.reload();
+    }
+    
+    // E-STOP CLICK HANDLER SIMULATION
+    const estop = document.getElementById('estop-trigger');
+    if (estop) {
+        estop.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('🚨 [HALT MATRIX SHUTDOWN REQUEST] Dispatching critical halt override vectors to ESP32 relay shield. System locked in emergency shutdown state.');
+            const telStatus = document.getElementById('telemetry-status');
+            if (telStatus) {
+                telStatus.textContent = 'HALTED [E-STOP]';
+                telStatus.style.color = 'var(--danger-red)';
+                telStatus.style.textShadow = '0 0 12px var(--danger-red)';
+            }
+        });
+    }
+
+    // MOBILE DRAWER BURGER SYSTEM
+    const menuToggle = document.getElementById('menuToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (menuToggle && navLinks) {
+        menuToggle.addEventListener('click', () => {
+            menuToggle.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
+    }
 </script>
 
-  <!-- Secure Firebase Session Verification & Logout Controller -->
-  <script type="module">
-    import { auth, signOut, onAuthStateChanged } from '../js/firebase.js';
-
-    // Verify auth persistence and sync session
-    onAuthStateChanged(auth, (user) => {
-      if (!user && localStorage.getItem("isLoggedIn") === "true" && auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
-        console.warn("Firebase session expired. Logging out...");
-        window.logout();
-      }
-    });
-
-    // Override global logout function to securely handle Firebase signOut
-    window.logout = async function() {
-      console.log("Executing secure gateway termination...");
-      
-      try {
-        if (auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
-          await signOut(auth);
-        }
-      } catch (err) {
-        console.error("Firebase signOut failed:", err);
-      }
-
-      // Safe clean clear of local storages
-      localStorage.removeItem("isLoggedIn");
-      localStorage.removeItem("username");
-      localStorage.removeItem("displayName");
-      localStorage.removeItem("profilePhoto");
-      localStorage.removeItem("uid");
-      localStorage.removeItem("userRole");
-
-      // Redirect immediately back to login gateway
-      window.location.replace("login.html");
-    };
-  </script>
-
-  <!-- Existing Auth Module Integration -->
-  <script src="../js/auth.js"></script>
-
+<!-- EXTERNAL GATING FOR ADMINISTRATORS AND OPERATORS -->
+<script src="../js/auth.js"></script>
 </body>
 </html>

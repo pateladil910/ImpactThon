@@ -182,8 +182,64 @@
     </main>
 
     <!-- ================= FOOTER ================= -->
-    <footer class="footer">
-      &copy; 2026 AI Smart Safety System | Industrial Surveillance & Defense Core
+    <!-- ================= TELEMETRY FOOTER ================= -->
+    <footer class="telemetry-footer">
+        <!-- LEFT CLUSTER -->
+        <div class="footer-cluster left-cluster">
+            <!-- Desktop/Tablet Version -->
+            <div class="footer-item desktop-only">
+                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
+                <span class="footer-item-label">SAFETY CORE</span>
+                <span class="footer-item-value">v4.2.1</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">VISION MODEL</span>
+                <span class="footer-item-value">v3.0</span>
+            </div>
+            <!-- Mobile Version -->
+            <div class="footer-item mobile-only" style="color: var(--safe-green); font-weight: bold; text-shadow: 0 0 8px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
+                <span class="footer-item-label" style="color: var(--safe-green); font-weight: 700;">SYSTEM ONLINE</span>
+            </div>
+        </div>
+
+        <!-- CENTER CLUSTER -->
+        <div class="footer-cluster center-cluster">
+            <!-- Desktop/Tablet Version -->
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">PLC NETWORK</span>
+                <span class="footer-item-value">×4</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">CAMERA GRID</span>
+                <span class="footer-item-value">×4</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">LATENCY</span>
+                <span class="footer-item-value">8.24ms</span>
+            </div>
+            <!-- Mobile Version -->
+            <div class="footer-item mobile-only">
+                <span class="footer-item-label">NETWORK</span>
+                <span class="footer-item-value">×4</span>
+            </div>
+            <div class="footer-separator mobile-only"></div>
+            <div class="footer-item mobile-only">
+                <span class="footer-item-label">CAMERAS</span>
+                <span class="footer-item-value">×4</span>
+            </div>
+        </div>
+
+        <!-- RIGHT CLUSTER -->
+        <div class="footer-cluster right-cluster">
+            <div class="utc-clock-wrapper">
+                <span class="utc-label desktop-only">UTC</span>
+                <span class="utc-time" id="footer-live-clock">--:--:--</span>
+            </div>
+        </div>
     </footer>
 
   </div>
@@ -470,6 +526,22 @@
 
   <!-- Auth and Mobile Menu Handler -->
   <script src="../js/auth.js"></script>
+
+
+  <!-- FUTURISTIC LIVE TELEMETRY FOOTER CLOCK -->
+  <script>
+    (function() {
+        const utcClock = document.getElementById('footer-live-clock');
+        if (utcClock) {
+            function tick() {
+                const now = new Date();
+                utcClock.textContent = now.toISOString().substr(11, 8) + ' UTC';
+            }
+            tick();
+            setInterval(tick, 1000);
+        }
+    })();
+  </script>
 
 </body>
 
