@@ -6,6 +6,9 @@ import base64
 import threading
 import argparse
 import os
+import sys
+import json
+import getpass
 from flask import Flask, Response, jsonify
 from flask_cors import CORS
 from ultralytics import YOLO
@@ -14,43 +17,121 @@ app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURATION ---
-# Replace with your production backend URL or local IP
 BACKEND_API_URL = "https://codevortex.in/api/detection"
+CONFIG_FILE = "config.json"
 
-# Parse command-line arguments for dynamic camera URL
+# Parse command-line arguments (optional, defaults to database configuration)
 parser = argparse.ArgumentParser(description="AI Edge Agent for Camera Monitoring")
-parser.add_argument('--camera', type=str, default='0', help='Camera URL (RTSP/HTTP) or Webcam ID (0)')
+parser.add_argument('--camera', type=str, default=None, help='Override Camera URL (RTSP/HTTP) or Webcam ID (0)')
 args = parser.parse_args()
 
 # Load YOLOv8 model (yolov8n is fastest for Raspberry Pi)
 model = YOLO('yolov8n.pt') 
 
-# Initialize camera (Dynamic input: Webcam OR IP Camera/RTSP)
-# If digit, it's a webcam ID. Otherwise, it's an IP URL.
-cam_source = int(args.camera) if args.camera.isdigit() else args.camera
-print(f"📡 Connecting to camera source: {cam_source}")
-camera = cv2.VideoCapture(cam_source)
+# Global state variables
+camera = None
+cam_source = None
+AUTH_TOKEN = None
+GLOBAL_USER_ID = None
 
-# Optimize for Raspberry Pi (Reduce resolution for better FPS)
-camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-# Global variables
 output_frame = None
 lock = threading.Lock()
 last_detection_time = 0
 DETECTION_COOLDOWN = 5 # seconds between sending alerts to backend
 
-def detect_objects():
-    global output_frame, lock, last_detection_time
+def load_or_create_config():
+    token = None
+    user_id = None
     
+    # Try loading from local config.json
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                token = config.get("token")
+                user_id = config.get("userId")
+                print("💾 Found saved login session.")
+        except Exception as e:
+            print("Error loading config.json, prompting login.")
+            
+    # If not found, prompt user for login
+    if not token or not user_id:
+        print("\n🔑 --- AI Safety Shield Edge Agent Login ---")
+        email = input("Email: ")
+        password = getpass.getpass("Password: ")
+        
+        try:
+            # 1. Log in to Render backend
+            login_res = requests.post("https://codevortex.in/api/auth/login", json={
+                "email": email,
+                "password": password
+            }, timeout=10)
+            
+            if login_res.status_code != 200:
+                print("❌ Invalid email or password. Access denied.")
+                sys.exit(1)
+                
+            auth_data = login_res.json()
+            token = auth_data.get("token")
+            user_id = auth_data.get("user", {}).get("id")
+            
+            if not token or not user_id:
+                print("❌ Failed to parse session token. Access denied.")
+                sys.exit(1)
+                
+            print(f"👋 Welcome, {auth_data.get('user', {}).get('name', 'Operator')}!")
+            
+            # Save configuration locally for next start
+            with open(CONFIG_FILE, 'w') as f:
+                json.dump({
+                    "token": token,
+                    "userId": user_id
+                }, f)
+            print("💾 Login session saved locally.")
+            
+        except Exception as e:
+            print(f"❌ Authentication Error: {e}")
+            sys.exit(1)
+            
+    # 2. ALWAYS fetch User's Latest Camera details from the cloud to reflect web edits
+    try:
+        print("📡 Fetching active camera configuration from cloud...")
+        headers = {"Authorization": f"Bearer {token}"}
+        cam_res = requests.get("https://codevortex.in/api/camera/latest", headers=headers, timeout=10)
+        
+        if cam_res.status_code == 401:
+            print("❌ Saved session expired. Please delete config.json and restart to login again.")
+            sys.exit(1)
+            
+        if cam_res.status_code == 404:
+            print("\n⚠️  [NO CAMERA] You have not configured a camera yet.")
+            print("👉 Please log in to https://codevortex.in/pages/camera_setup.html and connect a camera first!")
+            sys.exit(1)
+            
+        cam_data = cam_res.json()
+        cam_url = cam_data.get("camera", {}).get("url")
+        
+        print(f"✅ Active Camera Stream loaded: {cam_url}")
+        return token, user_id, cam_url
+        
+    except Exception as e:
+        print(f"❌ Connection/Setup Error: {e}")
+        sys.exit(1)
+
+def detect_objects():
+    global output_frame, lock, last_detection_time, camera
+    
+    # Wait until camera is initialized
+    while camera is None or not camera.isOpened():
+        time.sleep(0.5)
+        
     while True:
         success, frame = camera.read()
         if not success:
             print("Failed to read camera. Retrying...")
             time.sleep(1)
             # Try to reconnect
-            camera.open(0)
+            camera.open(cam_source)
             continue
             
         # Run YOLO detection
@@ -86,7 +167,7 @@ def detect_objects():
             _, buffer = cv2.imencode('.jpg', frame)
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
             
-            # Send asynchronously to avoid blocking video stream
+            # Send alert payload with dynamic userId and token
             threading.Thread(target=send_alert_to_backend, args=(highest_conf, jpg_as_text)).start()
 
         # Update global frame for Flask stream
@@ -98,12 +179,13 @@ def send_alert_to_backend(confidence, image_b64):
         payload = {
             "danger": True,
             "confidence": int(confidence * 100),
-            "userId": "raspberry_pi_cam_1",
+            "userId": GLOBAL_USER_ID,
             "image": f"data:image/jpeg;base64,{image_b64}"
         }
-        res = requests.post(BACKEND_API_URL, json=payload, timeout=5)
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=5)
         if res.status_code == 200:
-            print("✅ Alert successfully sent to backend.")
+            print("✅ Alert successfully synced to cloud logs & dispatched alert emails.")
         else:
             print(f"⚠️ Backend returned status {res.status_code}")
     except Exception as e:
@@ -132,14 +214,38 @@ def video_feed():
 
 @app.route("/status")
 def status():
-    return jsonify({"status": "running", "camera": camera.isOpened()})
+    return jsonify({
+        "status": "running", 
+        "camera": camera.isOpened() if camera else False,
+        "userId": GLOBAL_USER_ID
+    })
 
 if __name__ == "__main__":
-    # Start the background detection thread
+    # 1. Load config and authenticate
+    AUTH_TOKEN, GLOBAL_USER_ID, camera_url = load_or_create_config()
+    
+    # 2. Overriding source if passed via command line --camera argument
+    if args.camera is not None:
+        camera_url = args.camera
+        
+    # Initialize camera (Dynamic input: Webcam OR IP Camera/RTSP)
+    cam_source = int(camera_url) if camera_url.isdigit() else camera_url
+    print(f"📡 Connecting to camera source: {cam_source}")
+    camera = cv2.VideoCapture(cam_source)
+    
+    # Optimize resolution for better FPS
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
+    if not camera.isOpened():
+        print(f"❌ ERROR: Could not open camera source {cam_source}")
+        sys.exit(1)
+
+    # 3. Start background detection thread
     t = threading.Thread(target=detect_objects)
     t.daemon = True
     t.start()
     
-    # Start Flask server
-    print("🚀 Starting AI Stream on port 5000...")
+    # 4. Start Flask server
+    print("🚀 Starting AI Edge Agent Stream on port 5000...")
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
