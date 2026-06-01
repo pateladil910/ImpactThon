@@ -324,7 +324,12 @@
   </script>
 
   <!-- Native Active Stream and Fetch updates -->
+  <!-- Native Active Stream and Fetch updates -->
   <script>
+    const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:10000"
+      : "https://impactthon-ai.onrender.com";
+
     /* ==========================
        🎥 CAMERA STREAM
     ========================== */
@@ -367,8 +372,8 @@
       const activeBtn = document.getElementById('btn-cam-' + camId);
       if (activeBtn) activeBtn.classList.add('active');
       
-      // Update video source (appending cam parameter)
-      cameraImg.src = "https://impactthon-ai.onrender.com/video_feed?cam=" + camId;
+      // Update video source passing the correct source parameter mapped to 0-indexed webcam
+      cameraImg.src = `${AI_SERVICE_URL}/video_feed?source=${camId - 1}`;
       
       // Update status text
       const statusText = document.getElementById('camera-status-text');
@@ -456,7 +461,7 @@
       if (stopTriggered) return;
       stopTriggered = true;
       try {
-        await fetch("https://impactthon-ai.onrender.com/api/force_stop", { method: "POST" });
+        await fetch(`${AI_SERVICE_URL}/api/force_stop`, { method: "POST" });
       } catch (e) {
         console.error(e);
       }
@@ -466,7 +471,7 @@
     initManualDashboard();
 
     // Re-implementing a simpler updateStatus for Manual Dash that doesn't touch Box 5
-    const STATUS_URL = "https://impactthon-ai.onrender.com/status";
+    const STATUS_URL = `${AI_SERVICE_URL}/status`;
     async function updateSafetyOnly() {
       try {
         const res = await fetch(STATUS_URL);

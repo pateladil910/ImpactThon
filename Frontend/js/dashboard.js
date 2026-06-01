@@ -18,6 +18,10 @@ const API_BASE_URL = (window.location.hostname === "localhost" || window.locatio
   ? "http://localhost:5000"
   : "https://impactthon-wjut.onrender.com";
 
+const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+  ? "http://localhost:10000"
+  : "https://impactthon-ai.onrender.com";
+
 const STATUS_URL = `${API_BASE_URL}/api/status`;
 
 let lastSafety = null;
@@ -95,7 +99,7 @@ async function startLiveSurveillance() {
       const cameraImg = document.getElementById("ai-camera");
       if (cameraImg) {
         // We pass the cam.url to your AI service as a parameter
-        cameraImg.src = `https://impactthon-ai.onrender.com/video_feed?source=${encodeURIComponent(cam.url)}`;
+        cameraImg.src = `${AI_SERVICE_URL}/video_feed?source=${encodeURIComponent(cam.url)}`;
       }
     } else {
       // If no camera found, send them back to setup

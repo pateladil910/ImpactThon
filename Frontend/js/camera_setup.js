@@ -272,29 +272,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     showStatus('testing', 'Interpreting local subnet socket connection...');
     btnConnect.disabled = true;
 
-    // Direct browser loading test (avoids CORS/cloud barriers)
-    previewFeed.src = url;
+    let hasFailed = false;
 
-    const timeoutTimer = setTimeout(() => {
-      // Stream timeout (e.g. 5 seconds)
-      previewFeed.onerror();
-    }, 6000);
+    // 1. Clear previous handlers & src cleanly to avoid empty src error events bubbling
+    previewFeed.onload = null;
+    previewFeed.onerror = null;
+    previewFeed.removeAttribute('src');
 
-    previewFeed.onload = () => {
-      clearTimeout(timeoutTimer);
-      if (streamLoader) streamLoader.style.display = 'none';
-      if (previewFeed) previewFeed.style.display = 'block';
-      verifyStream('success');
-      showHUDToast('CAMERA ONLINE', 'Intranet socket feed parsed and linked successfully!', 'success');
-    };
-
+    // 2. Set up the listeners BEFORE setting the new source
     previewFeed.onerror = () => {
-      clearTimeout(timeoutTimer);
+      hasFailed = true;
       if (streamLoader) streamLoader.style.display = 'none';
       if (previewFeed) previewFeed.style.display = 'none';
-      verifyStream('error', 'Replay socket timeout or codec not supported.');
-      showHUDToast('CAMERA OFFLINE', 'Network address unreachable or block header refused.', 'error');
+      verifyStream('error', 'Replay socket timeout or address unreachable.');
+      showHUDToast('CAMERA OFFLINE', 'Network address unreachable or port closed.', 'error');
     };
+
+    // If it's a standard static image that does finish loading and fires onload, handle it immediately
+    previewFeed.onload = () => {
+      if (!hasFailed) {
+        clearTimeout(validationTimer);
+        if (streamLoader) streamLoader.style.display = 'none';
+        if (previewFeed) previewFeed.style.display = 'block';
+        verifyStream('success');
+        showHUDToast('CAMERA ONLINE', 'Static sensor feed mapped successfully!', 'success');
+      }
+    };
+
+    // Since MJPEG streams are continuous and never finish loading, the standard onload event
+    // does not fire in most browsers. We wait 1.8 seconds; if onerror has NOT fired by then,
+    // we assume the connection is successful and display the feed.
+    const validationTimer = setTimeout(() => {
+      if (!hasFailed) {
+        if (streamLoader) streamLoader.style.display = 'none';
+        if (previewFeed) previewFeed.style.display = 'block';
+        verifyStream('success');
+        showHUDToast('CAMERA ONLINE', 'Intranet socket feed parsed and linked successfully!', 'success');
+      }
+    }, 1800);
+
+    // 3. NOW set the src to initiate the browser-direct connection
+    previewFeed.src = url;
   });
 
   // ==========================================

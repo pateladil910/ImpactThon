@@ -346,7 +346,16 @@
   </script>
 
   <!-- Native Active Stream and Fetch updates -->
+  <!-- Native Active Stream and Fetch updates -->
   <script>
+    const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:5000"
+      : "https://impactthon-wjut.onrender.com";
+
+    const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:10000"
+      : "https://impactthon-ai.onrender.com";
+
     /* ==========================
        🎥 CAMERA STREAM
     ========================== */
@@ -354,7 +363,7 @@
 
     async function fetchCameras() {
       try {
-        const res = await fetch('/api/camera/all');
+        const res = await fetch(`${API_BASE_URL}/api/camera/all`);
         const data = await res.json();
         if (data.success && data.cameras) {
           cameras = data.cameras;
@@ -385,7 +394,7 @@
         const btn = document.createElement("button");
         btn.id = "btn-cam-default";
         btn.className = "cam-btn active";
-        btn.onclick = () => switchCamera({ _id: 'default', name: 'Local Cam 1', url: 'https://impactthon-ai.onrender.com/video_feed' });
+        btn.onclick = () => switchCamera({ _id: 'default', name: 'Local Cam 1', url: '0' });
         btn.innerText = "Cam 1";
         container.appendChild(btn);
       }
@@ -412,8 +421,9 @@
       const activeBtn = document.getElementById('btn-cam-' + cam._id);
       if (activeBtn) activeBtn.classList.add('active');
 
-      // Set stream src
-      cameraImg.src = `https://impactthon-ai.onrender.com/video_feed?camId=${cam._id}`;
+      // Set stream src passing the correct source parameter to the AI service
+      const sourceUrl = cam.url || '0';
+      cameraImg.src = `${AI_SERVICE_URL}/video_feed?source=${encodeURIComponent(sourceUrl)}`;
 
       // Update status text
       const statusText = document.getElementById('camera-status-text');
@@ -429,7 +439,7 @@
           e.preventDefault();
           if (!confirm("Are you sure you want to disconnect this camera?")) return;
           try {
-            const res = await fetch('/api/camera/reset', {
+            const res = await fetch(`${API_BASE_URL}/api/camera/reset`, {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' }
             });
@@ -453,7 +463,7 @@
     /* ==========================
        🛡 AI STATUS
     ========================== */
-    const STATUS_URL = "https://impactthon-ai.onrender.com/status";
+    const STATUS_URL = `${AI_SERVICE_URL}/status`;
 
     let lastSafety = null;
     let lastAction = null;
@@ -523,7 +533,7 @@
     setInterval(updateStatus, 300);
     updateStatus();
 
-    const LAST_URL = "https://impactthon-ai.onrender.com/last_detection";
+    const LAST_URL = `${AI_SERVICE_URL}/last_detection`;
 
     async function updateLastDetection() {
       try {
