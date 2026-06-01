@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Camera = require('../models/Camera');
+const authMiddleware = require('../middleware/authMiddleware');
 const crypto = require('crypto');
 
 // Utility to check if IP is private/local
@@ -63,9 +64,10 @@ router.post('/test', async (req, res) => {
 });
 
 // POST /api/camera/save
-router.post('/save', async (req, res) => {
+router.post('/save', authMiddleware, async (req, res) => {
   try {
-    const { name, type, url, username, password, userId } = req.body;
+    const { name, type, url, username, password } = req.body;
+    const userId = req.user.id;
 
     // Encrypt password only if provided
     let encryptedPassword = "";
@@ -79,12 +81,12 @@ router.post('/save', async (req, res) => {
 
     const isPublic = !isPrivateIP(url);
 
-    // UPSERT LOGIC: This updates the camera if it exists, or creates it if not.
-    // This is what makes it "Life Long" and persistent.
+    // UPSERT LOGIC: This updates the camera belonging to the current user, or creates it if not.
     const camera = await Camera.findOneAndUpdate(
-      { name: name }, // You can also use userId if users are logged in
+      { userId: userId }, // Scoped to logged-in user
       {
-        cameraType: type,
+        name,
+        type, // Set schema type field
         url,
         username,
         password: encryptedPassword,
@@ -94,7 +96,7 @@ router.post('/save', async (req, res) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    res.status(201).json({ success: true, message: 'Camera saved for life!', camera });
+    res.status(201).json({ success: true, message: 'Camera saved successfully!', camera });
   } catch (error) {
     console.error('CRITICAL SAVE ERROR:', error.message);
     res.status(500).json({ success: false, message: error.message });
@@ -102,12 +104,12 @@ router.post('/save', async (req, res) => {
 });
 
 // DELETE /api/camera/reset
-router.delete('/reset', async (req, res) => {
+router.delete('/reset', authMiddleware, async (req, res) => {
   try {
-    // deleteMany({}) ensures the "Life-Long" memory is totally wiped
-    await Camera.deleteMany({});
+    // Delete only the logged-in user's camera
+    await Camera.deleteOne({ userId: req.user.id });
 
-    console.log("MongoDB: Camera collection cleared.");
+    console.log(`MongoDB: Camera cleared for user ${req.user.id}`);
     res.status(200).json({
       success: true,
       message: 'Camera disconnected successfully'
@@ -122,9 +124,10 @@ router.delete('/reset', async (req, res) => {
 });
 
 // GET /api/camera/all
-router.get('/all', async (req, res) => {
+router.get('/all', authMiddleware, async (req, res) => {
   try {
-    const cameras = await Camera.find({}).select('-password');
+    // Fetch only the logged-in user's cameras
+    const cameras = await Camera.find({ userId: req.user.id }).select('-password');
     res.status(200).json({ success: true, cameras });
   } catch (error) {
     console.error('Fetch Cameras Error:', error);
@@ -132,10 +135,10 @@ router.get('/all', async (req, res) => {
   }
 });
 
-router.get('/latest', async (req, res) => {
+router.get('/latest', authMiddleware, async (req, res) => {
   try {
-    // This finds the most recently saved camera in MongoDB
-    const camera = await Camera.findOne().sort({ createdAt: -1 }).select('-password');
+    // Fetch only the logged-in user's camera
+    const camera = await Camera.findOne({ userId: req.user.id }).select('-password');
 
     if (!camera) {
       return res.status(404).json({ success: false, message: 'No camera configured' });

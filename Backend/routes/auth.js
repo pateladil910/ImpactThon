@@ -69,10 +69,17 @@ router.post("/login", async (req, res) => {
     maxAge: 24 * 60 * 60 * 1000 // Expires in 1 day
   });
 
-  // 2. Send the response back to the frontend
+  // 2. Send the response back to the frontend (including token and user info for Edge Agents)
   return res.json({
     success: true,
-    role: user.role
+    token: token,
+    role: user.role,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
   });
 
   // --- CHANGE ENDS HERE ---
