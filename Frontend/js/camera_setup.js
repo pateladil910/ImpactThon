@@ -130,7 +130,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 2. AUTOFILL EXISTING CAMERA CONFIGURATION
   async function loadExistingCamera() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/camera/latest`);
+      const token = localStorage.getItem("token");
+      const headers = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await fetch(`${API_BASE_URL}/api/camera/latest`, { headers });
       if (response.status === 404) {
         console.log("No camera in database. Showing empty setup form.");
         document.body.classList.add('show-form');
@@ -443,9 +447,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // B: Perform database sync upsert
     try {
+      const token = localStorage.getItem("token");
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch(`${API_BASE_URL}/api/camera/save`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(payload)
       });
 
