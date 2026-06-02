@@ -56,19 +56,45 @@ app = Flask(__name__)
 CORS(app)
 app.register_blueprint(history_bp, url_prefix="/api")
 
+def construct_camera_source(url, username, password):
+    if not url:
+        return url
+    if not isinstance(url, str):
+        return url
+    if url.isdigit():
+        return int(url)
+    if not username or not password:
+        return url
+        
+    for schema in ["rtsp://", "rtmp://", "http://", "https://"]:
+        if url.lower().startswith(schema):
+            remainder = url[len(schema):]
+            first_slash = remainder.find('/')
+            first_at = remainder.find('@')
+            if first_at != -1 and (first_slash == -1 or first_at < first_slash):
+                # Credentials already exist in URL
+                return url
+            else:
+                from urllib.parse import quote
+                enc_user = quote(username)
+                enc_pass = quote(password)
+                return f"{schema}{enc_user}:{enc_pass}@{remainder}"
+    return url
+
 # ===============================
 # 🎥 CAMERA STREAM
 # ===============================
 @app.route("/video_feed")
 def video_feed():
     from flask import request
-    source = request.args.get("source", 0)
-    # If source is a digit, convert to int (for camera index)
-    if isinstance(source, str) and source.isdigit():
-        source = int(source)
-        
+    source = request.args.get("source", "0")
+    username = request.args.get("username", "")
+    password = request.args.get("password", "")
+    
+    resolved_source = construct_camera_source(source, username, password)
+    
     return Response(
-        generate_frames(source=source),
+        generate_frames(source=resolved_source),
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 
