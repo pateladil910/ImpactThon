@@ -334,9 +334,25 @@ async function logout() {
     console.error("Backend logout failed:", error);
   }
 
+  // Attempt Firebase Sign Out
+  try {
+    const firebaseModule = await import('../js/firebase.js');
+    if (firebaseModule && firebaseModule.auth && firebaseModule.signOut) {
+      if (firebaseModule.auth.app && firebaseModule.auth.app.options && firebaseModule.auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
+        await firebaseModule.signOut(firebaseModule.auth);
+        console.log("Firebase signOut successful");
+      }
+    }
+  } catch (err) {
+    console.warn("Firebase signout dynamic import failed or bypassed:", err);
+  }
+
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
   localStorage.removeItem("userRole");
+  localStorage.removeItem("displayName");
+  localStorage.removeItem("profilePhoto");
+  localStorage.removeItem("uid");
   localStorage.removeItem("connectedCamera");
   localStorage.removeItem("systemConfig");
   localStorage.removeItem("safetyShieldCameras");
