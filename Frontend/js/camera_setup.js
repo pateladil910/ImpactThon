@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let isCameraVerified = false;
 
   function updateDeployButtonState() {
-    btnConnect.disabled = !isCameraVerified;
+    const isDemo = demoModeToggle && demoModeToggle.checked;
+    btnConnect.disabled = !(isCameraVerified || isDemo);
   }
 
   // Monitor inputs to dynamically reset verification status on change
@@ -280,10 +281,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     demoActive = true;
     if (simulatedLogsContainer) simulatedLogsContainer.classList.remove('hidden');
     
+    // Show mock feed image and status
+    if (previewFeed) {
+      previewFeed.src = '../images/factory_safety_bg.webp';
+      previewFeed.style.display = 'block';
+    }
+    if (streamStatusText) {
+      streamStatusText.textContent = 'INGEST_CORE: ACTIVE (DEMO)';
+      streamStatusText.style.color = 'var(--safe-green)';
+    }
+    if (streamStatusDot) {
+      streamStatusDot.style.backgroundColor = 'var(--safe-green)';
+      streamStatusDot.style.boxShadow = '0 0 8px var(--safe-green)';
+    }
+    if (telStreamHealth) {
+      telStreamHealth.textContent = 'ONLINE (DEMO)';
+      telStreamHealth.style.color = 'var(--safe-green)';
+    }
+    const telModelStatus = document.getElementById('telModelStatus');
+    if (telModelStatus) {
+      telModelStatus.textContent = 'RUNNING (SIM)';
+      telModelStatus.style.color = 'var(--safe-green)';
+    }
+    
     demoInterval = setInterval(() => {
       if (!demoActive) return;
       
       const isBreached = Math.random() > 0.5; // 50% chance to breach
+      
+      // Update Latency
+      if (telLatency) {
+        telLatency.textContent = (8 + Math.floor(Math.random() * 6)) + 'ms';
+        telLatency.style.color = 'var(--primary-neon)';
+      }
       
       if (isBreached) {
         // Intrusion State
@@ -299,6 +329,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (hudConfidence) hudConfidence.textContent = (Math.random() * 5 + 94).toFixed(1) + '%';
         if (hudFps) hudFps.textContent = (Math.random() * 2 + 58).toFixed(1) + ' FPS';
+        if (restrictedZoneOverlay) {
+          restrictedZoneOverlay.style.display = 'block';
+        }
         
         triggerAlert();
       } else {
@@ -315,6 +348,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (hudConfidence) hudConfidence.textContent = '0.0%';
         if (hudFps) hudFps.textContent = (Math.random() * 2 + 58).toFixed(1) + ' FPS';
+        if (restrictedZoneOverlay) {
+          restrictedZoneOverlay.style.display = 'none';
+        }
       }
     }, 2500);
   };
@@ -338,6 +374,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (hudConfidence) hudConfidence.textContent = '0.0%';
     if (hudFps) hudFps.textContent = '0.0 FPS';
+    if (telStreamHealth) {
+      telStreamHealth.textContent = 'OFFLINE';
+      telStreamHealth.style.color = 'var(--danger-red)';
+    }
+    const telModelStatus = document.getElementById('telModelStatus');
+    if (telModelStatus) {
+      telModelStatus.textContent = 'READY';
+      telModelStatus.style.color = '';
+    }
+    if (telLatency) {
+      telLatency.textContent = 'N/A';
+      telLatency.style.color = '';
+    }
+    if (restrictedZoneOverlay) {
+      restrictedZoneOverlay.style.display = 'none';
+    }
+    
+    // Hide preview feed if it was demo
+    if (previewFeed && previewFeed.src.includes('images/')) {
+      previewFeed.style.display = 'none';
+      previewFeed.removeAttribute('src');
+    }
+    if (streamStatusText) {
+      streamStatusText.textContent = 'INGEST_CORE: STANDBY';
+      streamStatusText.style.color = '';
+    }
+    if (streamStatusDot) {
+      streamStatusDot.style.backgroundColor = '';
+      streamStatusDot.style.boxShadow = '';
+    }
   };
 
   window.triggerAlert = function() {
@@ -514,14 +580,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   cameraForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    if (!isCameraVerified) {
+    const isDemo = demoModeToggle && demoModeToggle.checked;
+    if (!isCameraVerified && !isDemo) {
       showHUDToast('VERIFICATION REQUIRED', 'Please test and verify the camera connection before deploying.', 'error');
       return;
     }
 
     const name = document.getElementById('camName').value;
     const type = document.getElementById('camType').value;
-    const url = camUrl.value.trim();
+    let url = camUrl.value.trim();
+    if (isDemo && !url) {
+      url = "rtsp://demo-stream.local/factory-camera";
+    }
     const locationVal = document.getElementById('camLocation') ? document.getElementById('camLocation').value.trim() : '';
     const descriptionVal = document.getElementById('camDescription') ? document.getElementById('camDescription').value.trim() : '';
     const usernameVal = document.getElementById('camUser') ? document.getElementById('camUser').value.trim() : '';
@@ -626,6 +696,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showHUDToast('DEMO HALTED', 'Threat models deactivated. Matrix secured.', 'success');
       stopDetection();
     }
+    updateDeployButtonState();
   });
 
   // ==========================================
