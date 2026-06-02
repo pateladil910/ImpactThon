@@ -337,6 +337,9 @@ async function logout() {
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
   localStorage.removeItem("userRole");
+  localStorage.removeItem("connectedCamera");
+  localStorage.removeItem("systemConfig");
+  localStorage.removeItem("safetyShieldCameras");
 
   window.location.replace("login.html");
 }
@@ -835,19 +838,111 @@ function checkAuthUI() {
     });
   });
 
-  // 2. Strict Camera Session Lock Filter (Dashboard, Danger Analytics, Detection Logs)
-  const isCameraActive = localStorage.getItem("cameraActive") === "true";
-  const cameraPages = ["dashboard.html", "dashboard2.html", "chart.html", "history.html"];
+  // 2. Strict Camera Session Lock Filter (Dashboard, Danger Analytics, Detection Logs, Plant Map)
+  // Fetch camera connection state from backend if it hasn't been cached in local storage yet
+  let cachedCameraConnected = localStorage.getItem("connectedCamera");
+  if (isLoggedIn === "true" && cachedCameraConnected === null) {
+    const token = localStorage.getItem("token");
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    fetch(`${API_BASE_URL}/api/camera/latest`, { headers })
+      .then(res => {
+        if (res.ok) {
+          localStorage.setItem("connectedCamera", "true");
+          checkAuthUI();
+        } else {
+          localStorage.setItem("connectedCamera", "false");
+          checkAuthUI();
+        }
+      })
+      .catch(err => {
+        console.warn("Unable to check camera state with backend:", err);
+      });
+  }
+
+  const isCameraConnected = cachedCameraConnected === "true";
+  const cameraPages = ["dashboard.html", "dashboard2.html", "chart.html", "history.html", "plant_map.html"];
 
   cameraPages.forEach(page => {
     const links = document.querySelectorAll(`.nav-menu a[href*="${page}"], .nav-links a[href*="${page}"]`);
     links.forEach(link => {
       const li = link.closest("li");
       if (li) {
-        li.style.display = isCameraActive ? "block" : "none";
+        li.style.display = isCameraConnected ? "block" : "none";
       }
     });
   });
+
+  // 3. Setup Flow Wizard Filter (Gateway Setup vs Camera Setup visibility)
+  const hasGatewayConfig = localStorage.getItem("systemConfig") !== null;
+  
+  // Clean select setup vs camera_setup exactly without partial match collision
+  const setupLinks = [];
+  const camSetupLinks = [];
+  document.querySelectorAll('.nav-menu a, .nav-links a').forEach(link => {
+    const href = link.getAttribute('href');
+    if (href) {
+      const page = href.split('?')[0].split('#')[0];
+      if (page === 'setup.html') {
+        setupLinks.push(link);
+      } else if (page === 'camera_setup.html') {
+        camSetupLinks.push(link);
+      }
+    }
+  });
+
+  if (isCameraConnected) {
+    // If camera is connected, only show Gateway Setup (settings) and hide Camera Setup button
+    setupLinks.forEach(link => {
+      const li = link.closest("li");
+      if (li) li.style.display = "block";
+    });
+    camSetupLinks.forEach(link => {
+      const li = link.closest("li");
+      if (li) li.style.display = "none";
+    });
+  } else {
+    // If no camera connected:
+    if (hasGatewayConfig) {
+      // Step 2: Show only "Camera Setup", hide "Gateway Setup"
+      setupLinks.forEach(link => {
+        const li = link.closest("li");
+        if (li) li.style.display = "none";
+      });
+      camSetupLinks.forEach(link => {
+        const li = link.closest("li");
+        if (li) li.style.display = "block";
+      });
+    } else {
+      // Step 1: Show only "Gateway Setup", hide "Camera Setup"
+      setupLinks.forEach(link => {
+        const li = link.closest("li");
+        if (li) li.style.display = "block";
+      });
+      camSetupLinks.forEach(link => {
+        const li = link.closest("li");
+        if (li) li.style.display = "none";
+      });
+    }
+  }
+
+  // 4. Automatic Redirect for first-time setup (Not connected yet)
+  if (isLoggedIn === "true" && cachedCameraConnected === "false") {
+    const pathname = window.location.pathname;
+    const currentPage = pathname.substring(pathname.lastIndexOf('/') + 1);
+    const allowedSetupPages = ["setup.html", "camera_setup.html", "login.html", "signup.html"];
+
+    if (!allowedSetupPages.includes(currentPage) && currentPage !== "") {
+      if (hasGatewayConfig) {
+        console.warn("Camera setup incomplete. Redirecting to camera setup...");
+        window.location.replace("camera_setup.html");
+      } else {
+        console.warn("System setup incomplete. Redirecting to gateway config...");
+        window.location.replace("setup.html");
+      }
+    }
+  }
 }
 
 // ---------------- INIT ----------------

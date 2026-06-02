@@ -561,6 +561,12 @@
             color: var(--danger-red);
         }
 
+        .status-box.warning {
+            border-color: rgba(245, 158, 11, 0.35);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
+            color: var(--warning-yellow);
+        }
+
         .spinner {
             width: 20px;
             height: 20px;
@@ -788,6 +794,27 @@
             0% { border-color: rgba(239, 68, 68, 0.4); box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.15); }
             100% { border-color: rgba(239, 68, 68, 1); box-shadow: inset 0 0 25px rgba(239, 68, 68, 0.5), 0 0 15px rgba(239, 68, 68, 0.4); }
         }
+
+        .btn-grid-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .btn-grid-tab.active {
+            background: var(--primary-neon);
+            color: var(--text-dark) !important;
+        }
+        .btn-grid-tab:hover:not(.active) {
+            color: var(--primary-neon);
+            background: rgba(6, 182, 212, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -813,6 +840,7 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="solution.html">Solution</a></li>
                 <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="plant_map.html">Plant Map</a></li>
                 <li><a href="chart.html">Danger Analytics</a></li>
                 <li><a href="history.html">Detection Logs</a></li>
                 <li><a href="setup.html">Gateway Setup</a></li>
@@ -967,88 +995,149 @@
                 </div>
             </div>
 
-            <!-- RIGHT PANEL: CAMERA CONNECTIONS FORM -->
+            <!-- RIGHT PANEL: CAMERA CONNECTIONS FORM & DISCOVERY WIZARD -->
             <div class="setup-card">
-                <h2>Connect Sensor Node</h2>
-                <p class="card-desc">Assign a unique optical feed input to the YOLOv8 neural hazard tracking envelope.</p>
-
-                <form id="cameraForm" class="setup-form" novalidate>
-                    <!-- CAMERA NAME INPUT -->
-                    <div class="input-group">
-                        <input type="text" id="camName" placeholder=" " required autocomplete="off" />
-                        <label for="camName">Camera Node Name</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(6, 182, 212, 0.15); padding-bottom: 10px;">
+                    <h2 style="margin-bottom: 0; font-size: 20px;">Optical Uplink</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-grid-tab active" id="tabManual">Manual Link</button>
+                        <button type="button" class="btn-grid-tab" id="tabDiscovery">Discovery Wizard</button>
                     </div>
+                </div>
 
-                    <!-- CAMERA SURVEILLANCE TYPE -->
-                    <div class="input-group">
-                        <select id="camType" required>
-                            <option value="RTSP">RTSP Camera (Network Stream)</option>
-                            <option value="IP_CAMERA">IP Camera (HTTP Feed)</option>
-                            <option value="CCTV">DVR / NVR Encoder Segment</option>
-                            <option value="WEBCAM">Local Webcam (USB Peripheral)</option>
-                        </select>
-                        <label for="camType">Sensor Protocol Type</label>
-                    </div>
+                <!-- MANUAL ONBOARDING -->
+                <div id="manualOnboardingContainer">
+                    <p class="card-desc" style="margin-bottom: 20px;">Assign a unique optical feed input to the YOLOv8 neural hazard tracking envelope.</p>
 
-                    <!-- STREAM ADDRESS OR IP -->
-                    <div class="input-group">
-                        <input type="text" id="camUrl" placeholder=" " required autocomplete="off" />
-                        <label for="camUrl">Stream URL / Network IP Address</label>
-                        <small id="urlWarning" class="warning-text hidden"></small>
-                    </div>
-
-                    <!-- HALF WIDTH: USERNAME & PASSWORD -->
-                    <div class="form-row-half">
+                    <form id="cameraForm" class="setup-form" novalidate>
+                        <!-- CAMERA NAME INPUT -->
                         <div class="input-group">
-                            <input type="text" id="camUser" placeholder=" " autocomplete="off" />
-                            <label for="camUser">Access Username</label>
+                            <input type="text" id="camName" placeholder=" " required autocomplete="off" />
+                            <label for="camName">Camera Node Name</label>
                         </div>
+
+                        <!-- CAMERA SURVEILLANCE TYPE & LOCATION -->
+                        <div class="form-row-half">
+                            <div class="input-group">
+                                <select id="camType" required>
+                                    <option value="RTSP">RTSP Camera (Network Stream)</option>
+                                    <option value="IP_CAMERA">IP Camera (Intranet IP)</option>
+                                    <option value="MOBILE_IP">Mobile IP Webcam</option>
+                                    <option value="USB">USB Camera (Webcam)</option>
+                                    <option value="ONVIF">ONVIF Camera</option>
+                                    <option value="DVR_NVR">DVR/NVR Channel</option>
+                                    <option value="MJPEG">HTTP MJPEG Camera</option>
+                                    <option value="HTTPS">HTTPS Camera Feed</option>
+                                </select>
+                                <label for="camType">Sensor Protocol Type</label>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" id="camLocation" placeholder=" " required autocomplete="off" />
+                                <label for="camLocation">Installation Location</label>
+                            </div>
+                        </div>
+
+                        <!-- FACTORY ASSIGNMENT -->
                         <div class="input-group">
-                            <input type="password" id="camPass" placeholder=" " autocomplete="new-password" />
-                            <label for="camPass">Access Password</label>
+                            <select id="camFactory" required>
+                                <option value="Factory A">Factory A</option>
+                                <option value="Factory B">Factory B</option>
+                                <option value="Factory C">Factory C</option>
+                            </select>
+                            <label for="camFactory">Factory Assignment</label>
                         </div>
-                    </div>
 
-                    <!-- DEMO SIMULATION TOGGLE -->
-                    <div class="input-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(2, 6, 23, 0.55); border: 1px solid rgba(6, 182, 212, 0.15); padding: 12px 20px; border-radius: 12px; margin-bottom: 5px;">
-                        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; text-transform: uppercase;">Demo Detection Mode</span>
-                        <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 22px; flex-shrink: 0; cursor: pointer;">
-                            <input type="checkbox" id="demoModeToggle" style="opacity: 0; width: 0; height: 0;">
-                            <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.08); transition: .3s; border-radius: 34px; border: 1px solid rgba(255,255,255,0.1);"></span>
-                        </label>
-                    </div>
-
-                    <!-- LIVE SIMULATED INCIDENT LOGS -->
-                    <div id="simulatedLogsContainer" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px; margin-bottom: 5px;">
-                        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; color: var(--danger-red); letter-spacing: 1px; text-transform: uppercase;">⚠️ DANGER OVERRIDE INCIDENT LOG</span>
-                        <div id="simulatedLogsConsole" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 12px; height: 110px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; color: var(--danger-red); line-height: 1.4; display: flex; flex-direction: column; gap: 4px; box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.1);">
-                            <div style="opacity: 0.6;">System tracking armed. Ready for intrusion simulation...</div>
+                        <!-- STREAM ADDRESS OR IP -->
+                        <div class="input-group">
+                            <input type="text" id="camUrl" placeholder=" " required autocomplete="off" />
+                            <label for="camUrl">Stream URL / IP (e.g. rtsp://192.168.1.100:554/h264)</label>
+                            <small id="urlWarning" class="warning-text hidden"></small>
                         </div>
-                    </div>
 
-                    <!-- DYNAMIC UPLINK STATUS TELEMETRY -->
-                    <div class="status-box hidden" id="statusBox">
-                        <div class="spinner hidden" id="spinner"></div>
-                        <span id="statusMessage">Telemetry standby.</span>
-                    </div>
+                        <!-- HALF WIDTH: USERNAME & PASSWORD -->
+                        <div class="form-row-half">
+                            <div class="input-group">
+                                <input type="text" id="camUser" placeholder=" " autocomplete="off" />
+                                <label for="camUser">Access Username</label>
+                            </div>
+                            <div class="input-group">
+                                <input type="password" id="camPass" placeholder=" " autocomplete="new-password" />
+                                <label for="camPass">Access Password</label>
+                            </div>
+                        </div>
 
-                    <!-- CTA SHELF ACTION BUTTONS -->
-                    <div class="button-group">
-                        <button type="button" class="btn btn-outline" id="btnTest">
+                        <!-- SENSOR DESCRIPTION -->
+                        <div class="input-group">
+                            <input type="text" id="camDescription" placeholder=" " autocomplete="off" />
+                            <label for="camDescription">Sensor Description / Notes</label>
+                        </div>
+
+                        <!-- DEMO SIMULATION TOGGLE -->
+                        <div class="input-group" style="display: flex; align-items: center; justify-content: space-between; background: rgba(2, 6, 23, 0.55); border: 1px solid rgba(6, 182, 212, 0.15); padding: 12px 20px; border-radius: 12px; margin-bottom: 5px;">
+                            <span style="font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; text-transform: uppercase;">Demo Detection Mode</span>
+                            <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 22px; flex-shrink: 0; cursor: pointer;">
+                                <input type="checkbox" id="demoModeToggle" style="opacity: 0; width: 0; height: 0;">
+                                <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.08); transition: .3s; border-radius: 34px; border: 1px solid rgba(255,255,255,0.1);"></span>
+                            </label>
+                        </div>
+
+                        <!-- LIVE SIMULATED INCIDENT LOGS -->
+                        <div id="simulatedLogsContainer" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px; margin-bottom: 5px;">
+                            <span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; color: var(--danger-red); letter-spacing: 1px; text-transform: uppercase;">⚠️ DANGER OVERRIDE INCIDENT LOG</span>
+                            <div id="simulatedLogsConsole" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 12px; height: 110px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; color: var(--danger-red); line-height: 1.4; display: flex; flex-direction: column; gap: 4px; box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.1);">
+                                <div style="opacity: 0.6;">System tracking armed. Ready for intrusion simulation...</div>
+                            </div>
+                        </div>
+
+                        <!-- DYNAMIC UPLINK STATUS TELEMETRY -->
+                        <div class="status-box hidden" id="statusBox">
+                            <div class="spinner hidden" id="spinner"></div>
+                            <span id="statusMessage">Telemetry standby.</span>
+                        </div>
+
+                        <!-- CTA SHELF ACTION BUTTONS -->
+                        <div class="button-group">
+                            <button type="button" class="btn btn-outline" id="btnTest">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5"></path>
+                                </svg>
+                                <span>Test Connection</span>
+                            </button>
+                            
+                            <button type="submit" class="btn btn-primary" id="btnConnect" disabled>
+                                <span>Deploy Neural Shield</span>
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- NETWORK DISCOVERY -->
+                <div id="discoveryContainer" style="display: none;">
+                    <p class="card-desc" style="margin-bottom: 20px;">Scan the local intranet subnet using WS-Discovery & ONVIF probes to automatically locate Hikvision, Dahua, Axis, and NVR CCTV channels.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <button type="button" class="btn btn-primary" id="btnScanSubnet">
                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.773 4.773zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span>Test Connection</span>
+                            <span>Trigger Subnet Discovery Scan</span>
                         </button>
                         
-                        <button type="submit" class="btn btn-primary" id="btnConnect" disabled>
-                            <span>Deploy Neural Shield</span>
-                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"></path>
-                            </svg>
-                        </button>
+                        <div id="discoveryScanLoader" style="display: none; flex-direction: column; gap: 12px; background: rgba(2, 6, 23, 0.55); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 12px; padding: 20px; text-align: center; position: relative;">
+                            <div class="spinner" style="margin: 0 auto 10px;"></div>
+                            <span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--primary-neon); letter-spacing: 1px;">ONVIF WS-DISCOVERY & PORT 554 SWEEPER IN PROGRESS...</span>
+                        </div>
+
+                        <div id="discoveredDevicesList" style="display: flex; flex-direction: column; gap: 12px; max-height: 380px; overflow-y: auto;">
+                            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); border: 1px dashed rgba(255,255,255,0.06); border-radius: 12px;">
+                                <span>No discovery scans performed yet. Click the trigger button above to query local subnet.</span>
+                            </div>
+                        </div>
                     </div>
-                </form>
+                </div>
             </div>
 
         </div>

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Protected Route Gatekeeper: Instant Guest Firewall -->
+  <script>
+    if (localStorage.getItem("isLoggedIn") !== "true") {
+      console.warn("Unauthorized access blocked. Redirecting to login gateway...");
+      window.location.replace("login.html");
+    }
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Factory Plant Layout Map | Live Control Console</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <link rel="stylesheet" href="../css/navbar_responsive.css">
+
+  <style>
+    /* Plant Map specific premium HMI design tokens */
+    .plant-layout-grid {
+      display: grid;
+      grid-template-columns: 2.5fr 1.2fr;
+      gap: 30px;
+      margin-top: 20px;
+      min-height: 580px;
+    }
+
+    /* Factory Tab Bar */
+    .factory-tabs {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+      padding-bottom: 10px;
+    }
+
+    .factory-tab {
+      background: rgba(6, 9, 21, 0.6);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      color: var(--text-muted);
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .factory-tab.active {
+      background: rgba(6, 182, 212, 0.12);
+      border-color: var(--primary-neon);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+    }
+
+    .factory-tab:hover:not(.active) {
+      border-color: var(--primary-neon);
+      color: #fff;
+      background: rgba(6, 182, 212, 0.05);
+    }
+
+    /* Blueprint floor container */
+    .floorplan-wrapper {
+      position: relative;
+      background: radial-gradient(circle at center, rgba(6, 18, 43, 0.85) 0%, rgba(2, 6, 23, 0.95) 100%);
+      border: 1.5px solid rgba(6, 182, 212, 0.15);
+      border-radius: 16px;
+      height: 520px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(6, 182, 212, 0.08);
+      user-select: none;
+    }
+
+    .blueprint-grid-overlay {
+      position: absolute;
+      inset: 0;
+      background-size: 30px 30px;
+      background-image: 
+        linear-gradient(to right, rgba(6, 182, 212, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(6, 182, 212, 0.04) 1px, transparent 1px);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .layout-floor-design {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+
+    /* Abstract SCADA Factory elements */
+    .factory-zone {
+      position: absolute;
+      border: 1px dashed rgba(6, 182, 212, 0.25);
+      background: rgba(6, 182, 212, 0.02);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: inset 0 0 8px rgba(6, 182, 212, 0.03);
+    }
+
+    .factory-zone.restricted {
+      border-color: rgba(239, 68, 68, 0.35);
+      background: repeating-linear-gradient(45deg, rgba(239, 68, 68, 0.03), rgba(239, 68, 68, 0.03) 10px, rgba(239, 68, 68, 0.08) 10px, rgba(239, 68, 68, 0.08) 20px);
+      color: var(--danger-red);
+      animation: zonePulse 3s infinite alternate;
+    }
+
+    @keyframes zonePulse {
+      0% { box-shadow: inset 0 0 8px rgba(239, 68, 68, 0.05); }
+      100% { box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.15); }
+    }
+
+    /* Production Belt */
+    .production-belt {
+      position: absolute;
+      background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 100%);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      color: rgba(255,255,255,0.3);
+      font-size: 8px;
+      font-family: monospace;
+    }
+
+    /* Interactive Draggable Camera Pin */
+    .camera-pin {
+      position: absolute;
+      z-index: 100;
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .camera-pin:active {
+      cursor: grabbing;
+      transform: translate(-50%, -50%) scale(1.15);
+    }
+
+    .camera-pin-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--card-bg-solid);
+      border: 1.5px solid var(--primary-neon);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-neon);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), 0 0 10px rgba(6, 182, 212, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .camera-pin.active .camera-pin-icon {
+      background: var(--primary-neon);
+      color: #000;
+      box-shadow: 0 0 15px var(--primary-neon);
+    }
+
+    /* Online/Offline/Breach Glow Rings */
+    .camera-pin.online .camera-pin-icon {
+      border-color: var(--safe-green);
+      color: var(--safe-green);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5), 0 0 8px rgba(16, 185, 129, 0.3);
+    }
+    
+    .camera-pin.offline .camera-pin-icon {
+      border-color: var(--danger-red);
+      color: var(--danger-red);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5), 0 0 8px rgba(239, 68, 68, 0.3);
+    }
+
+    .camera-pin.breach .camera-pin-icon {
+      border-color: var(--danger-red);
+      background: var(--danger-red);
+      color: #fff;
+      animation: pinBreachGlow 0.8s infinite alternate;
+    }
+
+    @keyframes pinBreachGlow {
+      0% { box-shadow: 0 0 5px var(--danger-red), 0 0 0px var(--danger-red); }
+      100% { box-shadow: 0 0 18px var(--danger-red), 0 0 8px var(--danger-red); transform: scale(1.08); }
+    }
+
+    /* Pin Label */
+    .camera-pin-label {
+      background: rgba(4, 8, 20, 0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 9px;
+      color: #fff;
+      margin-top: 4px;
+      white-space: nowrap;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    }
+
+    /* Inspector Panel styling */
+    .inspector-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mini-feed-scope {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      border: 1px solid rgba(6, 182, 212, 0.15);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .mini-feed-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .mini-feed-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* SCADA Blueprint grid layout guide lines */
+    .blueprint-h-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    .blueprint-v-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    /* Double click prompt */
+    .double-click-hint {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: var(--text-muted);
+      background: rgba(2, 6, 23, 0.85);
+      border: 1px solid rgba(6, 182, 212, 0.15);
+      padding: 6px 12px;
+      border-radius: 6px;
+      z-index: 5;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BACKDROP PARTICLES CANVAS -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+  <div class="laser-scan-line"></div>
+
+  <!-- FUTURISTIC HUD OVERLAYS -->
+  <div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+      <span>SYSTEM_CONTROL: RUNNING</span>
+      <span>PLANT_MAPPING: ENABLED</span>
+      <span class="status-badge" style="margin-top: 10px;">
+        <span class="status-dot"></span> SCADA ACTIVE
+      </span>
+    </div>
+
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+      <span>GRID_MAP_RESOLVER</span>
+      <span>MULTI-FACTORY VECTORS</span>
+      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: 8ms</span>
+      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
+    </div>
+
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+      </a>
+
+      <!-- Unified Menu Container -->
+      <div class="nav-menu" id="navLinks">
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="solution.html">Solution</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="plant_map.html" class="active">Plant Map</a></li>
+            <li><a href="chart.html">Danger Analytics</a></li>
+            <li><a href="history.html">Detection Logs</a></li>
+            <li><a href="setup.html">Gateway Setup</a></li>
+            <li><a href="camera_setup.html">Camera Setup</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="learn-more.html">How It Works</a></li>
+            <li><a href="diagnostics.html">Diagnostics</a></li>
+            <li><a href="notifications.html">Alerts</a></li>
+            <li><a href="incident_log.html">Incident Logs</a></li>
+            <li><a href="admin.html">Admin</a></li>
+        </ul>
+
+        <div class="auth-buttons" id="auth-buttons">
+          <a href="login.html">Log In</a>
+          <a href="signup.html">Sign Up</a>
+        </div>
+
+        <div id="profile-section" style="display:none;" class="profile-box">
+          <span id="profile-name" class="profile-name">User</span>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+
+    <!-- ================= MAIN ================= -->
+    <main class="main">
+
+      <h1>Industrial Plant Layout Visualizer</h1>
+      <p class="subtitle">
+        Real-time mapping of optical camera nodes across multiple plant layouts. Drag and drop camera pins to match physical installations.
+      </p>
+
+      <!-- FACTORY TAB SHELF -->
+      <div class="factory-tabs" id="factoryTabs">
+        <button class="factory-tab active" onclick="switchFactory('Factory A')">Factory A</button>
+        <button class="factory-tab" onclick="switchFactory('Factory B')">Factory B</button>
+        <button class="factory-tab" onclick="switchFactory('Factory C')">Factory C</button>
+      </div>
+
+      <!-- ================= SCADA MAP & INSPECTOR GRID ================= -->
+      <div class="plant-layout-grid">
+
+        <!-- 🗺️ BLUEPRINT LAYOUT CANVAS -->
+        <div class="floorplan-wrapper" id="floorplanWrapper" ondblclick="handleMapDoubleClick(event)">
+          <div class="blueprint-grid-overlay"></div>
+          
+          <!-- Abstract structural blueprint designs injected by JS depending on factory -->
+          <div class="layout-floor-design" id="layoutFloorDesign"></div>
+
+          <!-- Camera pins are injected dynamically -->
+          <div id="pinsContainer"></div>
+
+          <!-- Double Click Info Tag -->
+          <div class="double-click-hint">💡 Double-click layout map coordinate to place/onboard a camera pin here</div>
+        </div>
+
+        <!-- 🖥️ NODE INSPECTOR PANEL -->
+        <div class="box inspector-panel">
+          <div class="box-title" style="border-bottom: 1px solid rgba(6, 182, 212, 0.15); padding-bottom: 12px; margin-bottom: 10px;">
+            <span>🖥️ Sensor Node Telemetry Inspector</span>
+          </div>
+
+          <!-- Preview feed -->
+          <div class="mini-feed-scope">
+            <div class="camera-scanner-sweep"></div>
+            <img class="mini-feed-img" id="inspectorMiniFeed" alt="Sensor Ingest View" />
+            <div class="mini-feed-placeholder" id="inspectorPlaceholder">
+              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"></path>
+              </svg>
+              <span>Select an active camera node on the blueprint layout map to establish live telemetry and feed ingress...</span>
+            </div>
+          </div>
+
+          <!-- Attributes Grid -->
+          <div style="display: flex; flex-direction: column; gap: 12px; font-family: 'Space Grotesk', sans-serif;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+              <span style="color: var(--text-muted); font-size: 11px;">Node Name</span>
+              <span id="inspectName" style="color: #fff; font-weight: 700; font-size: 12px;">--</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+              <span style="color: var(--text-muted); font-size: 11px;">Installation Area</span>
+              <span id="inspectLocation" style="color: #fff; font-weight: 700; font-size: 12px;">--</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+              <span style="color: var(--text-muted); font-size: 11px;">Surveillance Protocol</span>
+              <span id="inspectType" style="color: #fff; font-weight: 700; font-size: 12px;">--</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+              <span style="color: var(--text-muted); font-size: 11px;">Connection Status</span>
+              <span id="inspectStatus" style="color: var(--text-muted); font-weight: 700; font-size: 12px; text-transform: uppercase;">--</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+              <span style="color: var(--text-muted); font-size: 11px;">Link Latency</span>
+              <span id="inspectLatency" style="color: #fff; font-weight: 700; font-size: 12px;">--</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
+              <span style="color: var(--text-muted); font-size: 11px;">Description / Details</span>
+              <span id="inspectDesc" style="color: var(--text-muted); font-size: 11px; text-align: right; max-width: 60%; word-break: break-all;">--</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px;">
+            <button onclick="inspectGoToDashboard()" class="btn-primary" style="padding: 10px 15px; border-radius: 6px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              🖥️ Open Main Monitoring Console →
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- ================= TELEMETRY FOOTER ================= -->
+    <footer class="telemetry-footer">
+        <!-- LEFT CLUSTER -->
+        <div class="footer-cluster left-cluster">
+            <div class="footer-item desktop-only">
+                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
+                <span class="footer-item-label">SAFETY CORE</span>
+                <span class="footer-item-value">v4.2.1</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">VISION MODEL</span>
+                <span class="footer-item-value">v3.0</span>
+            </div>
+            <div class="footer-item mobile-only" style="color: var(--safe-green); font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
+                <span class="footer-item-label" style="color: var(--safe-green); font-weight: 700;">SYSTEM ONLINE</span>
+            </div>
+        </div>
+
+        <!-- CENTER CLUSTER -->
+        <div class="footer-cluster center-cluster">
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">FACTORY FLOOR</span>
+                <span class="footer-item-value" id="footer-active-factory">FACTORY A</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">TOTAL PINS</span>
+                <span class="footer-item-value" id="footer-total-pins">0</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">CLOUD SYNC</span>
+                <span class="footer-item-value" style="color: var(--safe-green);">ONLINE</span>
+            </div>
+        </div>
+
+        <!-- RIGHT CLUSTER -->
+        <div class="footer-cluster right-cluster">
+            <div class="utc-clock-wrapper">
+                <span class="utc-label desktop-only">UTC</span>
+                <span class="utc-time" id="footer-live-clock">--:--:--</span>
+            </div>
+        </div>
+    </footer>
+
+  </div>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  
+  <!-- Particles backdrop, clock ticking overrides -->
+  <script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = Math.random() * 0.4 - 0.2;
+            this.alpha = Math.random() * 0.5 + 0.1;
+            this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
+        }
+
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const count = Math.min(60, Math.floor(window.innerWidth / 20));
+    for (let i = 0; i < count; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Real-time ticking system clock inside HUD
+    const clockElement = document.getElementById('system-clock');
+    function updateClock() {
+        if (!clockElement) return;
+        const now = new Date();
+        const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
+        clockElement.textContent = `SYSTEM TIME: ${timeString} UTC`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Simulate latency shifts inside HUD
+    setInterval(() => {
+        const latencyEl = document.getElementById('system-latency');
+        if (latencyEl) {
+            latencyEl.textContent = `LATENCY: ${Math.floor(6 + Math.random() * 5)}ms`;
+        }
+    }, 3000);
+
+    // FUTURISTIC LIVE TELEMETRY FOOTER CLOCK
+    (function() {
+        const utcClock = document.getElementById('footer-live-clock');
+        if (utcClock) {
+            function tick() {
+                const now = new Date();
+                utcClock.textContent = now.toISOString().substr(11, 8) + ' UTC';
+            }
+            tick();
+            setInterval(tick, 1000);
+        }
+    })();
+  </script>
+
+  <!-- Auth and Mobile Menu Handler -->
+  <script src="../js/auth.js"></script>
+
+  <!-- Core Plant Map Ingest Controller -->
+  <script src="../js/plant_map.js"></script>
+
+</body>
+</html>

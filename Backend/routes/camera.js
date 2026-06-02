@@ -82,7 +82,7 @@ router.post('/test', async (req, res) => {
 // POST /api/camera/save
 router.post('/save', authMiddleware, async (req, res) => {
   try {
-    const { name, type, url, username, password } = req.body;
+    const { name, type, url, username, password, factory, mapX, mapY, brand, channelId, status } = req.body;
     const userId = req.user.id;
 
     // Encrypt password only if provided
@@ -97,9 +97,9 @@ router.post('/save', authMiddleware, async (req, res) => {
 
     const isPublic = !isPrivateIP(url);
 
-    // UPSERT LOGIC: This updates the camera belonging to the current user, or creates it if not.
+    // UPSERT LOGIC: This updates the camera belonging to the current user and url, or creates it if not.
     const camera = await Camera.findOneAndUpdate(
-      { userId: userId }, // Scoped to logged-in user
+      { userId: userId, url: url }, // Scoped to logged-in user and camera URL
       {
         name,
         type, // Set schema type field
@@ -107,6 +107,12 @@ router.post('/save', authMiddleware, async (req, res) => {
         username,
         password: encryptedPassword,
         isPublic,
+        factory: factory || 'Factory A',
+        mapX: mapX !== undefined ? Number(mapX) : 50,
+        mapY: mapY !== undefined ? Number(mapY) : 50,
+        brand: brand || 'Generic',
+        channelId: channelId !== undefined ? Number(channelId) : 1,
+        status: status || 'Offline',
         updatedAt: Date.now()
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -119,13 +125,46 @@ router.post('/save', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/camera/update_coordinates
+router.post('/update_coordinates', authMiddleware, async (req, res) => {
+  try {
+    const { url, mapX, mapY } = req.body;
+    const userId = req.user.id;
+
+    if (!url || mapX === undefined || mapY === undefined) {
+      return res.status(400).json({ success: false, message: 'URL, mapX, and mapY are required' });
+    }
+
+    const camera = await Camera.findOneAndUpdate(
+      { userId: userId, url: url },
+      { mapX: Number(mapX), mapY: Number(mapY), updatedAt: Date.now() },
+      { new: true }
+    );
+
+    if (!camera) {
+      return res.status(404).json({ success: false, message: 'Camera not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Coordinates updated successfully', camera });
+  } catch (error) {
+    console.error('Coordinates update error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // DELETE /api/camera/reset
 router.delete('/reset', authMiddleware, async (req, res) => {
   try {
-    // Delete only the logged-in user's camera
-    await Camera.deleteOne({ userId: req.user.id });
-
-    console.log(`MongoDB: Camera cleared for user ${req.user.id}`);
+    const { url } = req.query;
+    if (url) {
+      // Delete specific camera
+      await Camera.deleteOne({ userId: req.user.id, url: url });
+      console.log(`MongoDB: Camera cleared for user ${req.user.id} and URL ${url}`);
+    } else {
+      // Delete all cameras
+      await Camera.deleteMany({ userId: req.user.id });
+      console.log(`MongoDB: All cameras cleared for user ${req.user.id}`);
+    }
     res.status(200).json({
       success: true,
       message: 'Camera disconnected successfully'
@@ -159,6 +198,12 @@ router.get('/all', authMiddleware, async (req, res) => {
         username: cam.username,
         password: decryptedPassword,
         isPublic: cam.isPublic,
+        factory: cam.factory || 'Factory A',
+        mapX: cam.mapX !== undefined ? cam.mapX : 50,
+        mapY: cam.mapY !== undefined ? cam.mapY : 50,
+        brand: cam.brand || 'Generic',
+        channelId: cam.channelId !== undefined ? cam.channelId : 1,
+        status: cam.status || 'Offline',
         createdAt: cam.createdAt
       };
     });
@@ -195,6 +240,12 @@ router.get('/latest', authMiddleware, async (req, res) => {
         username: camera.username,
         password: decryptedPassword,
         isPublic: camera.isPublic,
+        factory: camera.factory || 'Factory A',
+        mapX: camera.mapX !== undefined ? camera.mapX : 50,
+        mapY: camera.mapY !== undefined ? camera.mapY : 50,
+        brand: camera.brand || 'Generic',
+        channelId: camera.channelId !== undefined ? camera.channelId : 1,
+        status: camera.status || 'Offline',
         createdAt: camera.createdAt
       }
     });

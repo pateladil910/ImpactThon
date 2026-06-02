@@ -9,23 +9,45 @@ let mailSent = false;
 // AI / Detection API
 router.post("/", async (req, res) => {
   try {
-    const { danger, confidence, userId, image } = req.body; // NEW: receive userId and image
-    // example: danger = true when human detected
+    const { danger, confidence, userId, image, cameraName, factory, breachType, severity } = req.body;
 
-    // 🔥 EMAIL TRIGGER LOGIC
+    // 🔥 EMAIL & INCIDENT LOGIC
     if (danger === true) {
-      // Save to Database
+      // 1. Save to Detection History
       try {
         await Detection.create({
           status: "DANGER",
-          message: "Human detected",
+          message: breachType === "NO_HELMET" ? "Helmet Violation detected" :
+                   breachType === "NO_VEST" ? "Safety Vest Violation detected" :
+                   "Human proximity breach",
           timestamp: new Date(),
           timestamp_ist: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
           userId: userId || "system" // Track which user made detection
         });
-        console.log("💾 Danger stored to DB");
+        console.log("💾 Danger stored to Detection History");
       } catch (dbError) {
         console.error("❌ DB Save Error:", dbError);
+      }
+
+      // 2. Save to Incident Log
+      try {
+        const Incident = require("../models/Incident");
+        await Incident.create({
+          userId: userId && userId !== "system" ? userId : null,
+          type: breachType === "NO_HELMET" ? "PPE: Helmet Violation" :
+                breachType === "NO_VEST" ? "PPE: Safety Vest Violation" :
+                breachType === "ZONE_INTRUSION" ? "Restricted Zone Proximity Breach" :
+                "Human Proximity Intrusion",
+          breachType: breachType || "PROXIMITY",
+          confidence: confidence || 100,
+          camera: cameraName || "Optical Node",
+          factory: factory || "Factory A",
+          severity: severity || "DANGER",
+          snapshotUrl: image || ""
+        });
+        console.log("💾 Incident logged to DB");
+      } catch (incError) {
+        console.error("❌ Incident Save Error:", incError);
       }
 
       if (!mailSent) {
