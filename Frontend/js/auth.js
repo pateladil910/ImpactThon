@@ -931,9 +931,20 @@ function checkAuthUI() {
   if (isLoggedIn === "true" && cachedCameraConnected === "false") {
     const pathname = window.location.pathname;
     const currentPage = pathname.substring(pathname.lastIndexOf('/') + 1);
-    const allowedSetupPages = ["setup.html", "camera_setup.html", "login.html", "signup.html"];
+    
+    // Only redirect if trying to access pages that strictly require a connected camera
+    const restrictedPages = [
+      "dashboard.html",
+      "plant_map.html",
+      "chart.html",
+      "history.html",
+      "incident_log.html",
+      "admin.html",
+      "diagnostics.html",
+      "notifications.html"
+    ];
 
-    if (!allowedSetupPages.includes(currentPage) && currentPage !== "") {
+    if (restrictedPages.includes(currentPage)) {
       if (hasGatewayConfig) {
         console.warn("Camera setup incomplete. Redirecting to camera setup...");
         window.location.replace("camera_setup.html");
