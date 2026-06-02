@@ -279,6 +279,81 @@ def force_stop():
     return jsonify({"status": "stopped"})
 
 # ===============================
+# 📷 TEST CONNECTION API
+# ===============================
+@app.route("/api/test_camera")
+def test_camera():
+    from flask import request
+    source = request.args.get("source", "0")
+    username = request.args.get("username", "")
+    password = request.args.get("password", "")
+    
+    # Validation block for blacklisted domains
+    blacklist = ["google.com", "youtube.com", "facebook.com", "twitter.com", "wikipedia.org"]
+    if any(domain in source.lower() for domain in blacklist):
+        return jsonify({
+            "status": "error",
+            "message": "Camera verification failed"
+        }), 200
+
+    resolved_source = construct_camera_source(source, username, password)
+    
+    # Convert webcam indices to int
+    if isinstance(resolved_source, str) and resolved_source.isdigit():
+        resolved_source = int(resolved_source)
+
+    try:
+        cap = cv2.VideoCapture(resolved_source)
+        if not cap.isOpened():
+            return jsonify({
+                "status": "error",
+                "message": "Camera verification failed"
+            }), 200
+
+        # Read 5 consecutive frames
+        frame_count = 0
+        width = 0
+        height = 0
+        start_time = time.time()
+        
+        for _ in range(5):
+            ret, frame = cap.read()
+            if ret:
+                frame_count += 1
+                if frame_count == 1:
+                    height, width = frame.shape[:2]
+            time.sleep(0.05) # small sleep between frame reads
+
+        duration = time.time() - start_time
+        cap.release()
+
+        if frame_count >= 5 and width > 0 and height > 0:
+            fps = round(frame_count / duration, 1)
+            return jsonify({
+                "status": "success",
+                "message": "Camera Connected Successfully",
+                "fps": fps if fps > 0 else 30.0,
+                "width": width,
+                "height": height,
+                "frames": frame_count
+            })
+        else:
+            return jsonify({
+                "status": "warning",
+                "message": "Connected But No Video Feed",
+                "fps": 0,
+                "width": width,
+                "height": height,
+                "frames": frame_count
+            })
+    except Exception as e:
+        print(f"Exception during test_camera: {e}")
+        return jsonify({
+            "status": "error",
+            "message": "Camera verification failed"
+        }), 200
+
+# ===============================
 # ▶ RUN SERVER
 # ===============================
 if __name__ == "__main__":
