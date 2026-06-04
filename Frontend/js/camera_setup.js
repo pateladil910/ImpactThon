@@ -17,6 +17,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   const camUrl = document.getElementById('camUrl');
   const cameraForm = document.getElementById('cameraForm');
 
+  // Preview elements
+  const previewFeed = document.getElementById('previewFeed');
+  const streamLoader = document.getElementById('streamLoader');
+  const restrictedZoneOverlay = document.getElementById('restrictedZoneOverlay');
+  const streamStatusDot = document.getElementById('streamStatusDot');
+  const streamStatusText = document.getElementById('streamStatusText');
+  const streamResolution = document.getElementById('streamResolution');
+  const streamTitleTag = document.getElementById('streamTitleTag');
+
+  // Telemetry widgets
+  const hudHumanCount = document.getElementById('hudHumanCount');
+  const hudZoneStatus = document.getElementById('hudZoneStatus');
+  const hudZoneStatusCard = document.getElementById('hudZoneStatusCard');
+  const hudConfidence = document.getElementById('hudConfidence');
+  const hudFps = document.getElementById('hudFps');
+  const telStreamHealth = document.getElementById('telStreamHealth');
+  const telLatency = document.getElementById('telLatency');
+
+  // Demo simulation elements
+  const demoModeToggle = document.getElementById('demoModeToggle');
+  const simulatedLogsContainer = document.getElementById('simulatedLogsContainer');
+  const simulatedLogsConsole = document.getElementById('simulatedLogsConsole');
+
   let isCameraVerified = false;
 
   function updateDeployButtonState() {
@@ -40,29 +63,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Run initially in case of autofill
   updateDeployButtonState();
-
-  // Preview elements
-  const previewFeed = document.getElementById('previewFeed');
-  const streamLoader = document.getElementById('streamLoader');
-  const restrictedZoneOverlay = document.getElementById('restrictedZoneOverlay');
-  const streamStatusDot = document.getElementById('streamStatusDot');
-  const streamStatusText = document.getElementById('streamStatusText');
-  const streamResolution = document.getElementById('streamResolution');
-  const streamTitleTag = document.getElementById('streamTitleTag');
-
-  // Telemetry widgets
-  const hudHumanCount = document.getElementById('hudHumanCount');
-  const hudZoneStatus = document.getElementById('hudZoneStatus');
-  const hudZoneStatusCard = document.getElementById('hudZoneStatusCard');
-  const hudConfidence = document.getElementById('hudConfidence');
-  const hudFps = document.getElementById('hudFps');
-  const telStreamHealth = document.getElementById('telStreamHealth');
-  const telLatency = document.getElementById('telLatency');
-
-  // Demo simulation elements
-  const demoModeToggle = document.getElementById('demoModeToggle');
-  const simulatedLogsContainer = document.getElementById('simulatedLogsContainer');
-  const simulatedLogsConsole = document.getElementById('simulatedLogsConsole');
 
   let audioCtx = null;
   let demoInterval = null;
