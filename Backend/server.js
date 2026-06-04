@@ -122,6 +122,76 @@ app.use("/api/contact", contactRoutes); // NEW
 app.use("/api/camera", cameraRoutes);
 app.use("/api/incident", incidentRoutes);
 
+const axios = require("axios");
+
+// Utility to check if IP is private/local
+function isPrivateIP(urlStr) {
+  if (!urlStr) return false;
+  try {
+    let cleanUrl = urlStr.toLowerCase().trim();
+    
+    // Extract host/ip
+    // 1. Remove protocol schema
+    cleanUrl = cleanUrl.replace(/^(rtsp|rtmp|http|https):\/\//, '');
+    // 2. Remove credentials if present (anything before '@')
+    if (cleanUrl.includes('@')) {
+      cleanUrl = cleanUrl.substring(cleanUrl.indexOf('@') + 1);
+    }
+    // 3. Remove port and path (anything starting with ':' or '/')
+    const endIdx = cleanUrl.search(/[:\/]/);
+    if (endIdx !== -1) {
+      cleanUrl = cleanUrl.substring(0, endIdx);
+    }
+    
+    // Pure digit check (e.g. USB index "0", "1")
+    if (/^\d+$/.test(cleanUrl)) return true;
+    
+    if (cleanUrl === 'localhost' || cleanUrl === '127.0.0.1') return true;
+    if (cleanUrl.startsWith('192.168.')) return true;
+    if (cleanUrl.startsWith('10.')) return true;
+    
+    // Match 172.16.x.x to 172.31.x.x
+    const match = cleanUrl.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./);
+    if (match) return true;
+    
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+app.get("/api/test_camera", async (req, res) => {
+  const { source, username, password } = req.query;
+  if (!source) {
+    return res.status(400).json({ status: "error", message: "Source URL is required" });
+  }
+
+  const isLocal = isPrivateIP(source);
+  if (isLocal) {
+    return res.status(200).json({
+      status: "error",
+      isLocal: true,
+      message: "Private local IP cameras cannot be accessed directly from cloud deployment. Please run your Local Edge Agent."
+    });
+  }
+
+  try {
+    // Proxy request to the Cloud AI service
+    const aiServiceUrl = process.env.AI_SERVICE_URL || "https://impactthon-ai.onrender.com";
+    const response = await axios.get(`${aiServiceUrl}/api/test_camera`, {
+      params: { source, username, password },
+      timeout: 10000
+    });
+    return res.status(200).json(response.data);
+  } catch (err) {
+    console.error("Error proxying test_camera to AI service:", err.message);
+    return res.status(200).json({
+      status: "error",
+      message: "Camera verification failed via cloud service."
+    });
+  }
+});
+
 app.get("/api/status", (req, res) => {
   res.json({ danger: true, confidence: 92 });
 });

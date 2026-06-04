@@ -34,6 +34,79 @@ cam_source = None
 AUTH_TOKEN = None
 GLOBAL_USER_ID = None
 
+class ThreadedCamera:
+    def __init__(self, source):
+        self.source = source
+        # Force FFMPEG backend for network streams
+        if isinstance(source, str) and (source.startswith("rtsp://") or source.startswith("http://")):
+            self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+        else:
+            self.cap = cv2.VideoCapture(self.source)
+            
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+        self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+        
+        self.grabbed, self.frame = self.cap.read()
+        self.started = False
+        self.read_lock = threading.Lock()
+        self.thread = None
+
+    def start(self):
+        if self.started:
+            return self
+        self.started = True
+        self.thread = threading.Thread(target=self.update, args=())
+        self.thread.daemon = True
+        self.thread.start()
+        return self
+
+    def update(self):
+        while self.started:
+            if not self.cap.isOpened():
+                time.sleep(2.0)
+                if isinstance(self.source, str) and (self.source.startswith("rtsp://") or self.source.startswith("http://")):
+                    self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+                else:
+                    self.cap = cv2.VideoCapture(self.source)
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+                self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+                continue
+            
+            grabbed, frame = self.cap.read()
+            if grabbed:
+                with self.read_lock:
+                    self.grabbed = grabbed
+                    self.frame = frame
+            else:
+                print(f"[CAM_WATCHDOG] Frame read failed for {self.source}. Reconnecting...")
+                with self.read_lock:
+                    self.grabbed = False
+                self.cap.release()
+                time.sleep(2.0)
+
+    def read(self):
+        with self.read_lock:
+            if self.frame is None:
+                return False, None
+            return self.grabbed, self.frame.copy()
+
+    def isOpened(self):
+        return self.cap.isOpened() if self.cap else False
+
+    def set(self, propId, value):
+        if self.cap:
+            return self.cap.set(propId, value)
+        return False
+
+    def release(self):
+        self.started = False
+        if self.thread:
+            self.thread.join(timeout=0.5)
+        if self.cap:
+            self.cap.release()
+
 output_frame = None
 lock = threading.Lock()
 last_detection_time = 0
@@ -169,10 +242,9 @@ def detect_objects():
             time.sleep(0.03) # 30 FPS processing rate
 
         success, frame = camera.read()
-        if not success:
+        if not success or frame is None:
             print("Failed to read camera. Retrying...")
-            time.sleep(1)
-            camera.open(cam_source)
+            time.sleep(1.0)
             continue
             
         # Run YOLO detection
@@ -562,7 +634,7 @@ if __name__ == "__main__":
     # Initialize camera (Dynamic input: Webcam OR IP Camera/RTSP)
     cam_source = construct_camera_source(camera_url, username, password)
     print(f"📡 Connecting to camera source: {camera_url}")
-    camera = cv2.VideoCapture(cam_source)
+    camera = ThreadedCamera(cam_source).start()
     
     # Optimize resolution for better FPS
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
