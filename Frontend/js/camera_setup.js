@@ -145,6 +145,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const response = await fetch(`${API_BASE_URL}/api/camera/latest`, { headers });
+      if (response.status === 401) {
+        console.warn("Session unauthorized or token expired. Bypassing autofill.");
+        document.body.classList.add('show-form');
+        return;
+      }
       if (response.status === 404) {
         console.log("No camera in database. Showing empty setup form.");
         document.body.classList.add('show-form');
