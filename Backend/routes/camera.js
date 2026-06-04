@@ -6,20 +6,36 @@ const crypto = require('crypto');
 
 // Utility to check if IP is private/local
 function isPrivateIP(urlStr) {
+  if (!urlStr) return false;
   try {
-    const parsed = new URL(urlStr);
-    const host = parsed.hostname;
-
-    // Check for common private IP patterns
-    if (host === 'localhost' || host === '127.0.0.1') return true;
-    if (host.startsWith('192.168.')) return true;
-    if (host.startsWith('10.')) return true;
-    if (host.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) return true;
-
+    let cleanUrl = urlStr.toLowerCase().trim();
+    
+    // Extract host/ip
+    // 1. Remove protocol schema
+    cleanUrl = cleanUrl.replace(/^(rtsp|rtmp|http|https):\/\//, '');
+    // 2. Remove credentials if present (anything before '@')
+    if (cleanUrl.includes('@')) {
+      cleanUrl = cleanUrl.substring(cleanUrl.indexOf('@') + 1);
+    }
+    // 3. Remove port and path (anything starting with ':' or '/')
+    const endIdx = cleanUrl.search(/[:\/]/);
+    if (endIdx !== -1) {
+      cleanUrl = cleanUrl.substring(0, endIdx);
+    }
+    
+    // Pure digit check (e.g. USB index "0", "1")
+    if (/^\d+$/.test(cleanUrl)) return true;
+    
+    if (cleanUrl === 'localhost' || cleanUrl === '127.0.0.1') return true;
+    if (cleanUrl.startsWith('192.168.')) return true;
+    if (cleanUrl.startsWith('10.')) return true;
+    
+    // Match 172.16.x.x to 172.31.x.x
+    const match = cleanUrl.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./);
+    if (match) return true;
+    
     return false;
   } catch (e) {
-    // Fallback if URL parsing fails
-    if (urlStr.includes('192.168.') || urlStr.includes('10.') || urlStr.includes('localhost')) return true;
     return false;
   }
 }
