@@ -517,9 +517,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const testUrl = isLocal ? "http://localhost:5000" : AI_SERVICE_URL;
     const testApiUrl = `${testUrl}/api/test_camera?source=${encodeURIComponent(url)}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
 
-    fetch(testApiUrl)
+    // Create AbortController to enforce client-side timeout of 15 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 15000);
+
+    fetch(testApiUrl, { signal: controller.signal })
       .then(response => response.json())
       .then(data => {
+        clearTimeout(timeoutId);
         const resultText = data.message || "Unknown error";
         console.log("[VERIFY]");
         console.log("URL:", url);
@@ -563,13 +570,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       })
       .catch(err => {
-        console.error("Test connection fetch failed:", err);
+        clearTimeout(timeoutId);
         isCameraVerified = false;
         updateDeployButtonState();
         if (streamLoader) streamLoader.style.display = 'none';
 
-        verifyStream('error', 'Replay socket timeout or address unreachable.');
-        showHUDToast('CAMERA OFFLINE', 'Network address unreachable or port closed.', 'error');
+        if (err.name === 'AbortError') {
+          console.error("Test connection timed out.");
+          verifyStream('error', 'Connection attempt timed out. Address is unreachable.');
+          showHUDToast('TIMEOUT ERROR', 'The connection attempt timed out after 15 seconds.', 'error');
+        } else {
+          console.error("Test connection fetch failed:", err);
+          verifyStream('error', 'Replay socket timeout or address unreachable.');
+          showHUDToast('CAMERA OFFLINE', 'Network address unreachable or port closed.', 'error');
+        }
       });
   });
 
