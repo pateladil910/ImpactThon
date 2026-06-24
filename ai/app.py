@@ -1,3 +1,5 @@
+import os
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
 import pytz
 import serial
 import time
@@ -303,7 +305,11 @@ def test_camera():
         resolved_source = int(resolved_source)
 
     try:
-        cap = cv2.VideoCapture(resolved_source)
+        if isinstance(resolved_source, str) and (resolved_source.startswith("rtsp://") or resolved_source.startswith("http://")):
+            cap = cv2.VideoCapture(resolved_source, cv2.CAP_FFMPEG)
+        else:
+            cap = cv2.VideoCapture(resolved_source)
+            
         if not cap.isOpened():
             return jsonify({
                 "status": "error",
