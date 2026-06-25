@@ -404,25 +404,8 @@ async function signup(event) {
 
 // ---------------- LOGOUT ----------------
 
-async function logout() {
-  try {
-    await fetch(`${API_BASE_URL}/api/auth/logout`, {
-      method: "POST",
-      credentials: "include"
-    });
-  } catch (error) {
-    console.error("Backend logout failed:", error);
-  }
-
-  // Attempt Supabase Sign Out
-  try {
-    const { signOutSupabase } = await import('../js/supabase.js');
-    await signOutSupabase();
-    console.log("Supabase signOut successful");
-  } catch (err) {
-    console.warn("Supabase signout failed:", err);
-  }
-
+function logout() {
+  // 1. Immediately clear all local session data
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
   localStorage.removeItem("userRole");
@@ -433,7 +416,12 @@ async function logout() {
   localStorage.removeItem("systemConfig");
   localStorage.removeItem("safetyShieldCameras");
 
+  // 2. Immediately redirect to login
   window.location.replace("login.html");
+
+  // 3. Fire-and-forget backend + Supabase signout in background
+  fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
+  import('../js/supabase.js').then(({ signOutSupabase }) => signOutSupabase()).catch(() => {});
 }
 
 // ---------------- FORGOT & RESET PASSWORD ----------------
