@@ -224,14 +224,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 */
 
-import { supabase, getSession, signOutSupabase } from './supabase.js';
-
 document.addEventListener("DOMContentLoaded", async () => {
   // Check if we just returned from Supabase OAuth
-  const session = await getSession();
-  if (session && session.user && !localStorage.getItem("isLoggedIn")) {
-    handleSupabaseAuthSuccess(session.user);
+  try {
+    const { getSession } = await import('../js/supabase.js');
+    const session = await getSession();
+    if (session && session.user && !localStorage.getItem("isLoggedIn")) {
+      handleSupabaseAuthSuccess(session.user);
+    }
+  } catch(e) {
+    console.warn("Could not load Supabase session on load:", e);
   }
+
   
   if (window.location.pathname.includes("login.html") || window.location.pathname.includes("signup.html")) {
     // Other setup...
@@ -261,16 +265,19 @@ async function handleSupabaseAuthSuccess(user) {
       window.location.replace("index.html");
     } else {
       console.error("Backend auth failed:", data.message);
+      const { signOutSupabase } = await import('../js/supabase.js');
       await signOutSupabase();
     }
   } catch (error) {
     console.error("Error during Supabase backend sync:", error);
+    const { signOutSupabase } = await import('../js/supabase.js');
     await signOutSupabase();
   }
 }
 
 // Ensure triggerGoogleOAuth is globally available for HTML buttons
 window.triggerGoogleOAuth = async function() {
+  const { supabase } = await import('../js/supabase.js');
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -395,6 +402,7 @@ async function logout() {
 
   // Attempt Supabase Sign Out
   try {
+    const { signOutSupabase } = await import('../js/supabase.js');
     await signOutSupabase();
     console.log("Supabase signOut successful");
   } catch (err) {
