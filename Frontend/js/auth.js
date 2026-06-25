@@ -278,10 +278,17 @@ async function handleSupabaseAuthSuccess(user) {
 // Ensure triggerGoogleOAuth is globally available for HTML buttons
 window.triggerGoogleOAuth = async function() {
   const { supabase } = await import('../js/supabase.js');
+  
+  // Determine redirect URL based on environment
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const redirectTo = isLocal
+    ? window.location.origin + '/Frontend/pages/index.html'
+    : 'https://codevortex.in/Frontend/pages/index.html';
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin + '/Frontend/pages/index.html'
+      redirectTo: redirectTo
     }
   });
   if (error) {
