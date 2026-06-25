@@ -524,6 +524,9 @@
     // -------------------------------------------------------
     // 1. On page load: check if Supabase just redirected back
     // -------------------------------------------------------
+    // -------------------------------------------------------
+    // 1. On page load: check if Supabase just redirected back
+    // -------------------------------------------------------
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session && session.user) {
@@ -551,9 +554,12 @@
             console.error('Backend sync error:', err);
             showCyberToast('SYNC ERROR - Please try again', true);
         }
-    } else if (localStorage.getItem('isLoggedIn') === 'true') {
-        // Already logged in via email/password
-        window.location.replace('index.html');
+    } else {
+        // Fixes immediate redirect loop if you have an old session stored locally
+        const hasAuthTokens = window.location.hash.includes('access_token=');
+        if (localStorage.getItem('isLoggedIn') === 'true' && !hasAuthTokens) {
+            window.location.replace('index.html');
+        }
     }
 
     // -------------------------------------------------------
