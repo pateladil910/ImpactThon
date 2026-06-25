@@ -224,6 +224,65 @@ document.addEventListener("DOMContentLoaded", () => {
 
 */
 
+import { supabase, getSession, signOutSupabase } from './supabase.js';
+
+document.addEventListener("DOMContentLoaded", async () => {
+  // Check if we just returned from Supabase OAuth
+  const session = await getSession();
+  if (session && session.user && !localStorage.getItem("isLoggedIn")) {
+    handleSupabaseAuthSuccess(session.user);
+  }
+  
+  if (window.location.pathname.includes("login.html") || window.location.pathname.includes("signup.html")) {
+    // Other setup...
+  }
+});
+
+async function handleSupabaseAuthSuccess(user) {
+  try {
+    const role = "viewer"; // default role
+    const response = await fetch(`${API_BASE_URL}/api/auth/social-signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: user.user_metadata.full_name || user.email.split('@')[0],
+        email: user.email,
+        provider: "google",
+        roleSelection: role
+      })
+    });
+
+    const data = await response.json();
+    if (response.ok && data.success) {
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("username", user.email);
+      localStorage.setItem("displayName", user.user_metadata.full_name || "");
+      localStorage.setItem("userRole", data.role || role);
+      window.location.replace("index.html");
+    } else {
+      console.error("Backend auth failed:", data.message);
+      await signOutSupabase();
+    }
+  } catch (error) {
+    console.error("Error during Supabase backend sync:", error);
+    await signOutSupabase();
+  }
+}
+
+// Ensure triggerGoogleOAuth is globally available for HTML buttons
+window.triggerGoogleOAuth = async function() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/Frontend/pages/index.html'
+    }
+  });
+  if (error) {
+    console.error("Google Auth Error:", error.message);
+    if (typeof showCyberToast === 'function') showCyberToast(error.message.toUpperCase(), true);
+  }
+};
+
 const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
   ? "http://localhost:5000"
   : "https://impactthon-wjut.onrender.com";
@@ -334,17 +393,12 @@ async function logout() {
     console.error("Backend logout failed:", error);
   }
 
-  // Attempt Firebase Sign Out
+  // Attempt Supabase Sign Out
   try {
-    const firebaseModule = await import('../js/firebase.js');
-    if (firebaseModule && firebaseModule.auth && firebaseModule.signOut) {
-      if (firebaseModule.auth.app && firebaseModule.auth.app.options && firebaseModule.auth.app.options.apiKey !== "YOUR_FIREBASE_API_KEY") {
-        await firebaseModule.signOut(firebaseModule.auth);
-        console.log("Firebase signOut successful");
-      }
-    }
+    await signOutSupabase();
+    console.log("Supabase signOut successful");
   } catch (err) {
-    console.warn("Firebase signout dynamic import failed or bypassed:", err);
+    console.warn("Supabase signout failed:", err);
   }
 
   localStorage.removeItem("isLoggedIn");
