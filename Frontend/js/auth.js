@@ -225,12 +225,19 @@ document.addEventListener("DOMContentLoaded", () => {
 */
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // Detect if Supabase just redirected back with tokens in URL hash
+  const hash = window.location.hash;
+  const hasSupabaseToken = hash && (hash.includes('access_token') || hash.includes('error_description'));
+
   // Check if we just returned from Supabase OAuth
   try {
     const { getSession } = await import('../js/supabase.js');
     const session = await getSession();
-    if (session && session.user && !localStorage.getItem("isLoggedIn")) {
-      handleSupabaseAuthSuccess(session.user);
+    if ((session && session.user && !localStorage.getItem("isLoggedIn")) || hasSupabaseToken) {
+      if (session && session.user) {
+        handleSupabaseAuthSuccess(session.user);
+        return; // Stop further processing on this page
+      }
     }
   } catch(e) {
     console.warn("Could not load Supabase session on load:", e);
@@ -279,11 +286,11 @@ async function handleSupabaseAuthSuccess(user) {
 window.triggerGoogleOAuth = async function() {
   const { supabase } = await import('../js/supabase.js');
   
-  // Determine redirect URL based on environment
+  // Always redirect back to signup.html so the session handler can process it properly
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const redirectTo = isLocal
-    ? window.location.origin + '/Frontend/pages/index.html'
-    : 'https://codevortex.in/Frontend/pages/index.html';
+    ? window.location.origin + '/Frontend/pages/signup.html'
+    : 'https://codevortex.in/Frontend/pages/signup.html';
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
