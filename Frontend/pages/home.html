@@ -177,10 +177,10 @@
             assetLoaded = true;
         });
 
-        // 3. Fetch Supabase Session State
-        getSession().then((session) => {
+        // 3. Fetch Firebase Session State
+        onAuthStateChanged(auth, (user) => {
             authStateFetched = true;
-            isLoggedIn = !!session;
+            isLoggedIn = !!user || localStorage.getItem('isLoggedIn') === 'true';
         });
 
         // 4. Easing progress bar calculation matched to life cycle

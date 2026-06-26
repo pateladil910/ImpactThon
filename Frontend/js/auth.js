@@ -222,87 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuthUI();
 });
 
-*/
 
-document.addEventListener("DOMContentLoaded", async () => {
-  // Detect if Supabase just redirected back with tokens in URL hash
-  const hash = window.location.hash;
-  const hasSupabaseToken = hash && (hash.includes('access_token') || hash.includes('error_description'));
-
-  // Check if we just returned from Supabase OAuth
-  try {
-    const { getSession } = await import('../js/supabase.js');
-    const session = await getSession();
-    if ((session && session.user && !localStorage.getItem("isLoggedIn")) || hasSupabaseToken) {
-      if (session && session.user) {
-        handleSupabaseAuthSuccess(session.user);
-        return; // Stop further processing on this page
-      }
-    }
-  } catch(e) {
-    console.warn("Could not load Supabase session on load:", e);
-  }
-
-  
-  if (window.location.pathname.includes("login.html") || window.location.pathname.includes("signup.html")) {
-    // Other setup...
-  }
-});
-
-async function handleSupabaseAuthSuccess(user) {
-  try {
-    const role = "viewer"; // default role
-    const response = await fetch(`${API_BASE_URL}/api/auth/social-signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: user.user_metadata.full_name || user.email.split('@')[0],
-        email: user.email,
-        provider: "google",
-        roleSelection: role
-      })
-    });
-
-    const data = await response.json();
-    if (response.ok && data.success) {
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("username", user.email);
-      localStorage.setItem("displayName", user.user_metadata.full_name || "");
-      localStorage.setItem("userRole", data.role || role);
-      window.location.replace("index.html");
-    } else {
-      console.error("Backend auth failed:", data.message);
-      const { signOutSupabase } = await import('../js/supabase.js');
-      await signOutSupabase();
-    }
-  } catch (error) {
-    console.error("Error during Supabase backend sync:", error);
-    const { signOutSupabase } = await import('../js/supabase.js');
-    await signOutSupabase();
-  }
-}
-
-// Ensure triggerGoogleOAuth is globally available for HTML buttons
-window.triggerGoogleOAuth = async function() {
-  const { supabase } = await import('../js/supabase.js');
-  
-  // Always redirect back to signup.html so the session handler can process it properly
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const redirectTo = isLocal
-    ? window.location.origin + '/Frontend/pages/signup.html'
-    : 'https://codevortex.in/Frontend/pages/signup.html';
-
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: redirectTo
-    }
-  });
-  if (error) {
-    console.error("Google Auth Error:", error.message);
-    if (typeof showCyberToast === 'function') showCyberToast(error.message.toUpperCase(), true);
-  }
-};
 
 const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
   ? "http://localhost:5000"
@@ -405,7 +325,7 @@ async function signup(event) {
 // ---------------- LOGOUT ----------------
 
 function logout() {
-  // 1. Immediately clear all local session data
+  // 1. Clear all local session data immediately
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
   localStorage.removeItem("userRole");
@@ -416,12 +336,14 @@ function logout() {
   localStorage.removeItem("systemConfig");
   localStorage.removeItem("safetyShieldCameras");
 
-  // 2. Immediately redirect to login
-  window.location.replace("login.html");
+  // 2. Sign out from Firebase in background
+  import('../js/firebase.js').then(({ auth, signOut }) => signOut(auth)).catch(() => {});
 
-  // 3. Fire-and-forget backend + Supabase signout in background
+  // 3. Sign out from backend in background
   fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
-  import('../js/supabase.js').then(({ signOutSupabase }) => signOutSupabase()).catch(() => {});
+
+  // 4. Redirect immediately
+  window.location.replace("login.html");
 }
 
 // ---------------- FORGOT & RESET PASSWORD ----------------

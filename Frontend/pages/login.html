@@ -267,9 +267,23 @@
 <!-- Asynchronous Active Session Verification -->
 <script>
     if (localStorage.getItem("isLoggedIn") === "true") {
-        console.log("Active session detected in localStorage, redirecting to index.html...");
         window.location.replace("index.html");
     }
+</script>
+
+<!-- Asynchronous Active Session Verification -->
+<script type="module">
+    import { auth, onAuthStateChanged } from '../js/firebase.js';
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("username", user.email);
+            localStorage.setItem("displayName", user.displayName || "");
+            localStorage.setItem("profilePhoto", user.photoURL || "");
+            localStorage.setItem("uid", user.uid);
+            window.location.replace("index.html");
+        }
+    });
 </script>
 
 <!-- Existing Auth Module Integration -->

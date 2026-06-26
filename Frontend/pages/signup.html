@@ -511,13 +511,132 @@
     }
 </style>
 
-<!-- Supabase Google OAuth - Self Contained Module -->
+<!-- Firebase Google OAuth - Complete Working Implementation -->
 <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    import { auth, provider, signInWithPopup, signOut, onAuthStateChanged } from '../js/firebase.js';
 
-    const SUPABASE_URL = 'https://krpbytwpmrsprnjkvrty.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_K-KNUdWCBtX2AiUYS7s7YA_XTjKx34f';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const API_BASE_URL = 'https://impactthon-wjut.onrender.com';
+
+    // -------------------------------------------------------
+    // 1. On page load: check if already logged in
+    // -------------------------------------------------------
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+        window.location.replace('index.html');
+    }
+
+    // Monitor Firebase session
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log('Firebase session active:', user.email);
+            if (!localStorage.getItem('isLoggedIn')) {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', user.email);
+                localStorage.setItem('displayName', user.displayName || '');
+                localStorage.setItem('profilePhoto', user.photoURL || '');
+                localStorage.setItem('uid', user.uid);
+                localStorage.setItem('userRole', 'viewer');
+                window.location.replace('index.html');
+            }
+        }
+    });
+
+    // -------------------------------------------------------
+    // 2. Google OAuth Button Handler
+    // -------------------------------------------------------
+    window.triggerGoogleOAuth = async function() {
+        const btn = document.getElementById('googleAuthBtn');
+        const text = document.getElementById('googleBtnText');
+        const loader = document.getElementById('googleBtnLoader');
+        const icon = document.getElementById('googleBtnIcon');
+
+        // Check if Firebase config is placeholder
+        if (auth.app.options.apiKey === 'YOUR_FIREBASE_API_KEY') {
+            showCyberToast('FIREBASE NOT CONFIGURED - Add your Firebase config!', true);
+            return;
+        }
+
+        if (btn) btn.disabled = true;
+        if (icon) icon.style.display = 'none';
+        if (text) text.textContent = 'Connecting to Google...';
+        if (loader) loader.style.display = 'block';
+        showCyberToast('LAUNCHING SECURE OAUTH GATEWAY...');
+
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            console.log('Firebase Auth Success:', user.email);
+
+            if (text) text.textContent = 'Uplink Established!';
+            if (loader) loader.style.display = 'none';
+            showCyberToast(`GOOGLE LINKED: ${user.email} - Syncing account...`);
+
+            // Sync with your backend
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/auth/social-signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        provider: 'google',
+                        roleSelection: 'viewer'
+                    })
+                });
+                const data = await res.json();
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', user.email);
+                localStorage.setItem('displayName', user.displayName || '');
+                localStorage.setItem('profilePhoto', user.photoURL || '');
+                localStorage.setItem('uid', user.uid);
+                localStorage.setItem('userRole', data.role || 'viewer');
+            } catch (backendErr) {
+                // Even if backend sync fails, allow login with Firebase session
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', user.email);
+                localStorage.setItem('displayName', user.displayName || '');
+                localStorage.setItem('profilePhoto', user.photoURL || '');
+                localStorage.setItem('uid', user.uid);
+                localStorage.setItem('userRole', 'viewer');
+            }
+
+            setTimeout(() => window.location.replace('index.html'), 1200);
+
+        } catch (error) {
+            console.error('Firebase Login Error:', error);
+            let msg = 'AUTHENTICATION ERROR';
+            if (error.code === 'auth/popup-closed-by-user') msg = 'POPUP CLOSED BY USER';
+            else if (error.code === 'auth/network-request-failed') msg = 'NETWORK ERROR - CHECK CONNECTION';
+            else if (error.code === 'auth/cancelled-popup-request') msg = 'POPUP CONFLICT - TRY AGAIN';
+            else if (error.code === 'auth/unauthorized-domain') msg = 'DOMAIN NOT AUTHORIZED IN FIREBASE';
+            showCyberToast(msg, true);
+            if (btn) btn.disabled = false;
+            if (icon) icon.style.display = 'block';
+            if (text) text.textContent = 'Continue with Google';
+            if (loader) loader.style.display = 'none';
+        }
+    };
+
+    // -------------------------------------------------------
+    // 3. Cyber Toast helper
+    // -------------------------------------------------------
+    function showCyberToast(text, isError = false) {
+        const toast = document.getElementById('oauthCyberToast');
+        const toastText = document.getElementById('oauthToastText');
+        if (!toast || !toastText) return;
+        toastText.textContent = text;
+        toast.classList.toggle('error-toast', isError);
+        toast.classList.add('active');
+        setTimeout(() => toast.classList.remove('active'), 4000);
+    }
+</script>
+
+<!-- Existing Auth Module Integration -->
+<script src="../js/auth.js"></script>
+
+
+</body>
+</html>
+
 
     const API_BASE_URL = 'https://impactthon-wjut.onrender.com';
 

@@ -723,7 +723,15 @@ s
     };
   </script>
 
-  <!-- Supabase Session is handled natively via auth.js -->
+  <!-- Secure Firebase Session Verification -->
+  <script type="module">
+    import { auth, onAuthStateChanged } from '../js/firebase.js';
+    onAuthStateChanged(auth, (user) => {
+      if (!user && localStorage.getItem("isLoggedIn") === "true") {
+        if (typeof window.logout === "function") window.logout();
+      }
+    });
+  </script>
 
   <!-- Auth and Mobile Menu Handler -->
   <script src="../js/auth.js"></script>
