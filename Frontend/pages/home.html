@@ -141,7 +141,7 @@
 
     <!-- JS MODULE ROUTER SYSTEM -->
     <script type="module">
-        import { getSession } from "../js/supabase.js";
+        import { auth, onAuthStateChanged } from "../js/firebase.js";
 
         const preloaderTerminal = document.getElementById('preloaderTerminal');
         const preloaderBar = document.getElementById('preloaderBar');
