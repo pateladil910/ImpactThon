@@ -200,10 +200,7 @@ app.get("/api/status", (req, res) => {
 
 // 5. Page Navigation Guards (The Fix)
 app.get("/", (req, res) => {
-  if (req.cookies.token) {
-    return res.redirect("/index.html");
-  }
-  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "home.html"));
+  res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "index.html"));
 });
 
 app.get("/login.html", (req, res) => {
@@ -214,9 +211,6 @@ app.get("/login.html", (req, res) => {
 });
 
 app.get("/index.html", (req, res) => {
-  if (!req.cookies.token) {
-    return res.redirect("/login.html");
-  }
   res.sendFile(path.join(__dirname, "..", "Frontend", "pages", "index.html"));
 });
 

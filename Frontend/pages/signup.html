@@ -575,6 +575,7 @@
                 const res = await fetch(`${API_BASE_URL}/api/auth/social-signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         name: user.displayName || user.email.split('@')[0],
                         email: user.email,

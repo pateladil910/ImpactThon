@@ -672,6 +672,7 @@ async function handleSocialSubmit(event) {
       headers: {
         "Content-Type": "application/json"
       },
+      credentials: "include",
       body: JSON.stringify({
         name,
         email,
@@ -705,7 +706,7 @@ async function handleSocialSubmit(event) {
       
     } else {
       alert(data.message || "Social verification failed.");
-    }ss
+    }
   } catch (error) {
     console.error("Social Linkage Error:", error);
     alert("Connection error occurred during social verification.");
