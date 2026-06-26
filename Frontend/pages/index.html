@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Protected Route Gatekeeper: Redirect to login if not logged in -->
+    <script>
+        if (localStorage.getItem("isLoggedIn") !== "true") {
+            window.location.replace("login.html");
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Smart Safety System | Next-Gen Industrial Guard</title>
@@ -947,15 +953,6 @@
         });
     }
 
-    // MOBILE DRAWER BURGER SYSTEM
-    const menuToggle = document.getElementById('menuToggle');
-    const navLinks = document.getElementById('navLinks');
-    if (menuToggle && navLinks) {
-        menuToggle.addEventListener('click', () => {
-            menuToggle.classList.toggle('active');
-            navLinks.classList.toggle('active');
-        });
-    }
 </script>
 
 <!-- EXTERNAL GATING FOR ADMINISTRATORS AND OPERATORS -->

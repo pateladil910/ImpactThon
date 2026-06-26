@@ -221,6 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   checkAuthUI();
 });
+*/
 
 
 
@@ -324,7 +325,7 @@ async function signup(event) {
 
 // ---------------- LOGOUT ----------------
 
-function logout() {
+async function logout() {
   // 1. Clear all local session data immediately
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
@@ -336,13 +337,18 @@ function logout() {
   localStorage.removeItem("systemConfig");
   localStorage.removeItem("safetyShieldCameras");
 
-  // 2. Sign out from Firebase in background
-  import('../js/firebase.js').then(({ auth, signOut }) => signOut(auth)).catch(() => {});
+  // 2. Sign out from Firebase and wait for it to complete
+  try {
+    const { auth, signOut } = await import('../js/firebase.js');
+    await signOut(auth);
+  } catch (error) {
+    console.error("Firebase signOut failed:", error);
+  }
 
   // 3. Sign out from backend in background
   fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
 
-  // 4. Redirect immediately
+  // 4. Redirect to login page
   window.location.replace("login.html");
 }
 
