@@ -7,6 +7,24 @@
     <link rel="stylesheet" href="../css/auth.css">
     <!-- Google Identity Services (GIS) SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <!-- Instant OAuth Return Loading Guard -->
+    <script>
+        if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('token') || window.location.hash.includes('error'))) {
+            document.addEventListener('DOMContentLoaded', () => {
+                const container = document.querySelector('.auth-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 50px 20px;">
+                            <div style="margin: 0 auto 25px auto; width: 55px; height: 55px; border: 4px solid rgba(6,182,212,0.15); border-top: 4px solid #06b6d4; border-radius: 50%; animation: spin 0.9s infinite linear;"></div>
+                            <h2 style="font-family: 'Space Grotesk', sans-serif; color: #06b6d4; font-size: 22px; margin-bottom: 12px; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(6,182,212,0.4);">AUTHENTICATING GOOGLE UPLINK...</h2>
+                            <p style="color: #64748b; font-size: 14px; font-family: 'Outfit', sans-serif;">Establishing encrypted satellite session parameters. Please wait...</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+    </script>
 </head>
 <body>
 <div id="fb-root"></div>
@@ -533,6 +551,18 @@
                 const user = session.user;
                 console.log('Supabase active session:', user.email);
 
+                // Ensure loading screen is active
+                const container = document.querySelector('.auth-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 50px 20px;">
+                            <div style="margin: 0 auto 25px auto; width: 55px; height: 55px; border: 4px solid rgba(6,182,212,0.15); border-top: 4px solid #06b6d4; border-radius: 50%; animation: spin 0.9s infinite linear;"></div>
+                            <h2 style="font-family: 'Space Grotesk', sans-serif; color: #06b6d4; font-size: 22px; margin-bottom: 12px; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(6,182,212,0.4);">AUTHENTICATING GOOGLE UPLINK...</h2>
+                            <p style="color: #64748b; font-size: 14px; font-family: 'Outfit', sans-serif;">Establishing encrypted satellite session parameters. Redirecting...</p>
+                        </div>
+                    `;
+                }
+
                 // Sync with backend
                 try {
                     const res = await fetch(`${API_BASE_URL}/api/auth/social-signup`, {
@@ -562,7 +592,7 @@
                     localStorage.setItem('userRole', 'viewer');
                 }
 
-                window.location.replace('index.html');
+                setTimeout(() => window.location.replace('index.html'), 800);
             }
         } catch (err) {
             console.error("Supabase session check error:", err);
