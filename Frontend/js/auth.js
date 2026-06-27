@@ -310,23 +310,25 @@ async function signup(event) {
 
 // ---------------- LOGOUT ----------------
 
-function logout() {
-  // 1. Clear all local session data immediately
-  localStorage.removeItem("isLoggedIn");
-  localStorage.removeItem("username");
-  localStorage.removeItem("userRole");
-  localStorage.removeItem("displayName");
-  localStorage.removeItem("profilePhoto");
-  localStorage.removeItem("uid");
-  localStorage.removeItem("connectedCamera");
-  localStorage.removeItem("systemConfig");
-  localStorage.removeItem("safetyShieldCameras");
+async function logout() {
+  // 1. Clear all local session and Supabase auth data immediately
+  try {
+    Object.keys(localStorage).forEach(key => localStorage.removeItem(key));
+    localStorage.clear();
+  } catch (e) {}
 
-  // 2. Trigger asynchronous cloud and backend signouts in background (non-blocking)
-  import('../js/supabase.js').then(mod => mod.signOutSupabase()).catch(() => {});
+  // 2. Sign out from Supabase cloud session
+  try {
+    const { signOutSupabase } = await import('../js/supabase.js');
+    await signOutSupabase();
+  } catch (error) {
+    console.error("Supabase signOut failed:", error);
+  }
+
+  // 3. Sign out from backend in background
   fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
 
-  // 3. Instant redirection to login page across all pages (0ms delay!)
+  // 4. Clean redirection to login page
   window.location.replace("login.html");
 }
 

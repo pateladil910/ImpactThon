@@ -283,7 +283,7 @@
 <script type="module">
     import { getSession } from '../js/supabase.js';
     getSession().then((session) => {
-        if (session && session.user) {
+        if (session && session.user && localStorage.getItem("isLoggedIn") === "true") {
             const user = session.user;
             localStorage.setItem("isLoggedIn", "true");
             localStorage.setItem("username", user.email);
