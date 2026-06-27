@@ -348,19 +348,17 @@ async function signup(event) {
 // ---------------- LOGOUT ----------------
 
 function logout() {
-  // 1. Clear all local storage IMMEDIATELY (synchronous)
   try {
     localStorage.clear();
     sessionStorage.clear();
   } catch (e) {}
 
-  // 2. Redirect to login.html RIGHT NOW — no waiting for async calls
   window.location.replace("login.html");
+  setTimeout(function() { window.location.href = "login.html"; }, 100);
 
-  // 3. Supabase + backend signout run silently in background after navigation
   try {
     import('../js/supabase.js')
-      .then(function(mod) { if (mod.signOutSupabase) mod.signOutSupabase(); })
+      .then(function(mod) { if (mod && mod.signOutSupabase) mod.signOutSupabase(); })
       .catch(function() {});
   } catch (e) {}
 
@@ -371,6 +369,7 @@ function logout() {
     { method: "POST", credentials: "include" }
   ).catch(function() {});
 }
+window.logout = logout;
 
 // ---------------- FORGOT & RESET PASSWORD ----------------
 

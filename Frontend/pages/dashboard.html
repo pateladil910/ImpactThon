@@ -550,25 +550,37 @@ body.is-admin .admin-only-nav{display:list-item!important}
 /* ================================================================
    QUICK ACTIONS
 ================================================================ */
-.actions-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.actions-bar{
+  display:flex;align-items:center;justify-content:center;
+  gap:24px;flex-wrap:wrap;padding:20px 0 10px;width:100%;
+}
 .btn-primary{
-  padding:10px 22px;border-radius:var(--r-sm);
-  font-family:var(--hud);font-size:12px;font-weight:700;
-  background:linear-gradient(135deg,var(--cyan),var(--blue));
-  color:#000;border:none;cursor:pointer;text-decoration:none;
-  display:flex;align-items:center;gap:6px;
-  transition:opacity .2s,transform .15s;letter-spacing:.5px;
+  padding:14px 32px;border-radius:30px;
+  font-family:var(--hud);font-size:13px;font-weight:700;
+  background:linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+  color:#040814;border:1px solid rgba(6, 182, 212, 0.6);
+  cursor:pointer;text-decoration:none;
+  display:inline-flex;align-items:center;gap:10px;
+  transition:all .25s ease;letter-spacing:1px;text-transform:uppercase;
+  box-shadow:0 0 20px rgba(6, 182, 212, 0.35);
 }
-.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.btn-primary:hover{
+  transform:translateY(-3px);box-shadow:0 0 30px rgba(6, 182, 212, 0.6);
+  background:linear-gradient(135deg, #22d3ee 0%, #60a5fa 100%);color:#000;
+}
 .btn-danger-outline{
-  padding:10px 22px;border-radius:var(--r-sm);
-  font-family:var(--hud);font-size:12px;font-weight:700;
-  background:transparent;color:var(--red);
-  border:1px solid var(--red-30);cursor:pointer;
-  display:flex;align-items:center;gap:6px;
-  transition:all .2s;letter-spacing:.5px;
+  padding:14px 32px;border-radius:30px;
+  font-family:var(--hud);font-size:13px;font-weight:700;
+  background:rgba(239, 68, 68, 0.12);color:#ef4444;
+  border:1.5px solid rgba(239, 68, 68, 0.5);cursor:pointer;
+  display:inline-flex;align-items:center;gap:10px;
+  transition:all .25s ease;letter-spacing:1px;text-transform:uppercase;
+  box-shadow:0 0 15px rgba(239, 68, 68, 0.25);
 }
-.btn-danger-outline:hover{background:var(--red-15);border-color:var(--red)}
+.btn-danger-outline:hover{
+  transform:translateY(-3px);background:rgba(239, 68, 68, 0.25);
+  border-color:#ef4444;box-shadow:0 0 25px rgba(239, 68, 68, 0.5);color:#fff;
+}
 
 /* ================================================================
    FOOTER TELEMETRY BAR
@@ -909,10 +921,10 @@ body.is-admin .admin-only-nav{display:list-item!important}
     </div>
 
     <!-- QUICK ACTIONS -->
-    <div class="section-label">Quick Actions</div>
+    <div class="section-label">Quick Actions Console</div>
     <div class="actions-bar">
-      <a href="history.html" class="btn-primary">📊 View Detection History →</a>
-      <button id="btnLogoutCam" class="btn-danger-outline">⏏ Disconnect Camera</button>
+      <a href="history.html" class="btn-primary">📊 View Detection History &rarr;</a>
+      <button id="btnLogoutCam" class="btn-danger-outline">⏏ Disconnect Camera Node</button>
     </div>
 
   </main>
@@ -1419,9 +1431,28 @@ document.addEventListener('DOMContentLoaded',function(){
       renderGrid();
     });
   });
+  document.addEventListener('click', function(e){
+    if(e.target&&e.target.closest('.logout-btn')){
+      e.preventDefault();
+      if(typeof window.logout==='function') window.logout();
+      else {
+        localStorage.clear();sessionStorage.clear();
+        window.location.replace("login.html");
+      }
+    }
+  });
   setInterval(updateStatus,1000);
   updateAllStats();
 });
+</script>
+
+<!-- Global fallback logout definition -->
+<script>
+  window.logout = function() {
+    try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
+    window.location.replace("login.html");
+    setTimeout(function() { window.location.href = "login.html"; }, 100);
+  };
 </script>
 
 <!-- Supabase session check -->
