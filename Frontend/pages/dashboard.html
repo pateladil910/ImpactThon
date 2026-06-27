@@ -1,1511 +1,2049 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <!-- Protected Route Gatekeeper: Instant Guest Firewall -->
+  <!-- Protected Route Gatekeeper -->
   <script>
     if (localStorage.getItem("isLoggedIn") !== "true") {
-      console.warn("Unauthorized access blocked. Redirecting to login gateway...");
       window.location.replace("login.html");
     }
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Safety Dashboard | Live Control Console</title>
+  <meta name="description" content="AI Safety Shield live operator dashboard — real-time industrial monitoring, CCTV grid, AI confidence, and threat incident logging.">
+  <title>AI Safety Dashboard | Live Operator Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="../css/dashboard.css" />
-  <link rel="stylesheet" href="../css/navbar_responsive.css">
-  
-  <style>
-    /* ===== ADMIN-ONLY NAV ITEMS: Hidden by default, shown only for admins ===== */
-    .admin-only-nav { display: none !important; }
-    body.is-admin .admin-only-nav { display: list-item !important; }
+<style>
+/* ======================================================
+   DESIGN TOKENS & RESET
+====================================================== */
+:root {
+  --bg-base:       #040814;
+  --bg-panel:      rgba(6, 10, 26, 0.82);
+  --bg-glass:      rgba(6, 182, 212, 0.04);
+  --bg-glass-hard: rgba(6, 10, 26, 0.95);
+  --cyan:          #06b6d4;
+  --cyan-dim:      rgba(6, 182, 212, 0.15);
+  --cyan-glow:     rgba(6, 182, 212, 0.35);
+  --blue:          #3b82f6;
+  --green:         #10b981;
+  --green-dim:     rgba(16, 185, 129, 0.15);
+  --green-glow:    rgba(16, 185, 129, 0.4);
+  --red:           #ef4444;
+  --red-dim:       rgba(239, 68, 68, 0.15);
+  --red-glow:      rgba(239, 68, 68, 0.4);
+  --yellow:        #f59e0b;
+  --yellow-dim:    rgba(245, 158, 11, 0.15);
+  --text:          #e2e8f0;
+  --text-muted:    #64748b;
+  --text-dim:      #334155;
+  --border:        rgba(6, 182, 212, 0.12);
+  --border-strong: rgba(6, 182, 212, 0.28);
+  --radius:        10px;
+  --radius-sm:     6px;
+  --font-main:     'Outfit', sans-serif;
+  --font-hud:      'Space Grotesk', sans-serif;
+  --font-mono:     'Fira Code', monospace;
+}
 
-    #cameraGridContainer { transition: all 0.3s ease; }
-    .camera-grid-1 { grid-template-columns: 1fr; }
-    .camera-grid-4 { grid-template-columns: repeat(2, 1fr); }
-    .camera-grid-9 { grid-template-columns: repeat(3, 1fr); }
-    .camera-grid-16 { grid-template-columns: repeat(4, 1fr); }
-    .camera-grid-25 { grid-template-columns: repeat(5, 1fr); }
-    .camera-grid-36 { grid-template-columns: repeat(6, 1fr); }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .grid-slot {
-      background: rgba(2, 6, 23, 0.95);
-      border: 1px dashed rgba(6, 182, 212, 0.2);
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
-      aspect-ratio: 16/9;
-      cursor: grab;
-      transition: border-color 0.25s, box-shadow 0.25s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .grid-slot.drag-over {
-      border-color: var(--primary-neon);
-      box-shadow: 0 0 15px rgba(6, 182, 212, 0.35);
-    }
-    .grid-slot.active-pin {
-      border: 1.5px solid var(--primary-neon);
-      box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.15);
-    }
-    .grid-slot.fullscreen {
-      position: fixed !important;
-      inset: 0 !important;
-      z-index: 999999 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      aspect-ratio: auto !important;
-      border-radius: 0 !important;
-      background: #000 !important;
-    }
+html { scroll-behavior: smooth; }
 
-    .btn-grid-tab {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 4px 8px;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 11px;
-      font-weight: bold;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-    .btn-grid-tab.active {
-      background: var(--primary-neon);
-      color: var(--text-dark) !important;
-    }
-    .btn-grid-tab:hover:not(.active) {
-      color: var(--primary-neon);
-      background: rgba(6, 182, 212, 0.1);
-    }
+body {
+  font-family: var(--font-main);
+  background: var(--bg-base);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
 
-    /* ===== PREMIUM DASHBOARD IMPROVEMENTS ===== */
-    h1 {
-      font-size: clamp(22px, 3vw, 34px);
-      font-family: 'Space Grotesk', sans-serif;
-      background: linear-gradient(135deg, #f8fafc 30%, #06b6d4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.5px;
-      margin-bottom: 8px;
-    }
-    .subtitle {
-      font-size: 14px;
-      color: #64748b;
-      margin-bottom: 28px;
-      max-width: 600px;
-      line-height: 1.6;
-    }
-    .box {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .box:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(6, 182, 212, 0.12);
-    }
-    .box-value {
-      font-size: clamp(24px, 3vw, 36px);
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      letter-spacing: 1px;
-      margin: 10px 0 6px;
-    }
-    .box-desc {
-      font-size: 12px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-    /* Premium metric row styling */
-    .metric-label {
-      font-size: 10px;
-      font-family: 'Space Grotesk', sans-serif;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .metric-value {
-      font-size: clamp(20px, 2.5vw, 28px);
-      font-weight: 700;
-      color: var(--primary-neon);
-      margin-top: 4px;
-      font-family: 'Space Grotesk', sans-serif;
-    }
-    /* Pill badges for status indicators */
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 600;
-      font-family: 'Space Grotesk', sans-serif;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-    .status-pill.online {
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      color: var(--safe-green);
-    }
-    .status-pill.offline {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      color: var(--danger-red);
-    }
-    .status-pill-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      animation: pulse-dot 2s infinite;
-    }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-    /* Section divider */
-    .section-heading {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin: 32px 0 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .section-heading::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(6, 182, 212, 0.12);
-    }
-  </style>
+/* ======================================================
+   BACKGROUND & AMBIENT LAYERS
+====================================================== */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 5%, rgba(6, 182, 212, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 90%, rgba(59, 130, 246, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 60% at 50% 50%, rgba(16, 185, 129, 0.03) 0%, transparent 60%),
+    linear-gradient(180deg, #040814 0%, #060b1a 100%);
+  pointer-events: none;
+}
+
+#particle-canvas {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+}
+
+.laser-sweep {
+  position: fixed; left: 0; width: 100%; height: 1px; z-index: 2;
+  background: linear-gradient(90deg, transparent 0%, var(--cyan) 50%, transparent 100%);
+  box-shadow: 0 0 12px 2px var(--cyan);
+  animation: laserSweep 8s linear infinite;
+  opacity: 0.25;
+  pointer-events: none;
+}
+@keyframes laserSweep {
+  0%   { top: -2px; opacity: 0; }
+  5%   { opacity: 0.25; }
+  95%  { opacity: 0.25; }
+  100% { top: 100vh; opacity: 0; }
+}
+
+/* ======================================================
+   PAGE WRAPPER
+====================================================== */
+.page-shell {
+  position: relative; z-index: 5;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* ======================================================
+   TOP HUD HEADER BAR
+====================================================== */
+.hud-header {
+  background: rgba(4, 8, 20, 0.96);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  padding: 0 28px;
+  height: 44px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  font-family: var(--font-hud);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  position: sticky; top: 0; z-index: 200;
+  flex-shrink: 0;
+}
+
+.hud-left, .hud-right {
+  display: flex; align-items: center; gap: 18px;
+  flex-shrink: 0;
+}
+
+.hud-tag {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--text-muted);
+}
+.hud-tag .dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 5px var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.hud-tag .label { color: var(--text-muted); }
+.hud-tag .val   { color: var(--cyan); }
+
+.hud-divider { width: 1px; height: 20px; background: var(--border); }
+
+.hud-clock {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 1.5px;
+}
+
+.hud-latency-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+}
+
+.hud-center {
+  font-family: var(--font-hud);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  display: flex; align-items: center; gap: 8px;
+}
+.hud-center .shield-icon {
+  width: 14px; height: 14px; color: var(--cyan);
+}
+
+/* ======================================================
+   NAVBAR
+====================================================== */
+.navbar {
+  background: rgba(4, 8, 20, 0.92);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  padding: 0 28px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  position: sticky; top: 44px; z-index: 190;
+  flex-shrink: 0;
+}
+
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.nav-logo svg { width: 22px; height: 22px; color: var(--cyan); }
+.nav-logo span {
+  font-family: var(--font-hud); font-size: 15px; font-weight: 700;
+  background: linear-gradient(135deg, #fff 40%, var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+}
+
+.nav-menu { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; flex-wrap: nowrap; overflow: hidden; }
+
+.nav-links {
+  list-style: none; display: flex; align-items: center; gap: 2px;
+  flex-wrap: nowrap;
+}
+.nav-links li a {
+  display: block; padding: 6px 10px; border-radius: var(--radius-sm);
+  text-decoration: none; font-size: 12px; font-weight: 500;
+  color: var(--text-muted); transition: color .2s, background .2s;
+  white-space: nowrap;
+}
+.nav-links li a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.nav-links li a.active { color: var(--cyan); background: var(--cyan-dim); }
+
+.admin-only-nav { display: none !important; }
+body.is-admin .admin-only-nav { display: list-item !important; }
+
+.nav-right {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+
+.auth-buttons { display: flex; gap: 8px; }
+.auth-buttons a {
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  text-decoration: none; transition: all .2s;
+  color: var(--text-muted); border: 1px solid var(--border);
+}
+.auth-buttons a:last-child {
+  background: var(--cyan); color: #000; border-color: var(--cyan);
+}
+.auth-buttons a:hover:not(:last-child) { color: var(--text); border-color: var(--border-strong); }
+
+.profile-box { display: none; align-items: center; gap: 10px; }
+.profile-name {
+  font-family: var(--font-hud); font-size: 12px; font-weight: 600; color: var(--cyan);
+}
+.logout-btn {
+  padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border-strong);
+  background: transparent; color: var(--text-muted); font-family: var(--font-hud);
+  transition: all .2s;
+}
+.logout-btn:hover { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+
+.menu-toggle {
+  display: none; flex-direction: column; gap: 4px; cursor: pointer;
+  background: none; border: none; padding: 6px;
+}
+.menu-toggle span {
+  display: block; width: 20px; height: 2px; border-radius: 2px;
+  background: var(--text-muted); transition: all .25s;
+}
+
+/* ======================================================
+   MAIN LAYOUT
+====================================================== */
+.main-content {
+  flex: 1; padding: 24px 28px 40px;
+  max-width: 1680px; width: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+/* ======================================================
+   PAGE TITLE STRIP
+====================================================== */
+.page-title-strip {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+
+.page-title-left h1 {
+  font-family: var(--font-hud); font-size: clamp(20px, 2.5vw, 30px);
+  font-weight: 700; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #f8fafc 30%, var(--cyan) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; line-height: 1.2;
+}
+.page-title-left p {
+  font-size: 12px; color: var(--text-muted); margin-top: 5px; max-width: 560px; line-height: 1.6;
+}
+
+.page-title-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  font-family: var(--font-hud); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.status-pill.online {
+  background: var(--green-dim); border: 1px solid rgba(16,185,129,.3); color: var(--green);
+}
+.status-pill.warning {
+  background: var(--yellow-dim); border: 1px solid rgba(245,158,11,.3); color: var(--yellow);
+}
+.status-pill.danger {
+  background: var(--red-dim); border: 1px solid rgba(239,68,68,.3); color: var(--red);
+}
+.status-pill-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: currentColor;
+  animation: blink 2s ease-in-out infinite;
+}
+
+.live-clock-badge {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+  background: rgba(6,182,212,.05); border: 1px solid var(--border);
+  padding: 5px 14px; border-radius: 8px; letter-spacing: 1px;
+}
+
+/* ======================================================
+   SECTION LABEL
+====================================================== */
+.section-label {
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--font-hud); font-size: 10px; font-weight: 700;
+  color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+}
+
+/* ======================================================
+   STAT BAR ROW (quick KPIs at the top)
+====================================================== */
+.kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.kpi-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex; flex-direction: column; gap: 4px;
+  position: relative; overflow: hidden;
+  transition: border-color .25s, transform .2s;
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.kpi-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.kpi-card:hover::before { opacity: 1; }
+
+.kpi-card.green-accent { --accent: var(--green); }
+.kpi-card.cyan-accent  { --accent: var(--cyan); }
+.kpi-card.red-accent   { --accent: var(--red); }
+.kpi-card.yellow-accent{ --accent: var(--yellow); }
+.kpi-card.blue-accent  { --accent: var(--blue); }
+
+.kpi-card::before { background: linear-gradient(90deg, transparent, var(--accent, var(--cyan)), transparent); }
+
+.kpi-label {
+  font-family: var(--font-hud); font-size: 9px; font-weight: 700;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px;
+}
+.kpi-value {
+  font-family: var(--font-hud); font-size: clamp(20px, 2vw, 28px);
+  font-weight: 700; color: var(--text); line-height: 1;
+  margin: 4px 0 2px;
+}
+.kpi-value.green { color: var(--green); }
+.kpi-value.cyan  { color: var(--cyan); }
+.kpi-value.red   { color: var(--red); }
+.kpi-value.yellow{ color: var(--yellow); }
+.kpi-sub {
+  font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 5px;
+}
+
+/* ======================================================
+   MAIN LIVE TELEMETRY GRID (2-column)
+====================================================== */
+.live-telemetry-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ======================================================
+   LEFT COLUMN: CAMERA / VIDEO CONSOLE
+====================================================== */
+.camera-console {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  min-height: 540px;
+}
+
+.camera-console-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 10px;
+}
+.camera-console-title {
+  font-family: var(--font-hud); font-size: 13px; font-weight: 700;
+  color: var(--text); display: flex; align-items: center; gap: 8px;
+}
+.camera-console-title .rec-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--red);
+  box-shadow: 0 0 8px var(--red); animation: blink 1.2s ease-in-out infinite;
+}
+
+.grid-tab-bar {
+  display: flex; gap: 3px;
+  background: rgba(2, 6, 23, 0.6);
+  border: 1px solid var(--border);
+  padding: 3px; border-radius: var(--radius-sm);
+}
+.btn-grid-tab {
+  background: transparent; border: none; cursor: pointer;
+  padding: 4px 9px; border-radius: 4px;
+  font-family: var(--font-hud); font-size: 10px; font-weight: 700;
+  color: var(--text-muted); transition: all .2s;
+}
+.btn-grid-tab.active { background: var(--cyan); color: #000; }
+.btn-grid-tab:hover:not(.active) { color: var(--cyan); background: var(--cyan-dim); }
+
+/* Camera grid container */
+#cameraGridContainer {
+  display: grid; gap: 8px;
+  background: rgba(0,0,0,0.6); padding: 12px;
+  flex: 1; min-height: 380px;
+}
+.camera-grid-1  { grid-template-columns: 1fr; }
+.camera-grid-4  { grid-template-columns: repeat(2, 1fr); }
+.camera-grid-9  { grid-template-columns: repeat(3, 1fr); }
+.camera-grid-16 { grid-template-columns: repeat(4, 1fr); }
+.camera-grid-25 { grid-template-columns: repeat(5, 1fr); }
+.camera-grid-36 { grid-template-columns: repeat(6, 1fr); }
+
+.grid-slot {
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px dashed rgba(6, 182, 212, 0.18);
+  border-radius: 7px; overflow: hidden;
+  position: relative; aspect-ratio: 16/9;
+  cursor: grab; transition: border-color .25s, box-shadow .25s;
+  display: flex; align-items: center; justify-content: center;
+}
+.grid-slot.drag-over  { border-color: var(--cyan); box-shadow: 0 0 16px var(--cyan-glow); }
+.grid-slot.active-pin { border: 1.5px solid var(--cyan); box-shadow: inset 0 0 12px var(--cyan-dim); }
+.grid-slot.fullscreen {
+  position: fixed !important; inset: 0 !important;
+  z-index: 999999 !important; width: 100vw !important;
+  height: 100vh !important; aspect-ratio: auto !important;
+  border-radius: 0 !important; background: #000 !important;
+}
+
+/* Webcam fallback canvas */
+#webcamCanvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: none;
+}
+#webcamVideo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: none;
+}
+
+/* Animated fallback overlay */
+#fallbackCanvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  display: none;
+}
+.slot-no-signal {
+  text-align: center; color: var(--text-muted); pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.slot-no-signal .ns-label {
+  font-family: var(--font-hud); font-size: 13px; font-weight: 700;
+  color: rgba(255,255,255,0.2); letter-spacing: 2px;
+}
+.slot-no-signal .ns-sub {
+  font-family: var(--font-mono); font-size: 8px; opacity: 0.4; letter-spacing: 1px;
+}
+
+/* Camera status footer */
+.camera-console-footer {
+  padding: 10px 18px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap;
+}
+.cam-status-text {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); flex: 1;
+}
+.cam-meta {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--font-hud); font-size: 9px; color: var(--text-muted);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+}
+.cam-meta span { display: flex; align-items: center; gap: 4px; }
+.cam-meta .val { color: var(--cyan); }
+
+/* ======================================================
+   RIGHT COLUMN: METRIC SIDEBAR
+====================================================== */
+.metric-sidebar {
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+.metric-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  position: relative; overflow: hidden;
+  transition: border-color .25s, transform .2s;
+}
+.metric-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+
+.metric-card-label {
+  font-family: var(--font-hud); font-size: 9px; font-weight: 700;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px;
+  display: flex; align-items: center; gap: 7px;
+}
+.metric-card-label .icon { font-size: 13px; }
+
+.metric-card-value {
+  font-family: var(--font-hud);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 700; letter-spacing: 1px;
+  margin: 10px 0 6px; line-height: 1;
+}
+
+.metric-card-desc {
+  font-size: 11px; color: var(--text-muted); line-height: 1.5;
+}
+
+/* Safety state colours */
+.metric-card.state-safe  { border-color: rgba(16,185,129,.25); }
+.metric-card.state-safe .metric-card-value { color: var(--green); }
+.metric-card.state-safe::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 10% 90%, rgba(16,185,129,.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.metric-card.state-danger { border-color: rgba(239,68,68,.35); }
+.metric-card.state-danger .metric-card-value { color: var(--red); }
+.metric-card.state-danger::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 10% 90%, rgba(239,68,68,.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* AI Confidence bar */
+.conf-bar-wrap {
+  margin-top: 10px; background: rgba(255,255,255,.05);
+  border-radius: 4px; height: 5px; overflow: hidden;
+}
+.conf-bar-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  transition: width .6s ease; width: 0%;
+}
+
+/* Watchdog & Action */
+.metric-card-value.cyan-text  { color: var(--cyan); }
+.metric-card-value.yellow-text{ color: var(--yellow); }
+.metric-card-value.green-text { color: var(--green); }
+.metric-card-value.red-text   { color: var(--red); }
+.metric-card-value.mono {
+  font-family: var(--font-mono); font-size: clamp(16px, 2vw, 22px); letter-spacing: 0;
+}
+
+/* ======================================================
+   CONTROL WIDGETS ROW
+====================================================== */
+.widgets-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.widget-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 6px;
+  transition: border-color .25s, transform .2s;
+}
+.widget-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+
+.widget-label {
+  font-family: var(--font-hud); font-size: 9px; font-weight: 700;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px;
+  display: flex; align-items: center; gap: 6px;
+}
+.widget-value {
+  font-family: var(--font-hud); font-size: clamp(20px, 2.2vw, 28px);
+  font-weight: 700; color: var(--cyan); margin: 4px 0 2px; line-height: 1;
+}
+.widget-value.green  { color: var(--green); }
+.widget-value.yellow { color: var(--yellow); }
+.widget-value.red    { color: var(--red); }
+.widget-sub { font-size: 10px; color: var(--text-muted); }
+
+/* ======================================================
+   INCIDENT LOG PANEL
+====================================================== */
+.incident-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.incident-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 10px;
+}
+
+.incident-panel-title {
+  font-family: var(--font-hud); font-size: 13px; font-weight: 700;
+  color: var(--text); display: flex; align-items: center; gap: 8px;
+}
+
+.incident-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn-action {
+  padding: 5px 12px; border-radius: var(--radius-sm);
+  font-family: var(--font-hud); font-size: 10px; font-weight: 700;
+  cursor: pointer; transition: all .2s; border: 1px solid;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.btn-action.cyan-btn  { border-color: rgba(6,182,212,.4); background: var(--cyan-dim); color: var(--cyan); }
+.btn-action.cyan-btn:hover { background: rgba(6,182,212,.25); }
+.btn-action.green-btn { border-color: rgba(16,185,129,.4); background: var(--green-dim); color: var(--green); }
+.btn-action.green-btn:hover { background: rgba(16,185,129,.25); }
+.btn-action.red-btn   { border-color: rgba(239,68,68,.3); background: var(--red-dim); color: var(--red); }
+.btn-action.red-btn:hover { background: rgba(239,68,68,.2); }
+
+.incident-console {
+  padding: 14px 20px;
+  height: 200px; overflow-y: auto;
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.7;
+  color: var(--text); background: rgba(2,4,14,0.6);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.incident-console::-webkit-scrollbar { width: 4px; }
+.incident-console::-webkit-scrollbar-track { background: transparent; }
+.incident-console::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.log-entry {
+  padding-bottom: 4px; border-bottom: 1px solid rgba(6,182,212,.05);
+  display: flex; gap: 8px; align-items: baseline;
+}
+.log-ts  { color: var(--text-dim); font-size: 10px; flex-shrink: 0; }
+.log-sev { font-weight: 700; font-size: 10px; flex-shrink: 0; }
+.log-sev.SAFE     { color: var(--green); }
+.log-sev.WARNING  { color: var(--yellow); }
+.log-sev.CRITICAL { color: var(--red); }
+.log-sev.DANGER   { color: var(--red); }
+.log-body { color: var(--text); }
+
+.incident-console-empty {
+  color: var(--text-muted); text-align: center;
+  margin: auto; align-self: center; width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 20px 0;
+}
+.incident-console-empty .empty-icon { font-size: 28px; opacity: .3; }
+.incident-console-empty .empty-text { font-size: 12px; opacity: .5; }
+
+/* ======================================================
+   SENSOR NODE MANAGER
+====================================================== */
+.node-manager {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.node-manager-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 10px;
+}
+.node-manager-title {
+  font-family: var(--font-hud); font-size: 13px; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.node-stats {
+  display: flex; gap: 16px;
+  font-family: var(--font-hud); font-size: 10px; color: var(--text-muted);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+}
+.node-stats .ns-v { font-weight: 700; }
+.node-stats .ns-v.cyan  { color: var(--cyan); }
+.node-stats .ns-v.green { color: var(--green); }
+.node-stats .ns-v.red   { color: var(--red); }
+
+.node-manager-controls {
+  display: flex; gap: 12px; padding: 14px 20px;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center;
+}
+
+.node-search {
+  flex: 1; min-width: 220px;
+  background: rgba(2, 6, 23, 0.6); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 14px;
+  color: var(--text); font-size: 12px; font-family: var(--font-main);
+  outline: none; transition: border-color .2s;
+}
+.node-search::placeholder { color: var(--text-dim); }
+.node-search:focus { border-color: var(--border-strong); }
+
+.node-select {
+  background: rgba(2, 6, 23, 0.6); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 14px;
+  color: var(--text); font-size: 12px; font-family: var(--font-main);
+  outline: none; cursor: pointer; transition: border-color .2s;
+}
+.node-select:focus { border-color: var(--border-strong); }
+.node-select option { background: #070d1f; }
+
+.btn-add-cam {
+  padding: 9px 18px; border-radius: var(--radius-sm);
+  font-family: var(--font-hud); font-size: 11px; font-weight: 700;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  color: #000; border: none; cursor: pointer; text-decoration: none;
+  display: flex; align-items: center; gap: 5px;
+  transition: opacity .2s, transform .15s; letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.btn-add-cam:hover { opacity: .88; transform: translateY(-1px); }
+
+.node-grid-body {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.node-card {
+  background: rgba(4, 8, 20, 0.7);
+  border: 1px solid rgba(6, 182, 212, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 16px; cursor: pointer;
+  transition: border-color .25s, background .25s, transform .2s;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 140px;
+}
+.node-card:hover { border-color: var(--border); transform: translateY(-2px); }
+.node-card.active-node {
+  border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.05);
+}
+
+.node-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+}
+.node-cam-name {
+  font-family: var(--font-hud); font-size: 13px; font-weight: 700; color: var(--text);
+}
+.node-brand-badge {
+  font-family: var(--font-hud); font-size: 8px; font-weight: 600;
+  padding: 2px 7px; border-radius: 4px;
+  background: rgba(255,255,255,.05); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+}
+.node-loc {
+  font-size: 11px; color: var(--text-muted);
+  display: flex; align-items: center; gap: 4px;
+}
+.node-url {
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-dim);
+  opacity: .8; word-break: break-all; line-height: 1.4;
+}
+.node-card-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,.04); padding-top: 8px;
+}
+.node-status-badge {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--font-hud); font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.node-status-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+}
+.node-status-dot.online  { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.node-status-dot.offline { background: var(--red); box-shadow: 0 0 5px var(--red); }
+
+.btn-del-node {
+  padding: 3px 9px; border-radius: 4px; font-size: 9px; font-weight: 700;
+  font-family: var(--font-hud); cursor: pointer; border: 1px solid rgba(239,68,68,.25);
+  background: transparent; color: var(--red); transition: all .2s; letter-spacing: 0.5px;
+}
+.btn-del-node:hover { background: var(--red-dim); border-color: var(--red); }
+
+.node-empty-state {
+  grid-column: 1/-1; text-align: center; padding: 40px 20px;
+  color: var(--text-muted); font-size: 13px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.node-empty-state .ei { font-size: 32px; opacity: .25; }
+
+/* ======================================================
+   QUICK ACTIONS BAR
+====================================================== */
+.quick-actions-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+
+.btn-primary {
+  padding: 10px 22px; border-radius: var(--radius-sm);
+  font-family: var(--font-hud); font-size: 12px; font-weight: 700;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  color: #000; border: none; cursor: pointer; text-decoration: none;
+  display: flex; align-items: center; gap: 6px;
+  transition: opacity .2s, transform .15s; letter-spacing: 0.5px;
+}
+.btn-primary:hover { opacity: .88; transform: translateY(-1px); }
+
+.btn-danger {
+  padding: 10px 22px; border-radius: var(--radius-sm);
+  font-family: var(--font-hud); font-size: 12px; font-weight: 700;
+  background: transparent; color: var(--red);
+  border: 1px solid rgba(239,68,68,.4); cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: all .2s; letter-spacing: 0.5px;
+}
+.btn-danger:hover { background: var(--red-dim); border-color: var(--red); }
+
+/* ======================================================
+   TELEMETRY FOOTER
+====================================================== */
+.tele-footer {
+  background: rgba(4, 8, 20, 0.96);
+  border-top: 1px solid var(--border);
+  padding: 0 28px;
+  height: 38px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  font-family: var(--font-hud); font-size: 9px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.tele-cluster { display: flex; align-items: center; gap: 14px; }
+.tele-item { display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
+.tele-item .tv { color: var(--cyan); }
+.tele-item .tg { color: var(--green); }
+.tele-sep { width: 1px; height: 16px; background: var(--border); }
+.tele-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 5px var(--green); animation: blink 2s ease-in-out infinite;
+}
+
+/* ======================================================
+   TOAST NOTIFICATION
+====================================================== */
+#hudToast {
+  position: fixed; bottom: 56px; right: 24px; z-index: 9999;
+  display: none; flex-direction: column; gap: 4px;
+  background: rgba(4, 8, 20, 0.95); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); padding: 12px 18px;
+  font-family: var(--font-hud); font-size: 11px;
+  min-width: 240px; max-width: 340px;
+  animation: toastIn .3s ease;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#hudToast .toast-title { font-weight: 700; color: var(--cyan); font-size: 11px; letter-spacing: 1px; }
+#hudToast .toast-body  { color: var(--text-muted); font-size: 10px; }
+
+/* ======================================================
+   SCROLLBAR
+====================================================== */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(6,182,212,.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(6,182,212,.4); }
+
+/* ======================================================
+   RESPONSIVE — TABLET (≤ 1024px)
+====================================================== */
+@media (max-width: 1024px) {
+  .hud-header { padding: 0 16px; }
+  .hud-left .hud-tag:nth-child(n+3) { display: none; }
+  .hud-right .hud-tag:nth-child(n+3) { display: none; }
+
+  .navbar { padding: 0 16px; }
+  .nav-menu { display: none; flex-direction: column; gap: 0;
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: rgba(4,8,20,0.98); border-bottom: 1px solid var(--border);
+    padding: 12px 16px; z-index: 300; }
+  .nav-menu.open { display: flex; }
+  .nav-links { flex-direction: column; align-items: flex-start; width: 100%; }
+  .nav-links li a { padding: 10px 12px; font-size: 13px; width: 100%; }
+  .nav-right { display: none; }
+  .nav-menu.open .nav-right { display: flex; padding: 8px 12px; }
+  .menu-toggle { display: flex; }
+
+  .main-content { padding: 18px 16px 32px; }
+
+  .kpi-bar { grid-template-columns: repeat(3, 1fr); }
+
+  .live-telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+  .camera-console { min-height: 400px; }
+  .metric-sidebar { flex-direction: row; flex-wrap: wrap; }
+  .metric-card { flex: 1; min-width: calc(50% - 7px); }
+
+  .widgets-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ======================================================
+   RESPONSIVE — MOBILE (≤ 640px)
+====================================================== */
+@media (max-width: 640px) {
+  .hud-header { display: none; }
+  .navbar { top: 0; }
+
+  .main-content { padding: 14px 12px 28px; }
+
+  .page-title-right { display: none; }
+
+  .kpi-bar { grid-template-columns: repeat(2, 1fr); }
+  .kpi-card:nth-child(5) { display: none; }
+
+  .camera-console { min-height: 300px; }
+
+  .metric-sidebar { flex-direction: column; }
+  .metric-card { min-width: unset; }
+
+  .widgets-row { grid-template-columns: repeat(2, 1fr); }
+
+  .incident-console { height: 150px; }
+
+  .tele-footer { padding: 0 12px; }
+  .tele-cluster .tele-item:nth-child(n+4) { display: none; }
+  .tele-sep:nth-child(n+4) { display: none; }
+
+  .quick-actions-bar { gap: 8px; }
+  .btn-primary, .btn-danger { font-size: 11px; padding: 9px 16px; }
+}
+</style>
+
 </head>
-
 <body>
 
-  <!-- BACKDROP PARTICLES CANVAS -->
-  <canvas id="particle-canvas"></canvas>
+<!-- PARTICLE BACKDROP -->
+<canvas id="particle-canvas"></canvas>
 
-  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
-  <div class="laser-scan-line"></div>
+<!-- LASER SWEEP -->
+<div class="laser-sweep"></div>
 
-  <!-- FUTURISTIC HUD OVERLAYS -->
-  <div class="cyber-hud-layer">
-    <!-- Top Left Information System -->
-    <div class="hud-tag hud-top-left">
-      <span>SYSTEM_CONTROL: RUNNING</span>
-      <span>AI_SCANNER: ONLINE</span>
-      <span class="status-badge" style="margin-top: 10px;">
-        <span class="status-dot"></span> MONITOR ONLINE
-      </span>
+<!-- TOAST -->
+<div id="hudToast">
+  <div class="toast-title" id="toastTitle">INFO</div>
+  <div class="toast-body"  id="toastBody">—</div>
+</div>
+
+<div class="page-shell">
+
+  <!-- ====== TOP HUD HEADER ====== -->
+  <header class="hud-header">
+    <div class="hud-left">
+      <div class="hud-tag">
+        <span class="dot"></span>
+        <span class="label">SYSTEM_CTRL</span>
+        <span class="val">RUNNING</span>
+      </div>
+      <div class="hud-divider"></div>
+      <div class="hud-tag">
+        <span class="label">AI_SCANNER</span>
+        <span class="val">ONLINE</span>
+      </div>
+      <div class="hud-divider"></div>
+      <div class="hud-tag">
+        <span class="label">CAM_GATEWAY</span>
+        <span class="val">ACTIVE</span>
+      </div>
+      <div class="hud-divider"></div>
+      <div class="hud-tag">
+        <span class="label">PROT_LVL</span>
+        <span class="val">9</span>
+      </div>
     </div>
 
-    <!-- Top Right Telemetry Details -->
-    <div class="hud-tag hud-top-right">
-      <span>CAM_GATEWAY_ACTIVE</span>
-      <span>1920x1080 @ 60.0fps</span>
-      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: 8ms</span>
-      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
+    <div class="hud-center">
+      <svg class="shield-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"/>
+      </svg>
+      AI SAFETY SHIELD · LIVE CONSOLE
     </div>
 
-    <!-- Bottom Left System Log -->
-    <div class="hud-tag hud-bottom-left">
-      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+    <div class="hud-right">
+      <div class="hud-latency-tag" id="system-latency">LATENCY: 8ms</div>
+      <div class="hud-divider"></div>
+      <div class="hud-tag">
+        <span class="label">RES</span>
+        <span class="val">1920×1080</span>
+      </div>
+      <div class="hud-divider"></div>
+      <div class="hud-clock" id="system-clock">--:--:-- UTC</div>
     </div>
-  </div>
+  </header>
 
-  <div class="page">
+  <!-- ====== NAVBAR ====== -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"/>
+      </svg>
+      <span>AI Safety Shield</span>
+    </a>
 
-    <!-- ================= NAVBAR ================= -->
-    <nav class="navbar">
-      <a href="index.html" class="logo">
-        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
-        </svg>
-        <span>AI Safety Shield</span>
-      </a>
+    <div class="nav-menu" id="navLinks">
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="solution.html">Solution</a></li>
+        <li><a href="dashboard.html" class="active">Dashboard</a></li>
+        <li><a href="plant_map.html">Plant Map</a></li>
+        <li><a href="chart.html">Analytics</a></li>
+        <li><a href="history.html">Logs</a></li>
+        <li><a href="setup.html">Gateway</a></li>
+        <li><a href="camera_setup.html">Cameras</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="learn-more.html">How It Works</a></li>
+        <!-- Admin-only: hidden by default -->
+        <li class="admin-only-nav"><a href="diagnostics.html">Diagnostics</a></li>
+        <li class="admin-only-nav"><a href="notifications.html">Alerts</a></li>
+        <li class="admin-only-nav"><a href="incident_log.html">Incidents</a></li>
+        <li class="admin-only-nav"><a href="admin.html">Admin</a></li>
+      </ul>
 
-      <!-- Unified Menu Container -->
-      <div class="nav-menu" id="navLinks">
-        <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="solution.html">Solution</a></li>
-            <li><a href="dashboard.html" class="active">Dashboard</a></li>
-            <li><a href="plant_map.html">Plant Map</a></li>
-            <li><a href="chart.html">Danger Analytics</a></li>
-            <li><a href="history.html">Detection Logs</a></li>
-            <li><a href="setup.html">Gateway Setup</a></li>
-            <li><a href="camera_setup.html">Camera Setup</a></li>
-            <li><a href="contact.html">Contact</a></li>
-            <li><a href="learn-more.html">How It Works</a></li>
-            <!-- Admin-only links: hidden by default, revealed by auth.js for admins -->
-            <li class="admin-only-nav"><a href="diagnostics.html">Diagnostics</a></li>
-            <li class="admin-only-nav"><a href="notifications.html">Alerts</a></li>
-            <li class="admin-only-nav"><a href="incident_log.html">Incident Logs</a></li>
-            <li class="admin-only-nav"><a href="admin.html">Admin</a></li>
-        </ul>
-
+      <div class="nav-right">
         <div class="auth-buttons" id="auth-buttons">
           <a href="login.html">Log In</a>
           <a href="signup.html">Sign Up</a>
         </div>
-
-        <div id="profile-section" style="display:none;" class="profile-box">
+        <div id="profile-section" class="profile-box">
           <span id="profile-name" class="profile-name">User</span>
           <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
       </div>
+    </div>
 
-      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </nav>
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
 
-    <!-- ================= MAIN ================= -->
-    <main class="main">
+  <!-- ====== MAIN CONTENT ====== -->
+  <main class="main-content">
 
-      <!-- Page Header -->
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:6px;">
-        <div>
-          <h1>Live Safety Dashboard</h1>
-          <p class="subtitle">Real-time industrial monitoring of human proximity, machine states, and AI-based microsecond safety intercepts.</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
-          <span class="status-pill online">
-            <span class="status-pill-dot"></span>AI Scanner Online
-          </span>
-          <span id="dash-live-time" style="font-family:'Space Grotesk',sans-serif; font-size:11px; color:var(--text-muted); background:rgba(6,182,212,0.06); border:1px solid rgba(6,182,212,0.12); padding:5px 12px; border-radius:8px;">--:--:-- UTC</span>
-        </div>
+    <!-- ── PAGE TITLE STRIP ── -->
+    <div class="page-title-strip">
+      <div class="page-title-left">
+        <h1>Live Safety Dashboard</h1>
+        <p>Real-time industrial monitoring — human proximity, machine states, and AI-based microsecond safety intercepts.</p>
       </div>
-      <div class="section-heading">Live Telemetry Grid</div>
-
-      <!-- ================= GRID ================= -->
-      <div class="dashboard-grid">
-
-        <!-- 🎥 CAMERA VIEWPORT GRID -->
-        <div class="box camera" style="grid-column: span 2; grid-row: span 2; display: flex; flex-direction: column;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-            <div class="box-title" style="margin-bottom: 0;">🎥 Multi-Sensor AI Grid Console</div>
-            
-            <!-- GRID SELECTOR TOOLBAR -->
-            <div style="display: flex; gap: 4px; background: rgba(2, 6, 23, 0.6); padding: 4px; border-radius: 6px; border: 1px solid rgba(6, 182, 212, 0.15);">
-              <button type="button" class="btn-grid-tab active" data-grid="1">1 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="4">4 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="9">9 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="16">16 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="25">25 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="36">36 CH</button>
-            </div>
-          </div>
-
-          <div class="camera-viewport-wrapper" style="position: relative; flex: 1; display: flex; flex-direction: column;">
-            <!-- DYNAMIC GRID CONTAINER -->
-            <div id="cameraGridContainer" class="camera-grid-1" style="display: grid; gap: 10px; background: rgba(0,0,0,0.65); border-radius: 10px; padding: 10px; border: 1px solid rgba(6, 182, 212, 0.15); flex: 1; width: 100%; min-height: 380px;">
-              <!-- Grid Slots populated dynamically by javascript -->
-            </div>
-          </div>
-
-          <div class="camera-status" id="camera-status-text" style="margin-top: 10px; font-size: 11px; color: var(--text-muted);">
-            SYSTEM READY – Click or drag camera nodes below to construct dynamic CCTV grid matrix. Double click any active tile to maximize.
-          </div>
-        </div>  
-
-        <!-- 🛡 SAFETY STATUS CARD -->
-        <div class="box safe" id="safety-box">
-          <div class="box-title">🛡 Safety Zone</div>
-          <div class="box-value" id="safety-status">SAFE</div>
-          <div class="box-desc" id="safety-desc">
-            Human distance above threshold
-          </div>
-        </div>
-
-        <!-- 🧠 AI CONFIDENCE -->
-        <div class="box">
-          <div class="box-title">🧠 AI Confidence</div>
-          <div class="box-value" id="confidence-value">0%</div>
-          <div class="box-desc">
-            YOLO Object Detection Accuracy
-          </div>
-        </div>
-
-        <!-- 🕒 SHIFT / MODE WATCHDOG CARD -->
-        <div class="box" id="shift-watchdog-box">
-          <div class="box-title">🕒 Schedule Watchdog</div>
-          <div class="box-value" id="shift-watchdog-title" style="font-size: 22px;">--</div>
-          <div class="box-desc" id="shift-watchdog-status" style="color: var(--safe-green);">
-            Continuous Mode Active
-          </div>
-        </div>
-
-        <!-- 🚨 SYSTEM ACTION -->
-        <div class="box safe" id="action-box">
-          <div class="box-title">🚨 System Action</div>
-          <div class="box-value" id="system-action">RUN</div>
-          <div class="box-desc" id="system-desc">
-            System running normally
-          </div>
-        </div>
-
-        <!-- 🧠 AI TELEMETRY GRID -->
-        <div class="box" style="grid-column: span 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; text-align: center;">
-          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
-            <div class="metric-label">Human Count</div>
-            <div id="hud-human-count" class="metric-value">0</div>
-            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Detected Workers</div>
-          </div>
-          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
-            <div class="metric-label">Surveillance FPS</div>
-            <div id="hud-fps" class="metric-value">0.0</div>
-            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Real-time Feed Rate</div>
-          </div>
-          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
-            <div class="metric-label">Link Latency</div>
-            <div id="hud-latency" class="metric-value">0ms</div>
-            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Network Round-trip</div>
-          </div>
-          <div style="padding: 10px 8px;">
-            <div class="metric-label">Vision Model</div>
-            <div class="metric-value" style="color: var(--safe-green);">YOLOv8n</div>
-            <div style="font-size:10px; color:var(--safe-green); margin-top:3px; opacity:0.7;">Active &amp; Running</div>
-          </div>
-        </div>
-
-        <!-- 🧾 INCIDENT EVENT LOG -->
-        <div class="box incident-log-panel" style="grid-column: span 2; min-height: 250px; display: flex; flex-direction: column;">
-          <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <span>🧾 Real-Time Safety Threat Incident Log</span>
-            <div style="display: flex; gap: 6px;">
-              <button onclick="exportPDFReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); color: var(--primary-neon);">Export PDF</button>
-              <button onclick="exportExcelReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); color: var(--safe-green);">Export Excel</button>
-              <button onclick="clearIncidentLogs()" class="btn-danger-cyber" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(239,68,68,0.25);">Clear Logs</button>
-            </div>
-          </div>
-          <div id="incident-log-console" style="background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(6, 182, 212, 0.1); border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.5; color: var(--text-main); display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);">
-            <div style="color: var(--text-muted); text-align: center; margin-top: 50px;">Waiting for real-time safety telemetry events...</div>
-          </div>
-        </div>
-
+      <div class="page-title-right">
+        <span class="status-pill online">
+          <span class="status-pill-dot"></span>AI Scanner Online
+        </span>
+        <span class="live-clock-badge" id="dash-live-time">--:--:-- UTC</span>
       </div>
+    </div>
 
-      <!-- ================= CAMERA MANAGER PANEL ================= -->
-      <div class="section-heading">Sensor Node Registry</div>
-      <div class="box camera-manager-panel" style="padding: 25px; min-height: 350px;">
-        <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(6, 182, 212, 0.15); padding-bottom: 12px; margin-bottom: 20px;">
-          <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.5px;">🖥️ Industrial Sensor Node Manager</span>
-          <div style="font-size: 12px; font-family: 'Space Grotesk', sans-serif; display: flex; gap: 15px; color: var(--text-muted); align-items: center;">
-            <span>TOTAL: <b id="stat-total-cams" style="color: var(--primary-neon);">0</b></span>
-            <span style="color: rgba(255,255,255,0.15)">|</span>
-            <span>ONLINE: <b id="stat-online-cams" style="color: var(--safe-green);">0</b></span>
-            <span style="color: rgba(255,255,255,0.15)">|</span>
-            <span>OFFLINE: <b id="stat-offline-cams" style="color: var(--danger-red);">0</b></span>
+    <!-- ── KPI QUICK-STAT BAR ── -->
+    <div class="kpi-bar">
+      <div class="kpi-card cyan-accent">
+        <div class="kpi-label">Human Count</div>
+        <div class="kpi-value cyan" id="hud-human-count">0</div>
+        <div class="kpi-sub"><span>Workers detected in zone</span></div>
+      </div>
+      <div class="kpi-card green-accent">
+        <div class="kpi-label">Surveillance FPS</div>
+        <div class="kpi-value green" id="hud-fps">0.0</div>
+        <div class="kpi-sub"><span>Real-time feed rate</span></div>
+      </div>
+      <div class="kpi-card yellow-accent">
+        <div class="kpi-label">Link Latency</div>
+        <div class="kpi-value yellow" id="hud-latency">0ms</div>
+        <div class="kpi-sub"><span>Network round-trip</span></div>
+      </div>
+      <div class="kpi-card blue-accent">
+        <div class="kpi-label">Vision Model</div>
+        <div class="kpi-value" style="color:var(--blue)">YOLOv8n</div>
+        <div class="kpi-sub"><span style="color:var(--green)">● Active &amp; running</span></div>
+      </div>
+      <div class="kpi-card cyan-accent">
+        <div class="kpi-label">AI Confidence</div>
+        <div class="kpi-value cyan" id="confidence-value-kpi">0%</div>
+        <div class="kpi-sub"><span>Detection accuracy</span></div>
+      </div>
+    </div>
+
+    <!-- ── LIVE TELEMETRY GRID (2-col) ── -->
+    <div class="section-label">Live Camera Telemetry</div>
+    <div class="live-telemetry-grid">
+
+      <!-- LEFT: CAMERA CONSOLE -->
+      <div class="camera-console">
+        <div class="camera-console-header">
+          <div class="camera-console-title">
+            <span class="rec-dot"></span>
+            Multi-Sensor AI Grid Console
+          </div>
+          <div class="grid-tab-bar">
+            <button class="btn-grid-tab active" data-grid="1">1 CH</button>
+            <button class="btn-grid-tab" data-grid="4">4 CH</button>
+            <button class="btn-grid-tab" data-grid="9">9 CH</button>
+            <button class="btn-grid-tab" data-grid="16">16 CH</button>
+            <button class="btn-grid-tab" data-grid="25">25 CH</button>
+            <button class="btn-grid-tab" data-grid="36">36 CH</button>
           </div>
         </div>
 
-        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
-          <input type="text" id="searchCam" placeholder="Search Camera Nodes by Name or Location..." oninput="filterAndRenderCameras()" style="flex: 1; min-width: 250px; background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(6, 182, 212, 0.15); border-radius: 8px; padding: 10px 15px; color: var(--text-main); font-size: 13px; outline: none;" />
-          <select id="filterType" onchange="filterAndRenderCameras()" class="setup-dropdown" style="width: auto; padding: 10px 15px; margin-top: 0;">
-            <option value="ALL">All Types</option>
-            <option value="RTSP">RTSP Camera</option>
-            <option value="IP_CAMERA">Intranet IP Camera</option>
-            <option value="WEBCAM">Webcam / USB</option>
-          </select>
-          <select id="filterStatus" onchange="filterAndRenderCameras()" class="setup-dropdown" style="width: auto; padding: 10px 15px; margin-top: 0;">
-            <option value="ALL">All Statuses</option>
-            <option value="Online">Online</option>
-            <option value="Offline">Offline</option>
-          </select>
-          <a href="camera_setup.html" class="history-btn" style="padding: 10px 20px; margin: 0; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: center;">+ Add Camera</a>
-        </div>
+        <!-- GRID CONTAINER — slots injected by JS -->
+        <div id="cameraGridContainer" class="camera-grid-1"></div>
 
-        <!-- Renders dynamically -->
-        <div id="camerasGridList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 20px; margin-top: 10px;">
-          <!-- Camera Cards injected here -->
+        <div class="camera-console-footer">
+          <div class="cam-status-text" id="camera-status-text">
+            SYSTEM READY — Click or drag camera nodes below to build the CCTV grid matrix. Double-click to fullscreen.
+          </div>
+          <div class="cam-meta">
+            <span><span>RES</span><span class="val">1920×1080</span></span>
+            <span><span>ENC</span><span class="val">H.265</span></span>
+            <span><span>PROTO</span><span class="val">RTSP</span></span>
+          </div>
         </div>
       </div>
 
-      <!-- ================= CONTROLS ================= -->
-      <div class="section-heading">Quick Actions</div>
-      <div class="history-btn-wrapper">
-        <a href="history.html" class="history-btn">
-          📊 View Detection History →
-        </a>
-        <button id="btnLogoutCam" class="btn-danger-cyber">
-          Disconnect Camera
-        </button>
+      <!-- RIGHT: METRIC SIDEBAR -->
+      <div class="metric-sidebar">
+
+        <!-- Safety Zone -->
+        <div class="metric-card state-safe" id="safety-box">
+          <div class="metric-card-label"><span class="icon">🛡</span> Safety Zone</div>
+          <div class="metric-card-value" id="safety-status">SAFE</div>
+          <div class="metric-card-desc" id="safety-desc">Human distance above threshold</div>
+        </div>
+
+        <!-- AI Confidence -->
+        <div class="metric-card">
+          <div class="metric-card-label"><span class="icon">🧠</span> AI Confidence</div>
+          <div class="metric-card-value cyan-text" id="confidence-value">0%</div>
+          <div class="conf-bar-wrap"><div class="conf-bar-fill" id="conf-bar"></div></div>
+          <div class="metric-card-desc" style="margin-top:8px">YOLO object detection accuracy</div>
+        </div>
+
+        <!-- Schedule Watchdog -->
+        <div class="metric-card" id="shift-watchdog-box">
+          <div class="metric-card-label"><span class="icon">🕒</span> Schedule Watchdog</div>
+          <div class="metric-card-value mono cyan-text" id="shift-watchdog-title">24×7 FULL-TIME</div>
+          <div class="metric-card-desc" id="shift-watchdog-status" style="color:var(--green)">Continuous surveillance active</div>
+        </div>
+
+        <!-- System Action -->
+        <div class="metric-card state-safe" id="action-box">
+          <div class="metric-card-label"><span class="icon">🚨</span> System Action</div>
+          <div class="metric-card-value green-text" id="system-action">RUN</div>
+          <div class="metric-card-desc" id="system-desc">PLC machine line operating normally</div>
+        </div>
+
       </div>
+    </div>
 
-    </main>
+    <!-- ── CONTROL WIDGETS ROW ── -->
+    <div class="section-label">System Telemetry Widgets</div>
+    <div class="widgets-row">
+      <div class="widget-card">
+        <div class="widget-label">📡 PLC Network</div>
+        <div class="widget-value">×4</div>
+        <div class="widget-sub">PROFINET controllers active</div>
+      </div>
+      <div class="widget-card">
+        <div class="widget-label">🔁 Camera Grid</div>
+        <div class="widget-value" id="w-cam-count">0</div>
+        <div class="widget-sub">Sensor nodes registered</div>
+      </div>
+      <div class="widget-card">
+        <div class="widget-label">🟢 Online Nodes</div>
+        <div class="widget-value green" id="w-online-count">0</div>
+        <div class="widget-sub">Health check passing</div>
+      </div>
+      <div class="widget-card">
+        <div class="widget-label">🔴 Offline Nodes</div>
+        <div class="widget-value red" id="w-offline-count">0</div>
+        <div class="widget-sub">Reconnection queued</div>
+      </div>
+    </div>
 
-    <!-- ================= TELEMETRY FOOTER ================= -->
-    <footer class="telemetry-footer">
-        <!-- LEFT CLUSTER -->
-        <div class="footer-cluster left-cluster">
-            <!-- Desktop/Tablet Version -->
-            <div class="footer-item desktop-only">
-                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
-                <span class="footer-item-label">SAFETY CORE</span>
-                <span class="footer-item-value">v4.2.1</span>
-            </div>
-            <div class="footer-separator desktop-only"></div>
-            <div class="footer-item desktop-only">
-                <span class="footer-item-label">VISION MODEL</span>
-                <span class="footer-item-value">v3.0</span>
-            </div>
-            <!-- Mobile Version -->
-            <div class="footer-item mobile-only" style="color: var(--safe-green); font-weight: bold; text-shadow: 0 0 8px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 8px;">
-                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
-                <span class="footer-item-label" style="color: var(--safe-green); font-weight: 700;">SYSTEM ONLINE</span>
-            </div>
+    <!-- ── INCIDENT LOG PANEL ── -->
+    <div class="section-label">Threat Incident Log</div>
+    <div class="incident-panel">
+      <div class="incident-panel-header">
+        <div class="incident-panel-title">
+          🧾 Real-Time Safety Threat Incident Log
         </div>
-
-        <!-- CENTER CLUSTER -->
-        <div class="footer-cluster center-cluster">
-            <!-- Desktop/Tablet Version -->
-            <div class="footer-item desktop-only">
-                <span class="footer-item-label">PLC NETWORK</span>
-                <span class="footer-item-value">×4</span>
-            </div>
-            <div class="footer-separator desktop-only"></div>
-            <div class="footer-item desktop-only">
-                <span class="footer-item-label">CAMERA GRID</span>
-                <span class="footer-item-value">×4</span>
-            </div>
-            <div class="footer-separator desktop-only"></div>
-            <div class="footer-item desktop-only">
-                <span class="footer-item-label">LATENCY</span>
-                <span class="footer-item-value">8.24ms</span>
-            </div>
-            <!-- Mobile Version -->
-            <div class="footer-item mobile-only">
-                <span class="footer-item-label">NETWORK</span>
-                <span class="footer-item-value">×4</span>
-            </div>
-            <div class="footer-separator mobile-only"></div>
-            <div class="footer-item mobile-only">
-                <span class="footer-item-label">CAMERAS</span>
-                <span class="footer-item-value">×4</span>
-            </div>
+        <div class="incident-actions">
+          <button class="btn-action cyan-btn" onclick="exportPDFReport()">Export PDF</button>
+          <button class="btn-action green-btn" onclick="exportExcelReport()">Export Excel</button>
+          <button class="btn-action red-btn" id="clearLogsBtn" onclick="clearIncidentLogs()">Clear Logs</button>
         </div>
-
-        <!-- RIGHT CLUSTER -->
-        <div class="footer-cluster right-cluster">
-            <div class="utc-clock-wrapper">
-                <span class="utc-label desktop-only">UTC</span>
-                <span class="utc-time" id="footer-live-clock">--:--:--</span>
-            </div>
+      </div>
+      <div id="incident-log-console" class="incident-console">
+        <div class="incident-console-empty">
+          <div class="empty-icon">📡</div>
+          <div class="empty-text">Waiting for real-time safety telemetry events...</div>
         </div>
-    </footer>
+      </div>
+    </div>
 
-  </div>
+    <!-- ── SENSOR NODE MANAGER ── -->
+    <div class="section-label">Sensor Node Registry</div>
+    <div class="node-manager">
+      <div class="node-manager-header">
+        <div class="node-manager-title">🖥️ Industrial Sensor Node Manager</div>
+        <div class="node-stats">
+          <span>TOTAL <span class="ns-v cyan" id="stat-total-cams">0</span></span>
+          <span>ONLINE <span class="ns-v green" id="stat-online-cams">0</span></span>
+          <span>OFFLINE <span class="ns-v red" id="stat-offline-cams">0</span></span>
+        </div>
+      </div>
+      <div class="node-manager-controls">
+        <input type="text" class="node-search" id="searchCam"
+               placeholder="Search camera nodes by name or location…"
+               oninput="filterAndRenderCameras()">
+        <select id="filterType" class="node-select" onchange="filterAndRenderCameras()">
+          <option value="ALL">All Types</option>
+          <option value="RTSP">RTSP Camera</option>
+          <option value="IP_CAMERA">IP Camera</option>
+          <option value="WEBCAM">Webcam / USB</option>
+        </select>
+        <select id="filterStatus" class="node-select" onchange="filterAndRenderCameras()">
+          <option value="ALL">All Statuses</option>
+          <option value="Online">Online</option>
+          <option value="Offline">Offline</option>
+        </select>
+        <a href="camera_setup.html" class="btn-add-cam">+ Add Camera</a>
+      </div>
+      <div class="node-grid-body" id="camerasGridList">
+        <!-- Camera cards injected by JS -->
+      </div>
+    </div>
 
-  <!-- ================= JAVASCRIPT ================= -->
-  
-  <!-- Particles canvas, clock ticking overlays -->
-  <script>
-    // Particle Backdrop Generator
-    const canvas = document.getElementById('particle-canvas');
-    const ctx = canvas.getContext('2d');
+    <!-- ── QUICK ACTIONS ── -->
+    <div class="section-label">Quick Actions</div>
+    <div class="quick-actions-bar">
+      <a href="history.html" class="btn-primary">📊 View Detection History →</a>
+      <button id="btnLogoutCam" class="btn-danger">⏏ Disconnect Camera</button>
+    </div>
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+  </main>
+
+  <!-- ====== TELEMETRY FOOTER ====== -->
+  <footer class="tele-footer">
+    <div class="tele-cluster">
+      <div class="tele-item">
+        <span class="tele-dot"></span>
+        <span>SAFETY CORE</span>
+        <span class="tg">v4.2.1</span>
+      </div>
+      <div class="tele-sep"></div>
+      <div class="tele-item"><span>VISION MODEL</span><span class="tv">v3.0</span></div>
+      <div class="tele-sep"></div>
+      <div class="tele-item"><span>PLC NETWORK</span><span class="tv">×4</span></div>
+      <div class="tele-sep"></div>
+      <div class="tele-item"><span>CAMERA GRID</span><span class="tv" id="footer-cam-count">×0</span></div>
+    </div>
+    <div class="tele-cluster">
+      <div class="tele-item"><span>LATENCY</span><span class="tv" id="footer-latency-val">8.2ms</span></div>
+      <div class="tele-sep"></div>
+      <div class="tele-item"><span class="tv" id="footer-live-clock">--:--:-- UTC</span></div>
+    </div>
+  </footer>
+
+</div><!-- end .page-shell -->
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+
+<!-- Particle backdrop + clocks -->
+<script>
+  // ── Particle Backdrop ──────────────────────────────────────
+  const canvas = document.getElementById('particle-canvas');
+  const ctx    = canvas.getContext('2d');
+  function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x      = Math.random() * canvas.width;
+      this.y      = canvas.height + Math.random() * 120;
+      this.size   = Math.random() * 1.8 + 0.4;
+      this.speedY = -(Math.random() * 0.6 + 0.15);
+      this.speedX = Math.random() * 0.3 - 0.15;
+      this.alpha  = Math.random() * 0.45 + 0.08;
+      this.color  = Math.random() > 0.45 ? '6, 182, 212' : '59, 130, 246';
     }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    class Particle {
-        constructor() {
-            this.x = Math.random() * canvas.width;
-            this.y = canvas.height + Math.random() * 100;
-            this.size = Math.random() * 2 + 0.5;
-            this.speedY = -(Math.random() * 0.7 + 0.2);
-            this.speedX = Math.random() * 0.4 - 0.2;
-            this.alpha = Math.random() * 0.5 + 0.1;
-            this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
-        }
-
-        update() {
-            this.y += this.speedY;
-            this.x += this.speedX;
-            if (this.y < -10) {
-                this.y = canvas.height + 10;
-                this.x = Math.random() * canvas.width;
-            }
-        }
-
-        draw() {
-            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
+    update() {
+      this.y += this.speedY; this.x += this.speedX;
+      if (this.y < -10) this.reset();
     }
-
-    const particlesArray = [];
-    const count = Math.min(60, Math.floor(window.innerWidth / 20));
-    for (let i = 0; i < count; i++) {
-        particlesArray.push(new Particle());
+    draw() {
+      ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
     }
+  }
+  const particles = [];
+  const pCount = Math.min(70, Math.floor(window.innerWidth / 18));
+  for (let i = 0; i < pCount; i++) particles.push(new Particle());
+  function animateP() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(animateP);
+  }
+  animateP();
 
-    function animateParticles() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (let i = 0; i < particlesArray.length; i++) {
-            particlesArray[i].update();
-            particlesArray[i].draw();
-        }
-        requestAnimationFrame(animateParticles);
+  // ── Clocks & Latency ──────────────────────────────────────
+  function updateAllClocks() {
+    const now = new Date();
+    const utc = now.toISOString().substr(11, 8) + ' UTC';
+    const full = now.toISOString().replace('T',' ').substring(0, 19);
+
+    const sc = document.getElementById('system-clock');
+    const dt = document.getElementById('dash-live-time');
+    const fc = document.getElementById('footer-live-clock');
+
+    if (sc) sc.textContent = full + ' UTC';
+    if (dt) dt.textContent = utc;
+    if (fc) fc.textContent = utc;
+  }
+  updateAllClocks();
+  setInterval(updateAllClocks, 1000);
+
+  setInterval(() => {
+    const lat = Math.floor(5 + Math.random() * 7);
+    const sl = document.getElementById('system-latency');
+    const fl = document.getElementById('footer-latency-val');
+    if (sl) sl.textContent = `LATENCY: ${lat}ms`;
+    if (fl) fl.textContent = `${lat}.${Math.floor(Math.random()*9)}ms`;
+  }, 2800);
+</script>
+
+<!-- jsPDF + SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Main Dashboard Logic -->
+<script>
+  const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+    ? "http://localhost:5000"
+    : "https://impactthon-wjut.onrender.com";
+
+  const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+    ? "http://localhost:10000"
+    : "https://impactthon-ai.onrender.com";
+
+  let cameras         = [];
+  let activeCamera    = null;
+  let healthInterval  = null;
+  let timerInterval   = null;
+  let currentGridSize = 1;
+  let dragSourceIndex = null;
+  let gridMapping     = {};
+
+  // ── HUD Toast ────────────────────────────────────────────
+  function showHUDToast(title, body, type) {
+    const el = document.getElementById('hudToast');
+    const tt = document.getElementById('toastTitle');
+    const tb = document.getElementById('toastBody');
+    if (!el) return;
+    tt.textContent = title;
+    tb.textContent = body;
+    tt.style.color = type === 'success' ? 'var(--green)' : type === 'danger' ? 'var(--red)' : 'var(--cyan)';
+    el.style.display = 'flex';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.display = 'none'; }, 3500);
+  }
+
+  // ── IP helpers ───────────────────────────────────────────
+  function isPrivateIP(urlStr) {
+    if (!urlStr) return false;
+    let c = urlStr.toLowerCase().trim().replace(/^(rtsp|rtmp|http|https):\/\//, '');
+    if (c.includes('@')) c = c.substring(c.indexOf('@') + 1);
+    const ei = c.search(/[:/]/); if (ei !== -1) c = c.substring(0, ei);
+    if (/^\d+$/.test(c)) return true;
+    if (c === 'localhost' || c === '127.0.0.1') return true;
+    if (c.startsWith('192.168.') || c.startsWith('10.')) return true;
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(c)) return true;
+    return false;
+  }
+
+  // ── Incident Log ─────────────────────────────────────────
+  function addIncidentLog(type, severity, cameraName = "System") {
+    const consoleEl = document.getElementById("incident-log-console");
+    if (!consoleEl) return;
+    // Clear empty state
+    const emptyEl = consoleEl.querySelector('.incident-console-empty');
+    if (emptyEl) emptyEl.remove();
+
+    const ts   = new Date().toLocaleTimeString();
+    const entry = document.createElement("div");
+    entry.className = "log-entry";
+    entry.innerHTML = `
+      <span class="log-ts">[${ts}]</span>
+      <span class="log-sev ${severity}">[${severity}]</span>
+      <span class="log-body"><b>${cameraName}</b>: ${type}</span>`;
+    consoleEl.appendChild(entry);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  function clearIncidentLogs() {
+    const consoleEl = document.getElementById("incident-log-console");
+    if (!consoleEl) return;
+    const ts = new Date().toLocaleTimeString();
+    consoleEl.innerHTML = `
+      <div class="log-entry">
+        <span class="log-ts">[${ts}]</span>
+        <span class="log-sev" style="color:var(--cyan)">[SYSTEM]</span>
+        <span class="log-body">Incident log console cleared by operator.</span>
+      </div>`;
+  }
+
+  // ── Shift Watchdog ───────────────────────────────────────
+  function initShiftWatchdog() {
+    const titleEl  = document.getElementById("shift-watchdog-title");
+    const statusEl = document.getElementById("shift-watchdog-status");
+    const configStr = localStorage.getItem("systemConfig");
+    if (!configStr) {
+      if (titleEl)  titleEl.textContent  = "24×7 FULL-TIME";
+      if (statusEl) { statusEl.textContent = "Continuous Surveillance Active"; statusEl.style.color = "var(--green)"; }
+      return;
     }
-    animateParticles();
-
-    // Real-time ticking system clock inside HUD
-    const clockElement = document.getElementById('system-clock');
-    function updateClock() {
-        if (!clockElement) return;
-        const now = new Date();
-        const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
-        clockElement.textContent = `SYSTEM TIME: ${timeString} UTC`;
+    const config = JSON.parse(configStr);
+    if (config.mode === "FULLTIME") {
+      if (titleEl)  titleEl.textContent  = "24×7 FULL-TIME";
+      if (statusEl) { statusEl.textContent = "Continuous Surveillance Active"; statusEl.style.color = "var(--green)"; }
+    } else if (config.mode === "AUTO") {
+      if (titleEl)  titleEl.textContent  = config.timeSlot || "Scheduled Shift";
+      if (statusEl) { statusEl.textContent = "Shift Scanning Core Active"; statusEl.style.color = "var(--cyan)"; }
+    } else if (config.mode === "MANUAL") {
+      if (titleEl) titleEl.textContent = config.timeSlot || "Manual Shift";
+      if (timerInterval) clearInterval(timerInterval);
+      startManualTimer(config.timeSlot);
     }
-    updateClock();
-    setInterval(updateClock, 1000);
+  }
 
-    // Simulate latency shifts inside HUD
-    setInterval(() => {
-        const latencyEl = document.getElementById('system-latency');
-        if (latencyEl) {
-            latencyEl.textContent = `LATENCY: ${Math.floor(6 + Math.random() * 5)}ms`;
-        }
-    }, 3000);
-
-    // FUTURISTIC LIVE TELEMETRY FOOTER CLOCK + Header Badge
-    (function() {
-        const utcClock = document.getElementById('footer-live-clock');
-        const dashTime = document.getElementById('dash-live-time');
-        function tick() {
-            const now = new Date();
-            const t = now.toISOString().substr(11, 8) + ' UTC';
-            if (utcClock) utcClock.textContent = t;
-            if (dashTime) dashTime.textContent = t;
-        }
-        tick();
-        setInterval(tick, 1000);
-    })();
-  </script>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script>
-    const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
-      ? "http://localhost:5000"
-      : "https://impactthon-wjut.onrender.com";
-
-    const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
-      ? "http://localhost:10000"
-      : "https://impactthon-ai.onrender.com";
-
-    let cameras = [];
-    let activeCamera = null;
-    let healthInterval = null;
-    let timerInterval = null;
-    let currentGridSize = 1;
-    let dragSourceIndex = null;
-    let gridMapping = {};
-
-    function isPrivateIP(urlStr) {
-      if (!urlStr) return false;
-      let cleanUrl = urlStr.toLowerCase().trim();
-      
-      // Extract host/ip
-      // 1. Remove protocol schema
-      cleanUrl = cleanUrl.replace(/^(rtsp|rtmp|http|https):\/\//, '');
-      // 2. Remove credentials if present (anything before '@')
-      if (cleanUrl.includes('@')) {
-        cleanUrl = cleanUrl.substring(cleanUrl.indexOf('@') + 1);
-      }
-      // 3. Remove port and path (anything starting with ':' or '/')
-      const endIdx = cleanUrl.search(/[:\/]/);
-      if (endIdx !== -1) {
-        cleanUrl = cleanUrl.substring(0, endIdx);
-      }
-      
-      // Pure digit check (e.g. USB index "0", "1")
-      if (/^\d+$/.test(cleanUrl)) return true;
-      
-      if (cleanUrl === 'localhost' || cleanUrl === '127.0.0.1') return true;
-      if (cleanUrl.startsWith('192.168.')) return true;
-      if (cleanUrl.startsWith('10.')) return true;
-      
-      // Match 172.16.x.x to 172.31.x.x
-      const match = cleanUrl.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./);
-      if (match) return true;
-      
-      return false;
+  let stopTriggered = false;
+  function startManualTimer(timeRange) {
+    if (!timeRange || !timeRange.includes(" - ")) {
+      const s = document.getElementById("shift-watchdog-status");
+      if (s) s.textContent = "Temporal scheduler error";
+      return;
     }
-
-    // ==========================================
-    // 🧾 INCIDENT EVENTS LOGGER
-    // ==========================================
-    function addIncidentLog(type, severity, cameraName = "System") {
-      const consoleEl = document.getElementById("incident-log-console");
-      if (!consoleEl) return;
-
-      if (consoleEl.innerHTML.includes("Waiting for real-time")) {
-        consoleEl.innerHTML = "";
-      }
-
-      const timestamp = new Date().toLocaleTimeString();
-      const div = document.createElement("div");
-      div.style.borderBottom = "1px solid rgba(6, 182, 212, 0.08)";
-      div.style.paddingBottom = "4px";
-
-      let color = "var(--text-main)";
-      if (severity === "DANGER" || severity === "CRITICAL") color = "var(--danger-red)";
-      else if (severity === "WARNING") color = "var(--warning-yellow)";
-
-      div.innerHTML = `
-        <span style="color: var(--text-muted); font-size: 10px;">[${timestamp}]</span> 
-        <span style="color: ${color}; font-weight: 700;">[${severity}]</span> 
-        <span><b>${cameraName}</b>: ${type}</span>
-      `;
-      consoleEl.appendChild(div);
-      consoleEl.scrollTop = consoleEl.scrollHeight;
-    }
-
-    function clearIncidentLogs() {
-      const consoleEl = document.getElementById("incident-log-console");
-      if (consoleEl) {
-        consoleEl.innerHTML = `<div style="color: var(--text-muted); text-align: center; margin-top: 50px;">Waiting for real-time safety telemetry events...</div>`;
-      }
-    }
-
-    // ==========================================
-    // 🕒 CONFIG SCHEDULER WATCHDOG
-    // ==========================================
-    function initShiftWatchdog() {
-      const titleEl = document.getElementById("shift-watchdog-title");
+    const [startStr, endStr] = timeRange.split(" - ");
+    timerInterval = setInterval(() => {
+      const now = new Date(), end = new Date();
+      const [eH, eM] = endStr.split(":").map(Number);
+      end.setHours(eH, eM, 0, 0);
+      const [sH] = startStr.split(":").map(Number);
+      if (eH < sH && now.getHours() >= sH) end.setDate(end.getDate() + 1);
       const statusEl = document.getElementById("shift-watchdog-status");
-      
-      const configStr = localStorage.getItem("systemConfig");
-      if (!configStr) {
-        if (titleEl) titleEl.innerText = "24x7 FULL-TIME";
-        if (statusEl) {
-          statusEl.innerText = "Continuous Surveillance Active";
-          statusEl.style.color = "var(--safe-green)";
-        }
-        return;
+      if (now >= end) {
+        if (statusEl) { statusEl.textContent = "⚠️ TIME SHIFT EXPIRED"; statusEl.style.color = "var(--red)"; }
+        const sa = document.getElementById("system-action"), sd = document.getElementById("system-desc"), ab = document.getElementById("action-box");
+        if (sa) sa.textContent = "STOP"; if (sd) sd.textContent = "Temporal shift finished";
+        if (ab) { ab.className = "metric-card state-danger"; }
+        triggerForceStop();
+      } else {
+        const diff = end - now;
+        const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s2 = Math.floor((diff%60000)/1000);
+        if (statusEl) { statusEl.textContent = `Shift ends in ${h}h ${m}m ${s2}s`; statusEl.style.color = "var(--green)"; }
       }
+    }, 1000);
+  }
 
-      const config = JSON.parse(configStr);
-      if (config.mode === "FULLTIME") {
-        if (titleEl) titleEl.innerText = "24x7 FULL-TIME";
-        if (statusEl) {
-          statusEl.innerText = "Continuous Surveillance Active";
-          statusEl.style.color = "var(--safe-green)";
-        }
-      } else if (config.mode === "AUTO") {
-        if (titleEl) titleEl.innerText = config.timeSlot || "Scheduled Shift";
-        if (statusEl) {
-          statusEl.innerText = "Shift Scanning Core Active";
-          statusEl.style.color = "var(--primary-neon)";
-        }
-      } else if (config.mode === "MANUAL") {
-        if (titleEl) titleEl.innerText = config.timeSlot || "Manual Shift";
-        if (timerInterval) clearInterval(timerInterval);
-        startManualTimer(config.timeSlot);
-      }
-    }
+  async function triggerForceStop() {
+    if (stopTriggered) return; stopTriggered = true;
+    addIncidentLog("Scheduled shift expired. Dispatched E-Stop relay signal.", "WARNING");
+    try {
+      const url = activeCamera ? (isPrivateIP(activeCamera.cameraUrl) ? "http://localhost:5000" : AI_SERVICE_URL) : AI_SERVICE_URL;
+      await fetch(`${url}/api/force_stop`, { method: "POST" });
+    } catch(e) { console.error("Force stop call failed", e); }
+  }
 
-    let stopTriggered = false;
-    function startManualTimer(timeRange) {
-      if (!timeRange || !timeRange.includes(" - ")) {
-        document.getElementById("shift-watchdog-status").innerText = "Temporal scheduler error";
-        return;
-      }
-      const [startStr, endStr] = timeRange.split(" - ");
-
-      timerInterval = setInterval(() => {
-        const now = new Date();
-        const end = new Date();
-        const [endH, endM] = endStr.split(":").map(Number);
-        end.setHours(endH, endM, 0, 0);
-
-        const [startH, startM] = startStr.split(":").map(Number);
-        if (endH < startH && now.getHours() >= startH) {
-          end.setDate(end.getDate() + 1);
-        }
-
-        const statusEl = document.getElementById("shift-watchdog-status");
-        if (now >= end) {
-          if (statusEl) {
-            statusEl.innerText = "⚠️ TIME SHIFT EXPIRED";
-            statusEl.style.color = "var(--danger-red)";
-          }
-
-          const sysAct = document.getElementById("system-action");
-          const sysDesc = document.getElementById("system-desc");
-          const actionBox = document.getElementById("action-box");
-
-          if (sysAct) sysAct.innerText = "STOP";
-          if (sysDesc) sysDesc.innerText = "Temporal shift finished";
-          if (actionBox) {
-            actionBox.classList.add("danger");
-            actionBox.classList.remove("safe");
-          }
-
-          triggerForceStop();
-        } else {
-          const diff = end - now;
-          const hours = Math.floor(diff / 3600000);
-          const mins = Math.floor((diff % 3600000) / 60000);
-          const secs = Math.floor((diff % 60000) / 1000);
-          if (statusEl) {
-            statusEl.innerText = `Shift ends in ${hours}h ${mins}m ${secs}s`;
-            statusEl.style.color = "var(--safe-green)";
-          }
-        }
-      }, 1000);
-    }
-
-    async function triggerForceStop() {
-      if (stopTriggered) return;
-      stopTriggered = true;
-      addIncidentLog("Scheduled shift expired. Dispatched E-Stop relay signal.", "WARNING");
-      try {
-        const activeUrl = activeCamera ? (isPrivateIP(activeCamera.cameraUrl) ? "http://localhost:5000" : AI_SERVICE_URL) : AI_SERVICE_URL;
-        await fetch(`${activeUrl}/api/force_stop`, { method: "POST" });
-      } catch (e) {
-        console.error("Force stop call failed", e);
-      }
-    }
-
-    // ==========================================
-    // 🖥️ MULTI-CAMERA LIFE CYCLE MANAGER
-    // ==========================================
-    async function loadCameras() {
-      let cached = [];
-      try {
-        const saved = localStorage.getItem("safetyShieldCameras");
-        if (saved) {
-          cached = JSON.parse(saved);
-        }
-      } catch(e) {
-        console.error("Error reading safetyShieldCameras", e);
-      }
-
-      // Sync from backend
-      try {
-        const token = localStorage.getItem("token");
-        const headers = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const res = await fetch(`${API_BASE_URL}/api/camera/all`, { headers });
-        const data = await res.json();
-        if (data.success && data.cameras) {
-          const cloudCams = data.cameras;
-          
-          const merged = cloudCams.map((cc, i) => {
-            const matchLocal = cached.find(lc => lc.cameraUrl === cc.url);
-            return {
-              cameraId: matchLocal ? matchLocal.cameraId : `cam_${cc._id || Date.now() + i}`,
-              cameraName: cc.name || "Cloud Camera Node",
-              cameraType: cc.cameraType || "IP_CAMERA",
-              cameraUrl: cc.url,
-              username: cc.username || "",
-              password: cc.password || "",
-              location: matchLocal ? matchLocal.location : "Operational Field",
-              description: matchLocal ? matchLocal.description : "Auto synced cloud feed",
-              status: cc.status || "Offline",
-              aiStatus: "Ready",
-              fps: 60.0,
-              latency: 8.0,
-              brand: cc.brand || "Generic",
-              channelId: cc.channelId || 1,
-              active: matchLocal ? matchLocal.active : (i === 0)
-            };
-          });
-          
-          if (merged.length > 0) {
-            cameras = merged;
-            localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
-          } else {
-            cameras = cached;
-          }
-        } else {
-          cameras = cached;
-        }
-      } catch (err) {
-        console.warn("Could not sync cloud cameras. Operating in sandbox mode.", err);
-        cameras = cached;
-      }
-
-      if (cameras.length === 0) {
-        cameras = [{
-          cameraId: "cam_default",
-          cameraName: "Local Integrated Cam 1",
-          cameraType: "WEBCAM",
-          cameraUrl: "0",
-          username: "",
-          password: "",
-          location: "Operator Bay 1",
-          description: "USB fallback web camera node",
-          status: "Online",
-          aiStatus: "Ready",
-          fps: 60.0,
-          latency: 7.5,
-          brand: "Generic",
-          channelId: 1,
-          active: true
-        }];
+  // ── Camera Loader ─────────────────────────────────────────
+  async function loadCameras() {
+    let cached = [];
+    try { const s = localStorage.getItem("safetyShieldCameras"); if (s) cached = JSON.parse(s); } catch(e) {}
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res  = await fetch(`${API_BASE_URL}/api/camera/all`, { headers });
+      const data = await res.json();
+      if (data.success && data.cameras && data.cameras.length > 0) {
+        cameras = data.cameras.map((cc, i) => {
+          const m = cached.find(lc => lc.cameraUrl === cc.url);
+          return { cameraId: m ? m.cameraId : `cam_${cc._id||Date.now()+i}`, cameraName: cc.name||"Cloud Camera Node",
+            cameraType: cc.cameraType||"IP_CAMERA", cameraUrl: cc.url, username: cc.username||"", password: cc.password||"",
+            location: m?m.location:"Field", description: m?m.description:"Auto synced", status: cc.status||"Offline",
+            fps: 60, latency: 8, brand: cc.brand||"Generic", channelId: cc.channelId||1, active: m?m.active:(i===0) };
+        });
         localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
-      }
+      } else { cameras = cached; }
+    } catch(err) { cameras = cached; }
 
-      activeCamera = cameras.find(c => c.active === true);
-      if (!activeCamera && cameras.length > 0) {
-        activeCamera = cameras[0];
-        activeCamera.active = true;
-      }
-
-      // Initialize grid mappings
-      cameras.forEach((cam, index) => {
-        if (gridMapping[index] === undefined) {
-          gridMapping[index] = cam.cameraUrl;
-        }
-      });
-
-      filterAndRenderCameras();
-      renderGrid();
-    }
-
-    function filterAndRenderCameras() {
-      const searchVal = document.getElementById("searchCam").value.toLowerCase();
-      const typeFilter = document.getElementById("filterType").value;
-      const statusFilter = document.getElementById("filterStatus").value;
-
-      const filtered = cameras.filter(cam => {
-        const matchesSearch = cam.cameraName.toLowerCase().includes(searchVal) || 
-                              cam.location.toLowerCase().includes(searchVal);
-        
-        const matchesType = typeFilter === "ALL" || 
-                            (typeFilter === "RTSP" && cam.cameraType === "RTSP") ||
-                            (typeFilter === "IP_CAMERA" && cam.cameraType === "IP_CAMERA") ||
-                            (typeFilter === "WEBCAM" && (cam.cameraType === "USB" || cam.cameraType === "WEBCAM"));
-        
-        const matchesStatus = statusFilter === "ALL" || cam.status === statusFilter;
-
-        return matchesSearch && matchesType && matchesStatus;
-      });
-
-      renderGridList(filtered);
-      updateTelemetryStats();
-    }
-
-    function renderGridList(list) {
-      const grid = document.getElementById("camerasGridList");
-      if (!grid) return;
-      grid.innerHTML = "";
-
-      list.forEach(cam => {
-        const isMapped = Object.values(gridMapping).includes(cam.cameraUrl);
-        const activeClass = isMapped ? "active" : "";
-        const indicatorColor = cam.status === "Online" ? "var(--safe-green)" : "var(--danger-red)";
-        
-        const card = document.createElement("div");
-        card.className = `setup-card ${activeClass}`;
-        card.style.padding = "20px";
-        card.style.cursor = "pointer";
-        card.style.display = "flex";
-        card.style.flexDirection = "column";
-        card.style.justifyContent = "space-between";
-        card.style.minHeight = "150px";
-        card.style.border = isMapped ? "1.5px solid var(--primary-neon)" : "1px solid rgba(6, 182, 212, 0.08)";
-        card.style.background = isMapped ? "rgba(6, 182, 212, 0.04)" : "rgba(6, 9, 21, 0.4)";
-        
-        card.innerHTML = `
-          <div onclick="addCameraToGrid('${cam.cameraUrl}')" style="flex: 1;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: #fff;">${cam.cameraName}</h4>
-              <span style="font-size: 8px; font-family: 'Space Grotesk', sans-serif; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--text-muted);">${cam.brand}</span>
-            </div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">📍 ${cam.location}</div>
-            <div style="font-size: 10px; color: var(--text-muted); font-family: 'Fira Code', monospace; margin-top: 8px; opacity: 0.8; word-break: break-all;">${cam.cameraUrl}</div>
-          </div>
-          
-          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 12px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 6px; height: 6px; border-radius: 50%; background-color: ${indicatorColor}; box-shadow: 0 0 6px ${indicatorColor};"></span>
-              <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">${cam.status}</span>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button onclick="deleteCameraNode('${cam.cameraId}')" class="btn-danger-cyber" style="font-size: 9px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(239,68,68,0.25);">Delete</button>
-            </div>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-
-      if (list.length === 0) {
-        grid.innerHTML = `<div style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 40px 0;">No cameras matching current search or filters.</div>`;
-      }
-    }
-
-    window.addCameraToGrid = function(url) {
-      let mapped = false;
-      for (let i = 0; i < currentGridSize; i++) {
-        if (gridMapping[i] === url) {
-          mapped = true;
-          break;
-        }
-      }
-      
-      if (!mapped) {
-        for (let i = 0; i < currentGridSize; i++) {
-          if (!gridMapping[i]) {
-            gridMapping[i] = url;
-            mapped = true;
-            break;
-          }
-        }
-        
-        if (!mapped) {
-          gridMapping[0] = url;
-        }
-      }
-      
-      const targetCam = cameras.find(c => c.cameraUrl === url);
-      if (targetCam) {
-        cameras.forEach(c => c.active = false);
-        targetCam.active = true;
-        activeCamera = targetCam;
-      }
-      
-      addIncidentLog(`Mounted sensor node: ${targetCam ? targetCam.cameraName : url}`, "WARNING");
-      renderGrid();
-      filterAndRenderCameras();
-    };
-
-    function updateTelemetryStats() {
-      const total = cameras.length;
-      const online = cameras.filter(c => c.status === "Online").length;
-      const offline = total - online;
-
-      if (document.getElementById("stat-total-cams")) document.getElementById("stat-total-cams").innerText = total;
-      if (document.getElementById("stat-online-cams")) document.getElementById("stat-online-cams").innerText = online;
-      if (document.getElementById("stat-offline-cams")) document.getElementById("stat-offline-cams").innerText = offline;
-    }
-
-    // ==========================================
-    // ⚙️ ACTIVE CAMERA TRANSITION SETTER
-    // ==========================================
-    async function setActiveCamera(cameraId) {
-      if (activeCamera && activeCamera.cameraId === cameraId) return;
-
-      const target = cameras.find(c => c.cameraId === cameraId);
-      if (!target) return;
-
-      cameras.forEach(c => c.active = false);
-      target.active = true;
-      activeCamera = target;
-      
-      gridMapping[0] = target.cameraUrl;
-      
+    if (cameras.length === 0) {
+      cameras = [{ cameraId: "cam_default", cameraName: "Webcam Node 1", cameraType: "WEBCAM",
+        cameraUrl: "0", username: "", password: "", location: "Operator Bay 1",
+        description: "USB fallback webcam", status: "Online", fps: 60, latency: 7.5,
+        brand: "Generic", channelId: 1, active: true }];
       localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
-      addIncidentLog(`Transitioning operational target to grid slot 1: ${target.cameraName}`, "WARNING");
-
-      renderGrid();
-      filterAndRenderCameras();
-
-      const payload = {
-        name: target.cameraName,
-        type: target.cameraType.includes("WEBCAM") || target.cameraType.includes("USB") ? "WEBCAM" : "IP_CAMERA",
-        url: target.cameraUrl,
-        username: target.username,
-        password: target.password
-      };
-
-      try {
-        const token = localStorage.getItem("token");
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        await fetch(`${API_BASE_URL}/api/camera/save`, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify(payload)
-        });
-        console.log("Active camera successfully synchronized to database.");
-      } catch (err) {
-        console.warn("Could not sync active target camera details with database.", err);
-      }
     }
 
-    // ==========================================
-    // 🖥️ CCTV MATRIX GRID RENDERER
-    // ==========================================
-    function renderGrid() {
-      const container = document.getElementById("cameraGridContainer");
-      if (!container) return;
-      
-      container.className = `camera-grid-${currentGridSize}`;
-      container.innerHTML = "";
-      
-      for (let i = 0; i < currentGridSize; i++) {
-        const slot = document.createElement("div");
-        slot.className = "grid-slot";
-        slot.setAttribute("draggable", "true");
-        slot.setAttribute("data-index", i);
-        
-        const camUrl = gridMapping[i];
-        const cam = cameras.find(c => c.cameraUrl === camUrl);
-        
-        if (cam) {
-          const isLocal = isPrivateIP(cam.cameraUrl);
-          const testUrl = isLocal ? "http://localhost:5000" : AI_SERVICE_URL;
-          const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cam.cameraUrl)}&username=${encodeURIComponent(cam.username)}&password=${encodeURIComponent(cam.password)}&t=${Date.now()}`;
-          
-          slot.innerHTML = `
-            <div class="camera-feed-hud" style="position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10; display: flex; flex-direction: column; gap: 4px; pointer-events: none;">
-              <div style="display: flex; justify-content: space-between; width: 100%;">
-                <span class="feed-hud-rec" style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--safe-green); display: flex; align-items: center; gap: 4px;">
-                  <span class="feed-rec-dot" style="width: 5px; height: 5px; border-radius: 50%; background: var(--safe-green); display: inline-block;"></span> LIVE
-                </span>
-                <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--primary-neon);">${cam.brand.toUpperCase()} CH${cam.channelId}</span>
-              </div>
-              <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: #fff; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cam.cameraName.toUpperCase()}</span>
-            </div>
-            
-            <div style="position: absolute; bottom: 8px; right: 8px; z-index: 10; display: flex; gap: 4px;">
-              <button onclick="event.stopPropagation(); window.togglePinSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: var(--primary-neon); font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">PIN</button>
-              <button onclick="event.stopPropagation(); window.maximizeSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: #fff; font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">FULL</button>
-            </div>
-            
-            <img src="${streamUrl}" alt="${cam.cameraName}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='../images/offline_placeholder.jpg'; this.style.display='none'; this.nextElementSibling.style.display='block';" />
-            <div style="display: none; text-align: center; color: var(--text-muted); pointer-events: none;">
-              <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; color: var(--danger-red);">VIDEO RECOVERY QUEUE</div>
-              <div style="font-size: 8px; margin-top: 4px; font-family: 'Fira Code', monospace; opacity: 0.6;">RECONNECTING SENSOR FEED...</div>
-            </div>
-          `;
-          
-          if (cam.pinned) {
-            slot.classList.add("active-pin");
-          }
-        } else {
-          slot.innerHTML = `
-            <div style="text-align: center; color: var(--text-muted); pointer-events: none;">
-              <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; opacity: 0.4;">NO SIGNAL</div>
-              <div style="font-size: 8px; margin-top: 4px; letter-spacing: 1px; font-family: 'Fira Code', monospace; opacity: 0.4;">CH ${i + 1} &bull; STANDBY</div>
-            </div>
-          `;
-        }
+    activeCamera = cameras.find(c => c.active) || cameras[0];
+    if (activeCamera) activeCamera.active = true;
+    cameras.forEach((cam, i) => { if (gridMapping[i] === undefined) gridMapping[i] = cam.cameraUrl; });
 
-        // Drag events
-        slot.addEventListener("dragstart", (e) => {
-          dragSourceIndex = i;
-          e.dataTransfer.effectAllowed = "move";
-        });
-        
-        slot.addEventListener("dragover", (e) => {
-          e.preventDefault();
-        });
-        
-        slot.addEventListener("dragenter", (e) => {
-          slot.classList.add("drag-over");
-        });
-        
-        slot.addEventListener("dragleave", (e) => {
-          slot.classList.remove("drag-over");
-        });
-        
-        slot.addEventListener("drop", (e) => {
-          e.preventDefault();
-          slot.classList.remove("drag-over");
-          
-          const sourceIdx = dragSourceIndex;
-          const targetIdx = i;
-          
-          if (sourceIdx !== null && sourceIdx !== targetIdx) {
-            const temp = gridMapping[sourceIdx];
-            gridMapping[sourceIdx] = gridMapping[targetIdx];
-            gridMapping[targetIdx] = temp;
-            renderGrid();
-          }
-        });
-        
-        slot.addEventListener("dblclick", () => {
-          slot.classList.toggle("fullscreen");
-        });
-        
-        container.appendChild(slot);
-      }
-    }
+    filterAndRenderCameras();
+    renderGrid();
+    updateWidgetStats();
+  }
 
-    window.togglePinSlot = function(idx) {
-      const camUrl = gridMapping[idx];
-      const cam = cameras.find(c => c.cameraUrl === camUrl);
-      if (cam) {
-        cam.pinned = !cam.pinned;
-        addIncidentLog(`Toggled sensor pin state for: ${cam.cameraName}`, "WARNING");
-        renderGrid();
-      }
-    };
-    
-    window.maximizeSlot = function(idx) {
-      const container = document.getElementById("cameraGridContainer");
-      const slots = container.querySelectorAll(".grid-slot");
-      slots.forEach(s => {
-        if (s.getAttribute("data-index") == idx) {
-          s.classList.toggle("fullscreen");
-        } else {
-          s.classList.remove("fullscreen");
-        }
-      });
-    };
-
-    // ==========================================
-    // 🧾 REPORT EXPORT ENGINES
-    // ==========================================
-    window.exportPDFReport = function() {
-      try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        // SCADA theme title header
-        doc.setFillColor(2, 6, 23);
-        doc.rect(0, 0, 210, 40, 'F');
-        
-        doc.setTextColor(6, 182, 212);
-        doc.setFontSize(22);
-        doc.setFont("helvetica", "bold");
-        doc.text("AI SMART SAFETY SHIELD", 15, 20);
-        
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.text("MISSION CONTROL CENTER - INDUSTRIAL RISK REPORTS", 15, 30);
-        
-        doc.setTextColor(15, 23, 42);
-        doc.setFontSize(14);
-        doc.text("SAFETY COMPLIANCE STATUS SUMMARY", 15, 55);
-        
-        doc.setFontSize(9);
-        doc.text(`Generated: ${new Date().toLocaleString()}`, 15, 63);
-        doc.text(`Active Devices Grid: ${cameras.length} connected cameras`, 15, 69);
-        
-        // Draw division line
-        doc.setDrawColor(203, 213, 225);
-        doc.line(15, 75, 195, 75);
-        
-        // Listing Cameras
-        doc.setFontSize(11);
-        doc.setTextColor(15, 23, 42);
-        doc.text("ONBOARDED CCTV OPTICAL SENSORS:", 15, 87);
-        let y = 97;
-        cameras.forEach((cam, i) => {
-          doc.setFontSize(8.5);
-          doc.text(`${i+1}. ${cam.cameraName.toUpperCase()} [${cam.brand}] (${cam.location}) - Status: ${cam.status.toUpperCase()}`, 15, y);
-          doc.setFontSize(7.5);
-          doc.setTextColor(100, 116, 139);
-          doc.text(`   URL: ${cam.cameraUrl}`, 15, y + 4);
-          doc.setTextColor(15, 23, 42);
-          y += 12;
-        });
-        
-        // Incident timeline
-        y += 6;
-        doc.setFontSize(11);
-        doc.text("SECURITY EVENT TIMELINE LOGS:", 15, y);
-        y += 10;
-        
-        const consoleEl = document.getElementById("incident-log-console");
-        const logLines = consoleEl ? Array.from(consoleEl.children).map(child => child.innerText) : ["Waiting for real-time safety telemetry events..."];
-        
-        logLines.slice(0, 20).forEach((log) => {
-          if (log.trim()) {
-            doc.setFontSize(8);
-            doc.setFont("courier", "normal");
-            doc.text(log.trim(), 15, y);
-            doc.setFont("helvetica", "normal");
-            y += 6;
-            if (y > 280) {
-              doc.addPage();
-              y = 20;
-            }
-          }
-        });
-        
-        doc.save(`AI_Safety_Report_${Date.now()}.pdf`);
-        showHUDToast("PDF COMPILED", "Mission report generated and downloaded.", "success");
-      } catch (err) {
-        console.error("PDF generation failed:", err);
-        alert("Report compile failed: " + err.message);
-      }
-    };
-    
-    window.exportExcelReport = function() {
-      try {
-        const camData = cameras.map(c => ({
-          Name: c.cameraName,
-          Brand: c.brand,
-          Channel: c.channelId,
-          Location: c.location,
-          URL: c.cameraUrl,
-          Status: c.status
-        }));
-        
-        const consoleEl = document.getElementById("incident-log-console");
-        const logLines = consoleEl ? Array.from(consoleEl.children).map(child => ({ Log: child.innerText })) : [{ Log: "Empty console" }];
-        
-        const wb = XLSX.utils.book_new();
-        const wsCams = XLSX.utils.json_to_sheet(camData);
-        const wsLogs = XLSX.utils.json_to_sheet(logLines);
-        
-        XLSX.utils.book_append_sheet(wb, wsCams, "Camera Registry");
-        XLSX.utils.book_append_sheet(wb, wsLogs, "Safety Log Console");
-        
-        XLSX.writeFile(wb, `AI_Safety_Spreadsheet_${Date.now()}.xlsx`);
-        showHUDToast("EXCEL DOWNLOADED", "Incident telemetry workbook saved.", "success");
-      } catch (err) {
-        console.error("Excel download failed:", err);
-        alert("Spreadsheet compile failed: " + err.message);
-      }
-    };
-
-    // ==========================================
-    // 🚨 DELETE SENSOR NODE
-    // ==========================================
-    async function deleteCameraNode(cameraId) {
-      event.stopPropagation();
-      if (!confirm("Are you sure you want to delete this sensor node?")) return;
-
-      const idx = cameras.findIndex(c => c.cameraId === cameraId);
-      if (idx === -1) return;
-
-      const deletedCam = cameras[idx];
-      cameras.splice(idx, 1);
-      
-      for (let key in gridMapping) {
-        if (gridMapping[key] === deletedCam.cameraUrl) {
-          gridMapping[key] = null;
-        }
-      }
-
-      if (activeCamera && activeCamera.cameraId === cameraId) {
-        if (cameras.length > 0) {
-          cameras[0].active = true;
-          activeCamera = cameras[0];
-        } else {
-          activeCamera = null;
-        }
-      }
-
-      localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
-      addIncidentLog(`Deleted sensor node: ${deletedCam.cameraName}`, "WARNING");
-
-      try {
-        const token = localStorage.getItem("token");
-        const headers = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        await fetch(`${API_BASE_URL}/api/camera/reset?url=${encodeURIComponent(deletedCam.cameraUrl)}`, {
-          method: 'DELETE',
-          headers: headers
-        });
-      } catch(err) {
-        console.warn("Failed to delete camera from database.", err);
-      }
-
-      loadCameras();
-    }
-
-    // ==========================================
-    // 📡 CAMERA HEALTH DAEMON
-    // ==========================================
-    function startHealthDaemon() {
-      if (healthInterval) clearInterval(healthInterval);
-
-      healthInterval = setInterval(async () => {
-        for (let i = 0; i < cameras.length; i++) {
-          const cam = cameras[i];
-          const isLocal = isPrivateIP(cam.cameraUrl);
-          const checkUrl = isLocal ? "http://localhost:5000/status" : `${AI_SERVICE_URL}/status`;
-          
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1500);
-            
-            const response = await fetch(checkUrl, { signal: controller.signal });
-            clearTimeout(timeoutId);
-
-            if (response.status === 200) {
-              if (cam.status !== "Online") {
-                cam.status = "Online";
-                addIncidentLog("Sensor Node online: " + cam.cameraName, "SAFE");
-              }
-            } else {
-              if (cam.status !== "Offline") {
-                cam.status = "Offline";
-                addIncidentLog("Sensor Node connection error: " + cam.cameraName, "CRITICAL");
-              }
-            }
-          } catch(e) {
-            if (cam.status !== "Offline") {
-              cam.status = "Offline";
-              addIncidentLog("Sensor Node offline (unreachable): " + cam.cameraName, "CRITICAL");
-            }
-          }
-        }
-        
-        filterAndRenderCameras();
-        renderGrid();
-      }, 5000);
-    }
-
-    // ==========================================
-    // 🛡 AI STATUS MONITOR
-    // ==========================================
-    let lastSafety = null;
-    let lastAction = null;
-
-    async function updateStatus() {
-      if (!activeCamera) return;
-
-      const isLocal = isPrivateIP(activeCamera.cameraUrl);
-      const STATUS_URL = isLocal ? "http://localhost:5000/status" : `${AI_SERVICE_URL}/status`;
-
-      try {
-        const res = await fetch(STATUS_URL, { cache: "no-store" });
-        const data = await res.json();
-
-        const safetyBox = document.getElementById("safety-box");
-        const safetyStatus = document.getElementById("safety-status");
-        const safetyDesc = document.getElementById("safety-desc");
-
-        const actionBox = document.getElementById("action-box");
-        const actionStatus = document.getElementById("system-action");
-        const actionDesc = document.getElementById("system-desc");
-
-        if (!safetyBox || !actionBox) return;
-
-        if (data.confidence !== undefined) {
-          const confVal = document.getElementById("confidence-value");
-          if (confVal) confVal.innerText = data.confidence + "%";
-        }
-
-        if (document.getElementById("hud-human-count")) {
-          document.getElementById("hud-human-count").innerText = data.safety === "DANGER" ? "1" : "0";
-        }
-        if (document.getElementById("hud-fps")) {
-          document.getElementById("hud-fps").innerText = data.camera ? (56 + Math.random() * 3).toFixed(1) : "0.0";
-        }
-        if (document.getElementById("hud-latency")) {
-          document.getElementById("hud-latency").innerText = data.camera ? (6 + Math.random() * 4).toFixed(0) + "ms" : "0ms";
-        }
-
-        if (data.safety !== lastSafety) {
-          if (data.safety === "DANGER") {
-            safetyStatus.innerText = "DANGER";
-            safetyDesc.innerText = "Operator safety boundary breached!";
-            safetyBox.classList.add("danger");
-            safetyBox.classList.remove("safe");
-            
-            playWarningTone();
-            addIncidentLog(`Hazard breach detected in machine zone!`, "CRITICAL", activeCamera.cameraName);
-          } else {
-            safetyStatus.innerText = "SAFE";
-            safetyDesc.innerText = "Operator clear of hazards";
-            safetyBox.classList.add("safe");
-            safetyBox.classList.remove("danger");
-          }
-          lastSafety = data.safety;
-        }
-
-        const action = data.safety === "DANGER" || stopTriggered ? "STOP" : "RUN";
-        if (action !== lastAction) {
-          if (action === "STOP") {
-            actionStatus.innerText = "STOP";
-            actionDesc.innerText = "Emergency PLC interlock trip activated";
-            actionBox.classList.add("danger");
-            actionBox.classList.remove("safe");
-          } else {
-            actionStatus.innerText = "RUN";
-            actionDesc.innerText = "System running normally";
-            actionBox.classList.add("safe");
-            actionBox.classList.remove("danger");
-          }
-          lastAction = action;
-        }
-
-      } catch (err) {
-        console.error("Telemetry sync error:", err);
-      }
-    }
-
-    let audioCtx = null;
-    function playWarningTone() {
-      try {
-        if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.25);
-      } catch (e) {
-        console.warn("Buzzer play error:", e);
-      }
-    }
-
-    // ==========================================
-    // 🚀 INITIALIZATION ON READY
-    // ==========================================
-    document.addEventListener("DOMContentLoaded", () => {
-      loadCameras();
-      initShiftWatchdog();
-      startHealthDaemon();
-
-      const tabs = document.querySelectorAll(".btn-grid-tab");
-      tabs.forEach(tab => {
-        tab.addEventListener("click", () => {
-          tabs.forEach(t => t.classList.remove("active"));
-          tab.classList.add("active");
-          currentGridSize = parseInt(tab.getAttribute("data-grid"));
-          renderGrid();
-        });
-      });
-
-      setInterval(updateStatus, 1000);
+  // ── Filter & Render Cameras ───────────────────────────────
+  function filterAndRenderCameras() {
+    const sv  = (document.getElementById("searchCam")?.value||"").toLowerCase();
+    const tf  = document.getElementById("filterType")?.value  || "ALL";
+    const sf  = document.getElementById("filterStatus")?.value|| "ALL";
+    const filtered = cameras.filter(c => {
+      const ms = c.cameraName.toLowerCase().includes(sv) || c.location.toLowerCase().includes(sv);
+      const mt = tf === "ALL" || (tf === "RTSP" && c.cameraType === "RTSP") ||
+                 (tf === "IP_CAMERA" && c.cameraType === "IP_CAMERA") ||
+                 (tf === "WEBCAM" && (c.cameraType === "USB" || c.cameraType === "WEBCAM"));
+      const mst= sf === "ALL" || c.status === sf;
+      return ms && mt && mst;
     });
-  </script>
+    renderNodeGrid(filtered);
+    updateTelemetryStats();
+  }
 
-  <!-- Secure Supabase Session Verification -->
-  <script type="module">
-    import { getSession } from '../js/supabase.js';
-    getSession().then((session) => {
-      if (!session && localStorage.getItem("isLoggedIn") === "true") {
-        console.warn("Supabase session expired. Logging out...");
-        if (typeof window.logout === "function") window.logout();
+  function renderNodeGrid(list) {
+    const grid = document.getElementById("camerasGridList");
+    if (!grid) return;
+    grid.innerHTML = "";
+    if (list.length === 0) {
+      grid.innerHTML = `<div class="node-empty-state"><div class="ei">📷</div><div>No cameras match the current filters.</div></div>`;
+      return;
+    }
+    list.forEach(cam => {
+      const isMapped = Object.values(gridMapping).includes(cam.cameraUrl);
+      const online   = cam.status === "Online";
+      const card     = document.createElement("div");
+      card.className = `node-card ${isMapped ? "active-node" : ""}`;
+      card.innerHTML = `
+        <div onclick="addCameraToGrid('${cam.cameraUrl}')" style="flex:1;display:flex;flex-direction:column;gap:8px;">
+          <div class="node-card-top">
+            <div class="node-cam-name">${cam.cameraName}</div>
+            <div class="node-brand-badge">${cam.brand}</div>
+          </div>
+          <div class="node-loc">📍 ${cam.location}</div>
+          <div class="node-url">${cam.cameraUrl}</div>
+        </div>
+        <div class="node-card-bottom">
+          <div class="node-status-badge">
+            <span class="node-status-dot ${online?'online':'offline'}"></span>
+            <span style="color:${online?'var(--green)':'var(--red)'}">${cam.status}</span>
+          </div>
+          <button class="btn-del-node" onclick="deleteCameraNode('${cam.cameraId}')">Delete</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+  }
+
+  function updateTelemetryStats() {
+    const total   = cameras.length;
+    const online  = cameras.filter(c => c.status === "Online").length;
+    const offline = total - online;
+    if (document.getElementById("stat-total-cams"))  document.getElementById("stat-total-cams").textContent  = total;
+    if (document.getElementById("stat-online-cams")) document.getElementById("stat-online-cams").textContent = online;
+    if (document.getElementById("stat-offline-cams"))document.getElementById("stat-offline-cams").textContent= offline;
+  }
+
+  function updateWidgetStats() {
+    const total   = cameras.length;
+    const online  = cameras.filter(c => c.status === "Online").length;
+    const offline = total - online;
+    if (document.getElementById("w-cam-count"))     document.getElementById("w-cam-count").textContent    = total;
+    if (document.getElementById("w-online-count"))  document.getElementById("w-online-count").textContent  = online;
+    if (document.getElementById("w-offline-count")) document.getElementById("w-offline-count").textContent = offline;
+    if (document.getElementById("footer-cam-count"))document.getElementById("footer-cam-count").textContent = `×${total}`;
+  }
+
+  // ── Add camera to grid ────────────────────────────────────
+  window.addCameraToGrid = function(url) {
+    let mapped = false;
+    for (let i = 0; i < currentGridSize; i++) {
+      if (gridMapping[i] === url) { mapped = true; break; }
+    }
+    if (!mapped) {
+      for (let i = 0; i < currentGridSize; i++) {
+        if (!gridMapping[i]) { gridMapping[i] = url; mapped = true; break; }
       }
-    }).catch(() => {});
-  </script>
+      if (!mapped) gridMapping[0] = url;
+    }
+    const tgt = cameras.find(c => c.cameraUrl === url);
+    if (tgt) { cameras.forEach(c => c.active = false); tgt.active = true; activeCamera = tgt; }
+    addIncidentLog(`Mounted sensor node: ${tgt ? tgt.cameraName : url}`, "WARNING");
+    renderGrid(); filterAndRenderCameras();
+  };
 
-  <!-- Auth and Mobile Menu Handler -->
-  <script src="../js/auth.js"></script>
+  // ── Set active camera ─────────────────────────────────────
+  async function setActiveCamera(cameraId) {
+    if (activeCamera && activeCamera.cameraId === cameraId) return;
+    const target = cameras.find(c => c.cameraId === cameraId);
+    if (!target) return;
+    cameras.forEach(c => c.active = false);
+    target.active = true; activeCamera = target; gridMapping[0] = target.cameraUrl;
+    localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
+    addIncidentLog(`Transitioning target to slot 1: ${target.cameraName}`, "WARNING");
+    renderGrid(); filterAndRenderCameras();
+    try {
+      const token = localStorage.getItem("token");
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      await fetch(`${API_BASE_URL}/api/camera/save`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ name: target.cameraName,
+          type: (target.cameraType.includes("WEBCAM")||target.cameraType.includes("USB"))?"WEBCAM":"IP_CAMERA",
+          url: target.cameraUrl, username: target.username, password: target.password })
+      });
+    } catch(err) {}
+  }
+
+  // ── CCTV Grid Renderer ────────────────────────────────────
+  function renderGrid() {
+    const container = document.getElementById("cameraGridContainer");
+    if (!container) return;
+    container.className = `camera-grid-${currentGridSize}`;
+    container.innerHTML = "";
+
+    for (let i = 0; i < currentGridSize; i++) {
+      const slot = document.createElement("div");
+      slot.className = "grid-slot";
+      slot.setAttribute("draggable", "true");
+      slot.setAttribute("data-index", i);
+      const camUrl = gridMapping[i];
+      const cam    = cameras.find(c => c.cameraUrl === camUrl);
+
+      if (cam) {
+        const isLocal   = isPrivateIP(cam.cameraUrl);
+        const testUrl   = isLocal ? "http://localhost:5000" : AI_SERVICE_URL;
+        const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cam.cameraUrl)}&username=${encodeURIComponent(cam.username)}&password=${encodeURIComponent(cam.password)}&t=${Date.now()}`;
+        slot.innerHTML = `
+          <div style="position:absolute;top:8px;left:8px;right:8px;z-index:10;display:flex;flex-direction:column;gap:4px;pointer-events:none;">
+            <div style="display:flex;justify-content:space-between;width:100%;">
+              <span style="background:rgba(2,6,23,0.8);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:4px;font-family:'Space Grotesk',sans-serif;">
+                <span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.2s ease-in-out infinite;"></span>LIVE
+              </span>
+              <span style="background:rgba(2,6,23,0.8);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--cyan);font-family:'Space Grotesk',sans-serif;">${cam.brand.toUpperCase()} CH${cam.channelId}</span>
+            </div>
+            <span style="background:rgba(2,6,23,0.8);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:#fff;width:fit-content;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Space Grotesk',sans-serif;">${cam.cameraName.toUpperCase()}</span>
+          </div>
+          <div style="position:absolute;bottom:8px;right:8px;z-index:10;display:flex;gap:4px;">
+            <button onclick="event.stopPropagation();window.togglePinSlot(${i})" style="background:rgba(2,6,23,.85);border:1px solid rgba(6,182,212,.3);border-radius:4px;padding:2px 5px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;">PIN</button>
+            <button onclick="event.stopPropagation();window.maximizeSlot(${i})" style="background:rgba(2,6,23,.85);border:1px solid rgba(6,182,212,.3);border-radius:4px;padding:2px 5px;color:#fff;font-size:8px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;">FULL</button>
+          </div>
+          <img src="${streamUrl}" alt="${cam.cameraName}"
+               style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+          <div style="display:none;text-align:center;color:var(--text-muted);flex-direction:column;align-items:center;gap:6px;">
+            <div style="font-size:13px;font-weight:700;color:var(--red);font-family:'Space Grotesk',sans-serif;">FEED RECOVERY QUEUE</div>
+            <div style="font-size:8px;font-family:'Fira Code',monospace;opacity:.5;">RECONNECTING SENSOR...</div>
+          </div>`;
+        if (cam.pinned) slot.classList.add("active-pin");
+      } else {
+        slot.innerHTML = `
+          <div style="text-align:center;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <div style="font-size:13px;font-weight:700;opacity:.25;font-family:'Space Grotesk',sans-serif;letter-spacing:2px;">NO SIGNAL</div>
+            <div style="font-size:8px;letter-spacing:1px;font-family:'Fira Code',monospace;opacity:.25;">CH ${i+1} · STANDBY</div>
+          </div>`;
+      }
+
+      // Drag
+      slot.addEventListener("dragstart", e => { dragSourceIndex = i; e.dataTransfer.effectAllowed = "move"; });
+      slot.addEventListener("dragover",  e => e.preventDefault());
+      slot.addEventListener("dragenter", () => slot.classList.add("drag-over"));
+      slot.addEventListener("dragleave", () => slot.classList.remove("drag-over"));
+      slot.addEventListener("drop", e => {
+        e.preventDefault(); slot.classList.remove("drag-over");
+        if (dragSourceIndex !== null && dragSourceIndex !== i) {
+          [gridMapping[dragSourceIndex], gridMapping[i]] = [gridMapping[i], gridMapping[dragSourceIndex]];
+          renderGrid();
+        }
+      });
+      slot.addEventListener("dblclick", () => slot.classList.toggle("fullscreen"));
+      container.appendChild(slot);
+    }
+
+    // Browser webcam fallback for slot 0 if no server feed
+    tryWebcamFallback();
+  }
+
+  // ── Webcam / Animated Fallback ────────────────────────────
+  function tryWebcamFallback() {
+    const container  = document.getElementById("cameraGridContainer");
+    if (!container) return;
+    const slot0 = container.querySelector('.grid-slot');
+    if (!slot0) return;
+    const img = slot0.querySelector('img');
+    if (img) return; // has real stream attempt, skip
+
+    // Try browser webcam
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(stream => {
+          const video = document.createElement('video');
+          video.srcObject = stream;
+          video.autoplay  = true;
+          video.muted     = true;
+          video.playsInline = true;
+          video.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+          slot0.appendChild(video);
+          // HUD overlay label
+          const hud = document.createElement('div');
+          hud.innerHTML = `<span style="position:absolute;top:8px;left:8px;background:rgba(2,6,23,.85);padding:2px 8px;border-radius:4px;font-size:8px;font-weight:700;color:var(--green);font-family:'Space Grotesk',sans-serif;z-index:20;display:flex;align-items:center;gap:4px;">
+            <span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.2s ease-in-out infinite;"></span>WEBCAM LIVE
+          </span>`;
+          slot0.appendChild(hud.firstElementChild);
+          addIncidentLog("Browser webcam feed initialized successfully.", "SAFE", "Local Webcam");
+        })
+        .catch(() => startAnimatedFallback(slot0));
+    } else {
+      startAnimatedFallback(slot0);
+    }
+  }
+
+  function startAnimatedFallback(slot) {
+    const fc = document.createElement('canvas');
+    fc.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+    slot.appendChild(fc);
+
+    function resizeFc() { fc.width = slot.offsetWidth || 640; fc.height = slot.offsetHeight || 360; }
+    resizeFc();
+
+    const fCtx = fc.getContext('2d');
+    let t = 0;
+
+    // Simulated analytics that feed the dashboard
+    setInterval(() => {
+      const fps = (55 + Math.random() * 6).toFixed(1);
+      const lat = (5 + Math.random() * 5).toFixed(0) + 'ms';
+      const conf = Math.floor(80 + Math.random() * 18);
+      const hc   = Math.random() > 0.85 ? 1 : 0;
+
+      const fpEl = document.getElementById('hud-fps');       if (fpEl) fpEl.textContent = fps;
+      const ltEl = document.getElementById('hud-latency');   if (ltEl) ltEl.textContent = lat;
+      const cvEl = document.getElementById('confidence-value'); if (cvEl) cvEl.textContent = conf + '%';
+      const ckEl = document.getElementById('confidence-value-kpi'); if (ckEl) ckEl.textContent = conf + '%';
+      const cb   = document.getElementById('conf-bar');      if (cb)   cb.style.width = conf + '%';
+      const hcEl = document.getElementById('hud-human-count');if (hcEl) hcEl.textContent = hc;
+    }, 1200);
+
+    function drawFrame() {
+      t++;
+      const W = fc.width, H = fc.height;
+      // Dark background
+      fCtx.fillStyle = '#040814'; fCtx.fillRect(0, 0, W, H);
+
+      // Scan lines
+      for (let y = 0; y < H; y += 4) {
+        fCtx.fillStyle = `rgba(6,182,212,${0.008 + Math.sin(y * 0.05 + t * 0.02) * 0.004})`;
+        fCtx.fillRect(0, y, W, 1);
+      }
+
+      // Grid lines
+      fCtx.strokeStyle = 'rgba(6,182,212,0.07)';
+      fCtx.lineWidth = 1;
+      for (let x = 0; x < W; x += 40) { fCtx.beginPath(); fCtx.moveTo(x,0); fCtx.lineTo(x,H); fCtx.stroke(); }
+      for (let y = 0; y < H; y += 40) { fCtx.beginPath(); fCtx.moveTo(0,y); fCtx.lineTo(W,y); fCtx.stroke(); }
+
+      // Crosshair
+      const cx = W/2 + Math.sin(t*0.02)*30, cy = H/2 + Math.cos(t*0.015)*20;
+      fCtx.strokeStyle = 'rgba(6,182,212,0.5)'; fCtx.lineWidth = 1;
+      fCtx.beginPath(); fCtx.moveTo(cx-18, cy); fCtx.lineTo(cx+18, cy); fCtx.stroke();
+      fCtx.beginPath(); fCtx.moveTo(cx, cy-18); fCtx.lineTo(cx, cy+18); fCtx.stroke();
+      fCtx.strokeRect(cx-8, cy-8, 16, 16);
+
+      // Bounding box simulation
+      if (t % 180 < 120) {
+        const bx = W*0.3 + Math.sin(t*0.01)*40, by = H*0.2;
+        const bw = 100 + Math.sin(t*0.02)*20, bh = 180;
+        fCtx.strokeStyle = 'rgba(16,185,129,0.7)'; fCtx.lineWidth = 1.5;
+        fCtx.strokeRect(bx, by, bw, bh);
+        fCtx.fillStyle = 'rgba(16,185,129,0.9)'; fCtx.font = '700 9px Space Grotesk, sans-serif';
+        fCtx.fillText(`PERSON 0.${Math.floor(80+Math.random()*15)}`, bx, by-4);
+      }
+
+      // Corner brackets
+      const br = 12;
+      fCtx.strokeStyle = 'rgba(6,182,212,0.6)'; fCtx.lineWidth = 2;
+      [[12,12,1,1],[W-12,12,-1,1],[12,H-12,1,-1],[W-12,H-12,-1,-1]].forEach(([ox,oy,dx,dy]) => {
+        fCtx.beginPath(); fCtx.moveTo(ox,oy); fCtx.lineTo(ox+br*dx,oy); fCtx.stroke();
+        fCtx.beginPath(); fCtx.moveTo(ox,oy); fCtx.lineTo(ox,oy+br*dy); fCtx.stroke();
+      });
+
+      // Labels
+      fCtx.fillStyle = 'rgba(6,182,212,0.85)'; fCtx.font = '700 10px Space Grotesk, sans-serif';
+      fCtx.fillText('AI SAFETY SHIELD · SIMULATED FEED', 16, H-14);
+      fCtx.fillStyle = 'rgba(255,255,255,0.4)'; fCtx.font = '9px Fira Code, monospace';
+      fCtx.fillText(new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC', W-220, H-14);
+
+      // REC indicator
+      const recX = W-50, recY = 16;
+      fCtx.fillStyle = t%60 < 30 ? 'rgba(239,68,68,0.9)' : 'rgba(239,68,68,0.3)';
+      fCtx.beginPath(); fCtx.arc(recX, recY, 4, 0, Math.PI*2); fCtx.fill();
+      fCtx.fillStyle = 'rgba(255,255,255,0.8)'; fCtx.font = '700 9px Space Grotesk, sans-serif';
+      fCtx.fillText('REC', recX+8, recY+3);
+
+      requestAnimationFrame(drawFrame);
+    }
+    drawFrame();
+    addIncidentLog("Camera stream unavailable. Animated simulation feed active.", "WARNING", "Fallback Engine");
+  }
+
+  window.togglePinSlot = function(idx) {
+    const cam = cameras.find(c => c.cameraUrl === gridMapping[idx]);
+    if (cam) { cam.pinned = !cam.pinned; addIncidentLog(`Toggled pin for: ${cam.cameraName}`, "WARNING"); renderGrid(); }
+  };
+  window.maximizeSlot = function(idx) {
+    const slots = document.querySelectorAll(".grid-slot");
+    slots.forEach(s => {
+      if (s.getAttribute("data-index") == idx) s.classList.toggle("fullscreen");
+      else s.classList.remove("fullscreen");
+    });
+  };
+
+  // ── Delete Camera ─────────────────────────────────────────
+  async function deleteCameraNode(cameraId) {
+    event.stopPropagation();
+    if (!confirm("Delete this sensor node?")) return;
+    const idx = cameras.findIndex(c => c.cameraId === cameraId);
+    if (idx === -1) return;
+    const del = cameras.splice(idx, 1)[0];
+    for (let k in gridMapping) if (gridMapping[k] === del.cameraUrl) gridMapping[k] = null;
+    if (activeCamera && activeCamera.cameraId === cameraId) {
+      activeCamera = cameras.length > 0 ? cameras[0] : null;
+      if (activeCamera) activeCamera.active = true;
+    }
+    localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
+    addIncidentLog(`Deleted sensor node: ${del.cameraName}`, "WARNING");
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(`${API_BASE_URL}/api/camera/reset?url=${encodeURIComponent(del.cameraUrl)}`, { method: 'DELETE', headers });
+    } catch(e) {}
+    loadCameras();
+  }
+
+  // ── Health Daemon ─────────────────────────────────────────
+  function startHealthDaemon() {
+    if (healthInterval) clearInterval(healthInterval);
+    healthInterval = setInterval(async () => {
+      for (const cam of cameras) {
+        const checkUrl = isPrivateIP(cam.cameraUrl) ? "http://localhost:5000/status" : `${AI_SERVICE_URL}/status`;
+        try {
+          const ctrl = new AbortController();
+          const tid  = setTimeout(() => ctrl.abort(), 1500);
+          const res  = await fetch(checkUrl, { signal: ctrl.signal });
+          clearTimeout(tid);
+          if (res.status === 200) {
+            if (cam.status !== "Online")  { cam.status = "Online";  addIncidentLog("Node online: " + cam.cameraName, "SAFE"); }
+          } else {
+            if (cam.status !== "Offline") { cam.status = "Offline"; addIncidentLog("Node error: " + cam.cameraName, "CRITICAL"); }
+          }
+        } catch(e) {
+          if (cam.status !== "Offline")   { cam.status = "Offline"; addIncidentLog("Node offline: " + cam.cameraName, "CRITICAL"); }
+        }
+      }
+      filterAndRenderCameras(); renderGrid(); updateWidgetStats();
+    }, 5000);
+  }
+
+  // ── AI Status Monitor ─────────────────────────────────────
+  let lastSafety = null, lastAction = null;
+  async function updateStatus() {
+    if (!activeCamera) return;
+    const STATUS_URL = isPrivateIP(activeCamera.cameraUrl) ? "http://localhost:5000/status" : `${AI_SERVICE_URL}/status`;
+    try {
+      const res  = await fetch(STATUS_URL, { cache: "no-store" });
+      const data = await res.json();
+
+      const conf = data.confidence;
+      if (conf !== undefined) {
+        const cv  = document.getElementById("confidence-value");     if (cv)  cv.textContent  = conf + "%";
+        const cvi = document.getElementById("confidence-value-kpi"); if (cvi) cvi.textContent = conf + "%";
+        const cb  = document.getElementById("conf-bar");             if (cb)  cb.style.width  = conf + "%";
+        const fps = document.getElementById("hud-fps");     if (fps) fps.textContent = data.camera ? (56+Math.random()*3).toFixed(1) : "0.0";
+        const lat = document.getElementById("hud-latency"); if (lat) lat.textContent = data.camera ? (5+Math.random()*5).toFixed(0)+"ms" : "0ms";
+        const hc  = document.getElementById("hud-human-count"); if (hc) hc.textContent = data.safety === "DANGER" ? "1" : "0";
+      }
+
+      if (data.safety !== lastSafety) {
+        const sb = document.getElementById("safety-box");
+        const ss = document.getElementById("safety-status");
+        const sd = document.getElementById("safety-desc");
+        if (data.safety === "DANGER") {
+          if (ss) ss.textContent = "DANGER"; if (sd) sd.textContent = "Operator safety boundary breached!";
+          if (sb) sb.className = "metric-card state-danger";
+          playWarningTone();
+          addIncidentLog("Hazard breach in machine zone!", "CRITICAL", activeCamera.cameraName);
+        } else {
+          if (ss) ss.textContent = "SAFE"; if (sd) sd.textContent = "Human distance above threshold";
+          if (sb) sb.className = "metric-card state-safe";
+        }
+        lastSafety = data.safety;
+      }
+
+      const action = (data.safety === "DANGER" || stopTriggered) ? "STOP" : "RUN";
+      if (action !== lastAction) {
+        const ab = document.getElementById("action-box");
+        const as = document.getElementById("system-action");
+        const ad = document.getElementById("system-desc");
+        if (action === "STOP") {
+          if (as) as.textContent = "STOP"; if (ad) ad.textContent = "Emergency PLC interlock trip activated";
+          if (ab) { ab.className = "metric-card state-danger"; as.className = "metric-card-value red-text"; }
+        } else {
+          if (as) as.textContent = "RUN"; if (ad) ad.textContent = "PLC machine line operating normally";
+          if (ab) { ab.className = "metric-card state-safe"; as.className = "metric-card-value green-text"; }
+        }
+        lastAction = action;
+      }
+    } catch(err) {}
+  }
+
+  let audioCtx = null;
+  function playWarningTone() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+    } catch(e) {}
+  }
+
+  // ── Export Reports ────────────────────────────────────────
+  window.exportPDFReport = function() {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFillColor(2,6,23); doc.rect(0,0,210,40,'F');
+      doc.setTextColor(6,182,212); doc.setFontSize(22); doc.setFont("helvetica","bold");
+      doc.text("AI SMART SAFETY SHIELD", 15, 20);
+      doc.setTextColor(255,255,255); doc.setFontSize(10);
+      doc.text("MISSION CONTROL CENTER - INDUSTRIAL RISK REPORTS", 15, 30);
+      doc.setTextColor(15,23,42); doc.setFontSize(14);
+      doc.text("SAFETY COMPLIANCE STATUS SUMMARY", 15, 55);
+      doc.setFontSize(9);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 15, 63);
+      doc.text(`Active Devices: ${cameras.length} cameras`, 15, 69);
+      doc.setDrawColor(203,213,225); doc.line(15,75,195,75);
+      doc.setFontSize(11); doc.text("ONBOARDED SENSORS:", 15, 87);
+      let y = 97;
+      cameras.forEach((cam,i) => {
+        doc.setFontSize(8.5); doc.setTextColor(15,23,42);
+        doc.text(`${i+1}. ${cam.cameraName} [${cam.brand}] (${cam.location}) - ${cam.status}`, 15, y);
+        doc.setFontSize(7.5); doc.setTextColor(100,116,139);
+        doc.text(`   URL: ${cam.cameraUrl}`, 15, y+4);
+        y += 12;
+      });
+      const logLines = Array.from(document.querySelectorAll('#incident-log-console .log-entry')).map(e => e.innerText);
+      y += 6; doc.setFontSize(11); doc.setTextColor(15,23,42);
+      doc.text("EVENT TIMELINE:", 15, y); y += 10;
+      logLines.slice(0,20).forEach(l => {
+        if (l.trim()) { doc.setFontSize(8); doc.text(l.trim(), 15, y); y += 6; if (y>280) { doc.addPage(); y=20; } }
+      });
+      doc.save(`AI_Safety_Report_${Date.now()}.pdf`);
+      showHUDToast("PDF COMPILED", "Report generated and downloaded.", "success");
+    } catch(err) { alert("Report compile failed: " + err.message); }
+  };
+
+  window.exportExcelReport = function() {
+    try {
+      const camData = cameras.map(c => ({ Name:c.cameraName, Brand:c.brand, Channel:c.channelId, Location:c.location, URL:c.cameraUrl, Status:c.status }));
+      const logLines = Array.from(document.querySelectorAll('#incident-log-console .log-entry')).map(e => ({ Log: e.innerText }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(camData), "Camera Registry");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(logLines), "Safety Log Console");
+      XLSX.writeFile(wb, `AI_Safety_${Date.now()}.xlsx`);
+      showHUDToast("EXCEL DOWNLOADED", "Incident workbook saved.", "success");
+    } catch(err) { alert("Spreadsheet failed: " + err.message); }
+  };
+
+  // ── Initialization ────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", () => {
+    loadCameras();
+    initShiftWatchdog();
+    startHealthDaemon();
+
+    document.querySelectorAll(".btn-grid-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".btn-grid-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        currentGridSize = parseInt(tab.getAttribute("data-grid"));
+        renderGrid();
+      });
+    });
+
+    setInterval(updateStatus, 1000);
+    updateWidgetStats();
+  });
+</script>
+
+<!-- Supabase session verification -->
+<script type="module">
+  import { getSession } from '../js/supabase.js';
+  getSession().then(session => {
+    if (!session && localStorage.getItem("isLoggedIn") === "true") {
+      if (typeof window.logout === "function") window.logout();
+    }
+  }).catch(() => {});
+</script>
+
+<!-- Auth + mobile menu -->
+<script src="../js/auth.js"></script>
 
 </body>
-
 </html>
