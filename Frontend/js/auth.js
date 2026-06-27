@@ -796,16 +796,23 @@ function checkAuthUI() {
     }
   }
 
-  // 1. Case-Insensitive Admin Details Filter (Strict selectors to prevent page collisions)
+  // 1. Case-Insensitive Admin Role Filter
+  // Uses body.is-admin class so CSS .admin-only-nav rules handle visibility cleanly
   const isAdmin = isLoggedIn === "true" && userRole && userRole.toLowerCase() === "admin";
-  const adminPages = ["admin.html", "diagnostics.html", "notifications.html", "incident_log.html"];
+  if (isAdmin) {
+    document.body.classList.add("is-admin");
+  } else {
+    document.body.classList.remove("is-admin");
+  }
 
+  // Fallback: also handle any li items NOT using admin-only-nav class (legacy pages)
+  const adminPages = ["admin.html", "diagnostics.html", "notifications.html", "incident_log.html"];
   adminPages.forEach(page => {
     const links = document.querySelectorAll(`.nav-menu a[href*="${page}"], .nav-links a[href*="${page}"]`);
     links.forEach(link => {
       const li = link.closest("li");
-      if (li) {
-        li.style.display = isAdmin ? "block" : "none";
+      if (li && !li.classList.contains("admin-only-nav")) {
+        li.style.display = isAdmin ? "list-item" : "none";
       }
     });
   });
