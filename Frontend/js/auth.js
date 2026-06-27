@@ -326,7 +326,7 @@ function logout() {
   import('../js/supabase.js').then(mod => mod.signOutSupabase()).catch(() => {});
   fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
 
-  // 3. Instant redirection (0ms delay!)
+  // 3. Instant redirection to login page across all pages (0ms delay!)
   window.location.replace("login.html");
 }
 
