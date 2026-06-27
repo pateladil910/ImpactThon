@@ -26,9 +26,11 @@ document.addEventListener("DOMContentLoaded", () => {
    🚪 LOGOUT FUNCTION
 =========================== */
 function logout() {
-  localStorage.removeItem("isLoggedIn");
-  localStorage.removeItem("username");
-  window.location.href = "../pages/login.html";
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch(e) {}
+  window.location.replace("login.html");
 }
 
 /* ===========================
