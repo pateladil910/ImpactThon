@@ -179,21 +179,6 @@ async function signup(event) {
   }
 }
 
-function logout() {
-  // Clear local storage for the UI
-   /*localStorage.removeItem("isLoggedIn");
-  localStorage.removeItem("username");
-  localStorage.removeItem("token") 
-
-  localStorage.removeItem("isLoggedIn", "true");
-  localStorage.removeItem("username", username);
-  localStorage.removeItem("token", data.token);
-
-  // Note: For a full logout, you'd ideally call a backend /logout 
-  // to clear the cookie, but this will get the user back to login.
-  window.location.href = "/index.html";
-}
-
 // --- UI UPDATES (Your existing logic kept safe) ---
 
 function checkAuthUI() {
@@ -325,7 +310,7 @@ async function signup(event) {
 
 // ---------------- LOGOUT ----------------
 
-async function logout() {
+function logout() {
   // 1. Clear all local session data immediately
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("username");
@@ -337,18 +322,11 @@ async function logout() {
   localStorage.removeItem("systemConfig");
   localStorage.removeItem("safetyShieldCameras");
 
-  // 2. Sign out from Supabase and wait for it to complete
-  try {
-    const { signOutSupabase } = await import('../js/supabase.js');
-    await signOutSupabase();
-  } catch (error) {
-    console.error("Supabase signOut failed:", error);
-  }
-
-  // 3. Sign out from backend in background
+  // 2. Trigger asynchronous cloud and backend signouts in background (non-blocking)
+  import('../js/supabase.js').then(mod => mod.signOutSupabase()).catch(() => {});
   fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
 
-  // 4. Redirect to login page
+  // 3. Instant redirection (0ms delay!)
   window.location.replace("login.html");
 }
 
