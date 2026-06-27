@@ -11,6 +11,7 @@
     <!-- Instant OAuth Return Loading Guard -->
     <script>
         if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('token') || window.location.hash.includes('error'))) {
+            document.write('<style>.auth-container { display: none !important; }</style>');
             document.addEventListener('DOMContentLoaded', () => {
                 const container = document.querySelector('.auth-container');
                 if (container) {
@@ -21,6 +22,7 @@
                             <p style="color: #64748b; font-size: 14px; font-family: 'Outfit', sans-serif;">Establishing encrypted satellite session parameters. Please wait...</p>
                         </div>
                     `;
+                    container.style.setProperty('display', 'block', 'important');
                 }
             });
         }
