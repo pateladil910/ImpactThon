@@ -347,26 +347,29 @@ async function signup(event) {
 
 // ---------------- LOGOUT ----------------
 
-async function logout() {
-  // 1. Clear all local session and Supabase auth data immediately
+function logout() {
+  // 1. Clear all local storage IMMEDIATELY (synchronous)
   try {
-    Object.keys(localStorage).forEach(key => localStorage.removeItem(key));
     localStorage.clear();
+    sessionStorage.clear();
   } catch (e) {}
 
-  // 2. Sign out from Supabase cloud session
-  try {
-    const { signOutSupabase } = await import('../js/supabase.js');
-    await signOutSupabase();
-  } catch (error) {
-    console.error("Supabase signOut failed:", error);
-  }
-
-  // 3. Sign out from backend in background
-  fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
-
-  // 4. Clean redirection to login page
+  // 2. Redirect to login.html RIGHT NOW — no waiting for async calls
   window.location.replace("login.html");
+
+  // 3. Supabase + backend signout run silently in background after navigation
+  try {
+    import('../js/supabase.js')
+      .then(function(mod) { if (mod.signOutSupabase) mod.signOutSupabase(); })
+      .catch(function() {});
+  } catch (e) {}
+
+  fetch(
+    ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:5000"
+      : "https://impactthon-wjut.onrender.com") + "/api/auth/logout",
+    { method: "POST", credentials: "include" }
+  ).catch(function() {});
 }
 
 // ---------------- FORGOT & RESET PASSWORD ----------------
