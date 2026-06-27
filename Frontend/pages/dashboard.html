@@ -7,6 +7,26 @@
       window.location.replace("login.html");
     }
   </script>
+  <!-- Early Auth-State Applicator: runs BEFORE any CSS renders so there is zero flicker -->
+  <script>
+    (function() {
+      var isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+      var username   = localStorage.getItem("username") || "User";
+      // Inject a tiny style block that overrides the default immediately
+      var style = document.createElement("style");
+      if (isLoggedIn) {
+        style.textContent = "#auth-buttons{display:none!important}#profile-section{display:flex!important}";
+      } else {
+        style.textContent = "#auth-buttons{display:flex!important}#profile-section{display:none!important}";
+      }
+      document.head.appendChild(style);
+      // Also set the name as soon as DOM is ready
+      document.addEventListener("DOMContentLoaded", function() {
+        var pn = document.getElementById("profile-name");
+        if (pn && isLoggedIn) pn.textContent = username;
+      });
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AI Safety Shield live operator dashboard — real-time industrial monitoring, CCTV grid, AI confidence, and threat incident logging.">
@@ -222,6 +242,8 @@ body.is-admin .admin-only-nav { display: list-item !important; }
 }
 
 .auth-buttons { display: flex; gap: 8px; }
+body.is-authenticated .auth-buttons { display: none; }
+
 .auth-buttons a {
   padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
   text-decoration: none; transition: all .2s;
@@ -233,6 +255,8 @@ body.is-admin .admin-only-nav { display: list-item !important; }
 .auth-buttons a:hover:not(:last-child) { color: var(--text); border-color: var(--border-strong); }
 
 .profile-box { display: none; align-items: center; gap: 10px; }
+body.is-authenticated .profile-box { display: flex; }
+
 .profile-name {
   font-family: var(--font-hud); font-size: 12px; font-weight: 600; color: var(--cyan);
 }
