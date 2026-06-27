@@ -517,14 +517,14 @@
     }, 4000);
 </script>
 
-  <!-- Secure Firebase Session Verification -->
+  <!-- Secure Supabase Session Verification -->
   <script type="module">
-    import { auth, onAuthStateChanged } from '../js/firebase.js';
-    onAuthStateChanged(auth, (user) => {
-      if (!user && localStorage.getItem("isLoggedIn") === "true") {
+    import { getSession } from '../js/supabase.js';
+    getSession().then((session) => {
+      if (!session && localStorage.getItem("isLoggedIn") === "true") {
         if (typeof window.logout === "function") window.logout();
       }
-    });
+    }).catch(() => {});
   </script>
 
   <!-- Existing Auth Module Integration -->

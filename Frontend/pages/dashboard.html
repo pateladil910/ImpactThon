@@ -1367,15 +1367,15 @@
     });
   </script>
 
-  <!-- Secure Firebase Session Verification -->
+  <!-- Secure Supabase Session Verification -->
   <script type="module">
-    import { auth, onAuthStateChanged } from '../js/firebase.js';
-    onAuthStateChanged(auth, (user) => {
-      if (!user && localStorage.getItem("isLoggedIn") === "true") {
-        console.warn("Firebase session expired. Logging out...");
+    import { getSession } from '../js/supabase.js';
+    getSession().then((session) => {
+      if (!session && localStorage.getItem("isLoggedIn") === "true") {
+        console.warn("Supabase session expired. Logging out...");
         if (typeof window.logout === "function") window.logout();
       }
-    });
+    }).catch(() => {});
   </script>
 
   <!-- Auth and Mobile Menu Handler -->

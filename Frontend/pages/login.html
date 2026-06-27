@@ -273,17 +273,18 @@
 
 <!-- Asynchronous Active Session Verification -->
 <script type="module">
-    import { auth, onAuthStateChanged } from '../js/firebase.js';
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
+    import { getSession } from '../js/supabase.js';
+    getSession().then((session) => {
+        if (session && session.user) {
+            const user = session.user;
             localStorage.setItem("isLoggedIn", "true");
             localStorage.setItem("username", user.email);
-            localStorage.setItem("displayName", user.displayName || "");
-            localStorage.setItem("profilePhoto", user.photoURL || "");
-            localStorage.setItem("uid", user.uid);
+            localStorage.setItem("displayName", user.user_metadata?.full_name || "");
+            localStorage.setItem("profilePhoto", user.user_metadata?.avatar_url || "");
+            localStorage.setItem("uid", user.id);
             window.location.replace("index.html");
         }
-    });
+    }).catch(() => {});
 </script>
 
 <!-- Existing Auth Module Integration -->

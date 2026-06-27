@@ -337,12 +337,12 @@ async function logout() {
   localStorage.removeItem("systemConfig");
   localStorage.removeItem("safetyShieldCameras");
 
-  // 2. Sign out from Firebase and wait for it to complete
+  // 2. Sign out from Supabase and wait for it to complete
   try {
-    const { auth, signOut } = await import('../js/firebase.js');
-    await signOut(auth);
+    const { signOutSupabase } = await import('../js/supabase.js');
+    await signOutSupabase();
   } catch (error) {
-    console.error("Firebase signOut failed:", error);
+    console.error("Supabase signOut failed:", error);
   }
 
   // 3. Sign out from backend in background

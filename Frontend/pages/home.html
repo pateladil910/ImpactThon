@@ -141,7 +141,7 @@
 
     <!-- JS MODULE ROUTER SYSTEM -->
     <script type="module">
-        import { auth, onAuthStateChanged } from "../js/firebase.js";
+        import { getSession } from "../js/supabase.js";
 
         const preloaderTerminal = document.getElementById('preloaderTerminal');
         const preloaderBar = document.getElementById('preloaderBar');
@@ -177,10 +177,13 @@
             assetLoaded = true;
         });
 
-        // 3. Fetch Firebase Session State
-        onAuthStateChanged(auth, (user) => {
+        // 3. Fetch Supabase Session State
+        getSession().then((session) => {
             authStateFetched = true;
-            isLoggedIn = !!user || localStorage.getItem('isLoggedIn') === 'true';
+            isLoggedIn = !!(session && session.user) || localStorage.getItem('isLoggedIn') === 'true';
+        }).catch(() => {
+            authStateFetched = true;
+            isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         });
 
         // 4. Easing progress bar calculation matched to life cycle
