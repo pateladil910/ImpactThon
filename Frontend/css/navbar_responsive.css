@@ -1,5 +1,17 @@
 /* ===== AUTOMATED CYBERNETIC UNIFIED NAVBAR ===== */
 
+/* ── Shared design tokens (fallback if index_new.css not loaded) ── */
+:root {
+    --primary-neon: #06b6d4;
+    --primary-blue: #3b82f6;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --bg-dark: #020617;
+    --font-cyber: 'Space Grotesk', sans-serif;
+    --font-main: 'Outfit', sans-serif;
+}
+
+
 .admin-only-nav {
     display: none !important;
 }
