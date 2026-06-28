@@ -12,7 +12,7 @@ html.is-admin .admin-only-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 24px; /* Squeezed desktop padding */
+    padding: 14px 16px; /* Squeezed desktop padding */
     background: rgba(8, 14, 27, 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -66,13 +66,13 @@ html.is-admin .admin-only-nav {
     justify-content: space-between;
     align-items: center;
     flex-grow: 1;
-    margin-left: 30px; /* Reduced desktop margin */
+    margin-left: 16px; /* Reduced desktop margin */
 }
 
 .nav-links {
     display: flex;
     list-style: none;
-    gap: 16px; /* Optimized dense desktop gap to prevent overflow */
+    gap: 10px; /* Optimized dense desktop gap to prevent overflow */
     align-items: center;
     flex: 1;
     justify-content: center;
@@ -82,7 +82,7 @@ html.is-admin .admin-only-nav {
     text-decoration: none;
     color: var(--text-muted);
     font-weight: 500;
-    font-size: 15px;
+    font-size: 13px;
     transition: all 0.25s ease;
     letter-spacing: 0.5px;
     position: relative;
