@@ -331,6 +331,10 @@ def test_camera():
         else:
             cap = cv2.VideoCapture(resolved_source)
             
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+
         if not cap.isOpened():
             return jsonify({
                 "status": "error",
