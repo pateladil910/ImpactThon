@@ -514,7 +514,8 @@ async function handleVerifyReset(event) {
 
 // ---------------- SOCIAL REGISTRATION (GOOGLE, FACEBOOK, APPLE) ----------------
 
-let currentSocialProvider = "";
+if(typeof window.currentSocialProvider==='undefined'){window.currentSocialProvider="";}
+var currentSocialProvider = window.currentSocialProvider;
 
 function injectSocialModalStyles() {
   if (document.getElementById("social-modal-styles")) return;
