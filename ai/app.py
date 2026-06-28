@@ -336,31 +336,7 @@ def test_camera():
     if isinstance(resolved_source, str) and resolved_source.isdigit():
         resolved_source = int(resolved_source)
 
-    # Fast Socket Pre-Check for IP/RTSP streams to prevent ngrok timeouts if network is unreachable
-    if isinstance(resolved_source, str) and (resolved_source.startswith("rtsp://") or resolved_source.startswith("http://")):
-        try:
-            clean = resolved_source.replace("rtsp://", "").replace("http://", "")
-            if "@" in clean:
-                clean = clean.split("@")[-1]
-            host_port = clean.split("/")[0]
-            if ":" in host_port:
-                host, port_str = host_port.split(":", 1)
-                port = int(port_str)
-            else:
-                host = host_port
-                port = 554 if resolved_source.startswith("rtsp://") else 80
-                
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(2.0)
-            result = s.connect_ex((host, port))
-            s.close()
-            if result != 0:
-                return jsonify({
-                    "status": "error",
-                    "message": f"Camera network unreachable ({host}:{port}). Ensure Laptop A is on the same WiFi."
-                }), 200
-        except Exception as se:
-            print(f"Socket probe error: {se}")
+
 
     try:
         if isinstance(resolved_source, str) and (resolved_source.startswith("rtsp://") or resolved_source.startswith("http://")):
