@@ -308,12 +308,13 @@
 
         <!-- Nav Time and Clear Actions inside auth buttons flexbox wrapper -->
         <div class="auth-buttons" id="auth-buttons">
-          <div class="nav-time" style="background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.3); padding: 8px 18px; border-radius: 30px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--primary-neon); letter-spacing: 0.5px; cursor: default;">
-            ⏱ <span id="liveTime">--:--:--</span>
-          </div>
-          <button class="clear-btn" onclick="clearHistory()" style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: none; padding: 10px 22px; border-radius: 30px; color: white; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-weight: 600; box-shadow: 0 4px 15px rgba(239,68,68,0.25); font-size: 13px; transition: all 0.25s ease;">
-            🗑 Clear All Data
-          </button>
+          <a href="login.html">Log In</a>
+          <a href="signup.html">Sign Up</a>
+        </div>
+
+        <div id="profile-section" style="display:none;" class="profile-box">
+          <span id="profile-name" class="profile-name">User</span>
+          <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
       </div>
 
