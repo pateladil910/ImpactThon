@@ -82,7 +82,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     telemetryInterval = setInterval(async () => {
       try {
-        const response = await fetch(`${AI_SERVICE_URL}/status`, { cache: "no-store" });
+        const response = await fetch(`${AI_SERVICE_URL}/status`, { 
+          cache: "no-store",
+          headers: {
+            'bypass-tunnel-reminder': 'true',
+            'ngrok-skip-browser-warning': 'true'
+          }
+        });
         const data = await response.json();
 
         // 1. Update safety status card
@@ -562,7 +568,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       controller.abort();
     }, 15000);
 
-    fetch(testApiUrl, { signal: controller.signal })
+    fetch(testApiUrl, { 
+      signal: controller.signal,
+      headers: {
+        'bypass-tunnel-reminder': 'true',
+        'ngrok-skip-browser-warning': 'true'
+      }
+    })
       .then(response => response.json())
       .then(data => {
         clearTimeout(timeoutId);
