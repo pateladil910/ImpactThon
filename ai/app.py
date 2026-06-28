@@ -124,10 +124,14 @@ def video_feed():
     
     resolved_source = construct_camera_source(source, username, password)
     
-    return Response(
+    resp = Response(
         generate_frames(source=resolved_source),
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
+    resp.headers['ngrok-skip-browser-warning'] = 'true'
+    resp.headers['bypass-tunnel-reminder'] = 'true'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 def send_email_async(custom_message=None, image_base64=None):
     try:
