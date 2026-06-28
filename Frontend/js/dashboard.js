@@ -86,39 +86,47 @@ async function updateStatus() {
 }
 
 async function startLiveSurveillance() {
+  let cam = null;
   try {
-    // Fetch the 'Life-Long' saved camera from MongoDB
     const response = await fetch(`${API_BASE_URL}/api/camera/latest`);
     const data = await response.json();
-
     if (data.success && data.camera) {
-      const cam = data.camera;
-      console.log(`🚀 Starting stream for: ${cam.name}`);
-
-      // Check if user saved an Edge Agent URL (for 2-laptop/ngrok setup)
-      const savedEdgeUrl = localStorage.getItem('edgeAgentUrl');
-
-      let streamBase;
-      if (savedEdgeUrl && cam.url && isPrivateIP(cam.url)) {
-        streamBase = savedEdgeUrl;
-        console.log(`🔗 Using Edge Agent URL: ${streamBase}`);
-      } else {
-        streamBase = AI_SERVICE_URL;
-      }
-
-      // Apply the saved URL to the camera image
-      const cameraImg = document.getElementById("ai-camera");
-      if (cameraImg) {
-        const u = encodeURIComponent(cam.url);
-        const usr = encodeURIComponent(cam.username || '');
-        const pwd = encodeURIComponent(cam.password || '');
-        cameraImg.src = `${streamBase}/video_feed?source=${u}&username=${usr}&password=${pwd}&t=${Date.now()}`;
-      }
-    } else {
-      console.log("No active backend camera found. Running simulated/local feed.");
+      cam = data.camera;
     }
   } catch (err) {
-    console.error("Failed to load saved camera settings.");
+    console.log("Backend camera fetch failed, checking local storage...");
+  }
+
+  if (!cam) {
+    try {
+      const localCams = JSON.parse(localStorage.getItem('safetyShieldCameras') || '[]');
+      if (localCams.length > 0) {
+        cam = localCams[localCams.length - 1]; // Get latest saved camera
+      }
+    } catch (e) {}
+  }
+
+  if (cam) {
+    console.log(`🚀 Starting stream for: ${cam.name || cam.cameraName}`);
+    const savedEdgeUrl = localStorage.getItem('edgeAgentUrl');
+    const camUrl = cam.url || cam.cameraUrl;
+
+    let streamBase;
+    if (savedEdgeUrl) {
+      streamBase = savedEdgeUrl;
+    } else {
+      streamBase = AI_SERVICE_URL;
+    }
+
+    const cameraImg = document.getElementById("ai-camera");
+    if (cameraImg) {
+      const u = encodeURIComponent(camUrl);
+      const usr = encodeURIComponent(cam.username || '');
+      const pwd = encodeURIComponent(cam.password || '');
+      cameraImg.src = `${streamBase}/video_feed?source=${u}&username=${usr}&password=${pwd}&t=${Date.now()}`;
+    }
+  } else {
+    console.log("No active camera found in database or local storage.");
   }
 }
 
