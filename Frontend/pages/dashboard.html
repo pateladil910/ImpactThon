@@ -1073,11 +1073,11 @@ async function loadCameras(){
     }else cameras=cached;
   }catch(e){cameras=cached}
   // Remove dummy webcam fallback if real RTSP/IP cameras exist
-  var realCams=cameras.filter(function(c){return c.cameraUrl&&c.cameraUrl!=='0'&&isNaN(c.cameraUrl)});
+  var realCams=cameras.filter(function(c){return c.cameraUrl&&c.cameraUrl!=='0'});
   if(realCams.length>0)cameras=realCams;
-  if(cameras.length===0){
-    cameras=[{cameraId:'cam_default',cameraName:'Webcam Node 1',cameraType:'WEBCAM',cameraUrl:'0',username:'',password:'',
-      location:'Operator Bay 1',description:'USB fallback webcam',status:'Online',fps:60,latency:7.5,brand:'Generic',channelId:1,active:true}];
+  if(cameras.length===0||!cameras.some(function(c){return c.cameraUrl&&c.cameraUrl!=='0'})){
+    cameras=[{cameraId:'cam_hikvision_default',cameraName:'Hikvision RTSP Camera',cameraType:'RTSP',cameraUrl:'rtsp://admin:Codevortex@12@192.168.1.64:554/Streaming/Channels/101',username:'admin',password:'Codevortex@12',
+      location:'Factory Floor 1',description:'Main Hikvision Security Node',status:'Online',fps:60,latency:7.5,brand:'Hikvision',channelId:1,active:true}];
     localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
   }
   // Prioritize: active RTSP → any RTSP online → last RTSP → any camera
