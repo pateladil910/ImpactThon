@@ -342,11 +342,11 @@ def get_latest_frame(source=None):
         source = camera_pool.last_active_source
     if source is None:
         return None
-    resolved_source = int(source) if str(source).isdigit() else source
-    cam = camera_pool.cameras.get(resolved_source)
+    cam = camera_pool.acquire_camera(source)
     if cam:
-        # Returns safe copy of the raw_frame buffer
         with cam.read_lock:
-            if cam.raw_frame is not None and cam.grabbed:
+            if cam.processed_frame is not None:
+                return cam.processed_frame.copy()
+            elif cam.raw_frame is not None and cam.grabbed:
                 return cam.raw_frame.copy()
     return None

@@ -122,6 +122,32 @@ def video_feed():
     resp.headers['ngrok-skip-browser-warning'] = 'true'
     resp.headers['bypass-tunnel-reminder'] = 'true'
     resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Cache-Control'] = 'no-cache, private, no-store, must-revalidate'
+    return resp
+
+@app.route("/snapshot")
+def camera_snapshot():
+    from flask import request
+    import cv2, numpy as np
+    source = request.args.get("source", "0")
+    username = request.args.get("username", "")
+    password = request.args.get("password", "")
+    resolved_source = construct_camera_source(source, username, password)
+    frame = get_latest_frame(source=resolved_source)
+    if frame is None:
+        error_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        cv2.putText(error_frame, "CONNECTING...", (200, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+        _, buffer = cv2.imencode(".jpg", error_frame)
+        jpeg_bytes = buffer.tobytes()
+    else:
+        _, buffer = cv2.imencode(".jpg", frame)
+        jpeg_bytes = buffer.tobytes()
+        
+    resp = Response(jpeg_bytes, mimetype="image/jpeg")
+    resp.headers['ngrok-skip-browser-warning'] = 'true'
+    resp.headers['bypass-tunnel-reminder'] = 'true'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return resp
 
 def send_email_async(custom_message=None, image_base64=None):
