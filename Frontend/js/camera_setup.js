@@ -1,3 +1,4 @@
+// Deployment Sync: 2026-06-28 T19:53:00 - Ultra-Shield Core
 document.addEventListener('DOMContentLoaded', async () => {
   const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
     ? "http://localhost:5000"
