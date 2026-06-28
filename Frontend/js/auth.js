@@ -7,26 +7,32 @@
 (function applyAuthState() {
   var isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   var username   = localStorage.getItem("username") || "User";
+  var userRole   = localStorage.getItem("userRole");
+  var isAdmin    = isLoggedIn && userRole && userRole.toLowerCase() === "admin";
+
+  if (isAdmin) {
+    if (document.documentElement) document.documentElement.classList.add("is-admin");
+  }
 
   // Inject a high-priority style override
   var style = document.createElement("style");
   style.id  = "auth-state-override";
+  var cssText = ".admin-only-nav{display:none!important;} html.is-admin .admin-only-nav, body.is-admin .admin-only-nav{display:list-item!important;}";
   if (isLoggedIn) {
-    style.textContent = "#auth-buttons{display:none!important}#profile-section{display:flex!important;align-items:center;gap:10px;}";
-    document.body && document.body.classList.add("is-authenticated");
+    cssText += "#auth-buttons{display:none!important}#profile-section{display:flex!important;align-items:center;gap:10px;}";
   } else {
-    style.textContent = "#auth-buttons{display:flex!important}#profile-section{display:none!important}";
+    cssText += "#auth-buttons{display:flex!important}#profile-section{display:none!important}";
   }
-  // Append to head as early as possible
+  style.textContent = cssText;
+
   var head = document.head || document.getElementsByTagName("head")[0];
   if (head) head.appendChild(style);
 
-  // Set username text as soon as DOM elements are available
   function applyUsername() {
     var pn = document.getElementById("profile-name");
     if (pn && isLoggedIn) pn.textContent = username;
-    // Also add class to body for CSS-level auth gating
     if (isLoggedIn && document.body) document.body.classList.add("is-authenticated");
+    if (isAdmin && document.body) document.body.classList.add("is-admin");
   }
 
   if (document.readyState === "loading") {

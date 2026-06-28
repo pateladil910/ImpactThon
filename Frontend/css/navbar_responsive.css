@@ -1,5 +1,13 @@
 /* ===== AUTOMATED CYBERNETIC UNIFIED NAVBAR ===== */
 
+.admin-only-nav {
+    display: none !important;
+}
+body.is-admin .admin-only-nav,
+html.is-admin .admin-only-nav {
+    display: list-item !important;
+}
+
 .navbar {
     display: flex;
     justify-content: space-between;
