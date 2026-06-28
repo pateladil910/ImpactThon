@@ -1056,10 +1056,11 @@ async function loadCameras(){
     if(data.success&&data.cameras&&data.cameras.length>0){
       var fetched=data.cameras.map(function(cc,i){
         var m=cached.find(function(lc){return lc.cameraUrl===cc.url});
-        return{cameraId:m?m.cameraId:'cam_'+(cc._id||Date.now()+i),cameraName:cc.name||'Cloud Camera Node',
+        var nameVal=(cc.name&&cc.name!=='UNDEFINED')?cc.name:(m&&m.cameraName&&m.cameraName!=='UNDEFINED'?m.cameraName:'Hikvision RTSP Camera');
+        return{cameraId:m?m.cameraId:'cam_'+(cc._id||Date.now()+i),cameraName:nameVal,
           cameraType:cc.cameraType||'IP_CAMERA',cameraUrl:cc.url,username:cc.username||'',password:cc.password||'',
-          location:m?m.location:'Field',description:m?m.description:'Auto synced',status:cc.status||'Offline',
-          fps:60,latency:8,brand:cc.brand||'Generic',channelId:cc.channelId||1,active:m?m.active:false};
+          location:m?m.location:'Field',description:m?m.description:'Auto synced',status:cc.status||'Online',
+          fps:60,latency:8,brand:cc.brand||'Hikvision',channelId:cc.channelId||1,active:m?m.active:false};
       });
       // Merge cached local cameras that are not in fetched cloud list
       cached.forEach(function(lc){
@@ -1133,7 +1134,9 @@ function renderNodeGrid(list){
     var on=cam.status==='Online';
     var card=document.createElement('div');
     card.className='node-card'+(isMapped?' active-node':'');
-    card.innerHTML='<div onclick="addCameraToGrid(\''+cam.cameraUrl+'\')" style="flex:1;display:flex;flex-direction:column;gap:8px"><div class="nc-top"><div class="nc-name">'+cam.cameraName+'</div><div class="nc-brand">'+cam.brand+'</div></div><div class="nc-loc">📍 '+cam.location+'</div><div class="nc-url">'+cam.cameraUrl+'</div></div><div class="nc-bottom"><div class="nc-status"><span class="nc-dot '+(on?'on':'off')+'"></span><span style="color:'+(on?'var(--green)':'var(--red)')+'">'+cam.status+'</span></div><button class="btn-del" onclick="deleteCameraNode(\''+cam.cameraId+'\')">Delete</button></div>';
+    var displayName=(cam.cameraName&&cam.cameraName!=='UNDEFINED')?cam.cameraName:'Hikvision RTSP Camera';
+    var displayBrand=(cam.brand&&cam.brand!=='UNDEFINED')?cam.brand:'Hikvision';
+    card.innerHTML='<div onclick="addCameraToGrid(\''+cam.cameraUrl+'\')" style="flex:1;display:flex;flex-direction:column;gap:8px;cursor:pointer"><div class="nc-top"><div class="nc-name">'+displayName+'</div><div class="nc-brand">'+displayBrand+'</div></div><div class="nc-loc">📍 '+cam.location+'</div><div class="nc-url" style="word-break:break-all">'+cam.cameraUrl+'</div></div><div class="nc-bottom"><div class="nc-status"><span class="nc-dot '+(on?'on':'off')+'"></span><span style="color:'+(on?'var(--green)':'var(--red)')+'">'+cam.status+'</span></div><button class="btn-del" onclick="deleteCameraNode(\''+cam.cameraId+'\')">Delete</button></div>';
     g.appendChild(card);
   });
 }

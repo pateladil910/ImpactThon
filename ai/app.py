@@ -93,22 +93,13 @@ def construct_camera_source(url, username, password):
             
             # If credentials already embedded in URL (an @ symbol exists before the first /)
             if last_at != -1 and (first_slash == -1 or last_at < first_slash):
-                creds_part = remainder[:last_at]
-                host_path = remainder[last_at + 1:]
-                if ':' in creds_part:
-                    u, p = creds_part.split(':', 1)
-                    u_clean = unquote(u)
-                    p_clean = unquote(p)
-                    enc_u = quote(u_clean, safe='')
-                    enc_p = quote(p_clean, safe='')
-                    return f"{schema}{enc_u}:{enc_p}@{host_path}"
                 return url
             else:
                 if username or password:
-                    enc_u = quote(unquote(username), safe='') if username else ""
-                    enc_p = quote(unquote(password), safe='') if password else ""
-                    if enc_u or enc_p:
-                        return f"{schema}{enc_u}:{enc_p}@{remainder}"
+                    u_clean = unquote(username) if username else ""
+                    p_clean = unquote(password) if password else ""
+                    if u_clean or p_clean:
+                        return f"{schema}{u_clean}:{p_clean}@{remainder}"
             break
     return url
 
