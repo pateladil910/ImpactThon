@@ -83,7 +83,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     telemetryInterval = setInterval(async () => {
       try {
-        const response = await fetch(`${AI_SERVICE_URL}/status`, { 
+        const edgeAgentInput = document.getElementById('edgeAgentUrl');
+        const edgeAgentUrlVal = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
+        const savedEdge = localStorage.getItem('edgeAgentUrl') || 'https://confider-celery-deskbound.ngrok-free.dev';
+        const targetUrl = edgeAgentUrlVal || savedEdge || AI_SERVICE_URL;
+
+        const response = await fetch(`${targetUrl}/status`, { 
           cache: "no-store",
           headers: {
             'bypass-tunnel-reminder': 'true',
@@ -91,6 +96,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         });
         const data = await response.json();
+
+        if (telStreamHealth) {
+          telStreamHealth.textContent = 'ONLINE';
+          telStreamHealth.style.color = 'var(--safe-green)';
+        }
 
         // 1. Update safety status card
         if (data.safety === "DANGER") {
