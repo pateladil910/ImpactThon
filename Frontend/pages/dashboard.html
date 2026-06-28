@@ -1052,13 +1052,20 @@ async function loadCameras(){
     var res=await fetch(API_BASE_URL+'/api/camera/all',{headers});
     var data=await res.json();
     if(data.success&&data.cameras&&data.cameras.length>0){
-      cameras=data.cameras.map(function(cc,i){
+      var fetched=data.cameras.map(function(cc,i){
         var m=cached.find(function(lc){return lc.cameraUrl===cc.url});
         return{cameraId:m?m.cameraId:'cam_'+(cc._id||Date.now()+i),cameraName:cc.name||'Cloud Camera Node',
           cameraType:cc.cameraType||'IP_CAMERA',cameraUrl:cc.url,username:cc.username||'',password:cc.password||'',
           location:m?m.location:'Field',description:m?m.description:'Auto synced',status:cc.status||'Offline',
-          fps:60,latency:8,brand:cc.brand||'Generic',channelId:cc.channelId||1,active:m?m.active:(i===0)};
+          fps:60,latency:8,brand:cc.brand||'Generic',channelId:cc.channelId||1,active:m?m.active:false};
       });
+      // Merge cached local cameras that are not in fetched cloud list
+      cached.forEach(function(lc){
+        if(!fetched.some(function(fc){return fc.cameraUrl===lc.cameraUrl})){
+          fetched.unshift(lc);
+        }
+      });
+      cameras=fetched;
       localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
     }else cameras=cached;
   }catch(e){cameras=cached}
@@ -1131,7 +1138,7 @@ function renderGrid(){
       var savedEdge=localStorage.getItem('edgeAgentUrl');
       var testUrl=isLocal?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL;
       var streamUrl=testUrl+'/video_feed?source='+encodeURIComponent(cam.cameraUrl)+'&username='+encodeURIComponent(cam.username)+'&password='+encodeURIComponent(cam.password)+'&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t='+Date.now();
-      slot.innerHTML='<div style="position:absolute;top:8px;left:8px;right:8px;z-index:10;display:flex;flex-direction:column;gap:4px;pointer-events:none"><div style="display:flex;justify-content:space-between;width:100%"><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:4px;font-family:var(--hud)"><span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.1s ease-in-out infinite"></span>LIVE</span><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--cyan);font-family:var(--hud)">'+cam.brand.toUpperCase()+' CH'+cam.channelId+'</span></div><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:#fff;width:fit-content;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--hud)">'+cam.cameraName.toUpperCase()+'</span></div><div style="position:absolute;bottom:8px;right:8px;z-index:10;display:flex;gap:4px"><button onclick="event.stopPropagation();window.togglePinSlot('+i+')" style="background:rgba(2,6,23,.88);border:1px solid var(--cyan-30);border-radius:4px;padding:2px 5px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:var(--hud)">PIN</button><button onclick="event.stopPropagation();window.maximizeSlot('+i+')" style="background:rgba(2,6,23,.88);border:1px solid var(--cyan-30);border-radius:4px;padding:2px 5px;color:#fff;font-size:8px;font-weight:700;cursor:pointer;font-family:var(--hud)">FULL</button></div><img src="'+streamUrl+'" alt="'+cam.cameraName+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"/><div style="display:none;text-align:center;color:var(--txt-2);flex-direction:column;align-items:center;gap:6px"><div style="font-size:12px;font-weight:700;color:var(--red);font-family:var(--hud)">FEED RECOVERY</div><div style="font-size:8px;font-family:var(--mono);opacity:.5">RECONNECTING...</div></div>';
+      slot.innerHTML='<div style="position:absolute;top:8px;left:8px;right:8px;z-index:10;display:flex;flex-direction:column;gap:4px;pointer-events:none"><div style="display:flex;justify-content:space-between;width:100%"><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:4px;font-family:var(--hud)"><span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.1s ease-in-out infinite"></span>LIVE</span><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--cyan);font-family:var(--hud)">'+(cam.brand||'CAM').toUpperCase()+' CH'+(cam.channelId||1)+'</span></div><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:#fff;width:fit-content;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--hud)">'+(cam.cameraName||'Node').toUpperCase()+'</span></div><div style="position:absolute;bottom:8px;right:8px;z-index:10;display:flex;gap:4px"><button onclick="event.stopPropagation();window.togglePinSlot('+i+')" style="background:rgba(2,6,23,.88);border:1px solid var(--cyan-30);border-radius:4px;padding:2px 5px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:var(--hud)">PIN</button><button onclick="event.stopPropagation();window.maximizeSlot('+i+')" style="background:rgba(2,6,23,.88);border:1px solid var(--cyan-30);border-radius:4px;padding:2px 5px;color:#fff;font-size:8px;font-weight:700;cursor:pointer;font-family:var(--hud)">FULL</button></div><img src="'+streamUrl+'" alt="'+cam.cameraName+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"/><div style="display:none;text-align:center;color:var(--txt-2);flex-direction:column;align-items:center;gap:6px"><div style="font-size:12px;font-weight:700;color:var(--red);font-family:var(--hud)">FEED RECOVERY</div><div style="font-size:8px;font-family:var(--mono);opacity:.5">RECONNECTING...</div></div>';
       if(cam.pinned)slot.classList.add('active-pin');
     }else{
       slot.innerHTML='<div style="text-align:center;color:var(--txt-2);display:flex;flex-direction:column;align-items:center;gap:6px"><div style="font-size:12px;font-weight:700;opacity:.2;font-family:var(--hud);letter-spacing:2px">NO SIGNAL</div><div style="font-size:8px;letter-spacing:1px;font-family:var(--mono);opacity:.2">CH '+(i+1)+' · STANDBY</div></div>';
@@ -1178,71 +1185,24 @@ function startMetricSimulation(){
   setInterval(function(){
     var fps=(54+Math.random()*7).toFixed(1);
     var lat=Math.floor(4+Math.random()*6)+'ms';
-    var conf=Math.floor(80+Math.random()*18);
-    var hc=Math.random()>.85?1:0;
-    ['hud-fps','hud-latency','confidence-value','confidence-value-kpi','hud-human-count'].forEach(function(id,i){
-      var el=document.getElementById(id);
-      if(el)el.textContent=[fps,lat,conf+'%',conf+'%',hc][i];
-    });
-    var cb=document.getElementById('conf-bar');if(cb)cb.style.width=conf+'%';
-  },1200);
+    var hc=document.getElementById('hud-human-count');if(hc)hc.textContent='0';
+    var hf=document.getElementById('hud-fps');if(hf)hf.textContent=fps;
+    var hl=document.getElementById('hud-latency');if(hl)hl.textContent=lat;
+  },1000);
 }
 
 function startAnimatedFallback(slot){
-  var fc=document.createElement('canvas');
-  fc.style.cssText='position:absolute;inset:0;width:100%;height:100%;';
-  slot.appendChild(fc);
-  function resize(){fc.width=slot.offsetWidth||640;fc.height=slot.offsetHeight||360}
-  resize();
-  var fCtx=fc.getContext('2d'),t=0;
-  startMetricSimulation();
-  function frame(){
-    t++;var W=fc.width,H=fc.height;
-    fCtx.fillStyle='#030712';fCtx.fillRect(0,0,W,H);
-    for(var y=0;y<H;y+=4){fCtx.fillStyle='rgba(6,182,212,'+(0.007+Math.sin(y*.04+t*.018)*.003)+')';fCtx.fillRect(0,y,W,1)}
-    fCtx.strokeStyle='rgba(6,182,212,0.06)';fCtx.lineWidth=1;
-    for(var x=0;x<W;x+=44){fCtx.beginPath();fCtx.moveTo(x,0);fCtx.lineTo(x,H);fCtx.stroke()}
-    for(var y=0;y<H;y+=44){fCtx.beginPath();fCtx.moveTo(0,y);fCtx.lineTo(W,y);fCtx.stroke()}
-    var cx=W/2+Math.sin(t*.018)*28,cy=H/2+Math.cos(t*.013)*18;
-    fCtx.strokeStyle='rgba(6,182,212,0.5)';fCtx.lineWidth=1;
-    fCtx.beginPath();fCtx.moveTo(cx-16,cy);fCtx.lineTo(cx+16,cy);fCtx.stroke();
-    fCtx.beginPath();fCtx.moveTo(cx,cy-16);fCtx.lineTo(cx,cy+16);fCtx.stroke();
-    fCtx.strokeRect(cx-7,cy-7,14,14);
-    if(t%200<140){
-      var bx=W*.3+Math.sin(t*.009)*35,by=H*.18,bw=95+Math.sin(t*.018)*18,bh=175;
-      fCtx.strokeStyle='rgba(16,185,129,.7)';fCtx.lineWidth=1.5;fCtx.strokeRect(bx,by,bw,bh);
-      fCtx.fillStyle='rgba(16,185,129,.9)';fCtx.font='700 9px Space Grotesk,sans-serif';
-      fCtx.fillText('PERSON 0.'+(Math.floor(80+Math.random()*15)),bx,by-4);
-    }
-    var br=12;fCtx.strokeStyle='rgba(6,182,212,0.55)';fCtx.lineWidth=2;
-    [[12,12,1,1],[W-12,12,-1,1],[12,H-12,1,-1],[W-12,H-12,-1,-1]].forEach(function(c){
-      fCtx.beginPath();fCtx.moveTo(c[0],c[1]);fCtx.lineTo(c[0]+br*c[2],c[1]);fCtx.stroke();
-      fCtx.beginPath();fCtx.moveTo(c[0],c[1]);fCtx.lineTo(c[0],c[1]+br*c[3]);fCtx.stroke();
-    });
-    fCtx.fillStyle='rgba(6,182,212,.8)';fCtx.font='700 10px Space Grotesk,sans-serif';
-    fCtx.fillText('AI SAFETY SHIELD · SIMULATED FEED',16,H-14);
-    fCtx.fillStyle='rgba(255,255,255,.35)';fCtx.font='9px Fira Code,monospace';
-    fCtx.fillText(new Date().toISOString().replace('T',' ').substr(0,19)+' UTC',W-215,H-14);
-    var rx=W-46,ry=14;
-    fCtx.fillStyle=t%60<30?'rgba(239,68,68,.9)':'rgba(239,68,68,.3)';
-    fCtx.beginPath();fCtx.arc(rx,ry,4,0,Math.PI*2);fCtx.fill();
-    fCtx.fillStyle='rgba(255,255,255,.8)';fCtx.font='700 9px Space Grotesk,sans-serif';
-    fCtx.fillText('REC',rx+8,ry+3);
-    requestAnimationFrame(frame);
-  }
-  frame();
-  addIncidentLog('Camera stream unavailable. Animated simulation active.','WARNING','Fallback Engine');
+  slot.innerHTML='<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(15,23,42,1) 0%,rgba(2,6,23,1) 100%);color:var(--cyan);gap:12px"><div style="width:40px;height:40px;border:2px solid var(--cyan-30);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite"></div><div style="font-size:10px;font-family:var(--hud);letter-spacing:2px;font-weight:700">STANDBY STREAM MATRIX</div></div>';
 }
 
-window.togglePinSlot=function(idx){
-  var cam=cameras.find(function(c){return c.cameraUrl===gridMapping[idx]});
+window.togglePinSlot=function(i){
+  var url=gridMapping[i];if(!url)return;
+  var cam=cameras.find(function(c){return c.cameraUrl===url});
   if(cam){cam.pinned=!cam.pinned;addIncidentLog('Toggled pin: '+cam.cameraName,'WARNING');renderGrid()}
 };
-window.maximizeSlot=function(idx){
-  document.querySelectorAll('.grid-slot').forEach(function(s){
-    if(s.getAttribute('data-index')==idx)s.classList.toggle('fullscreen');
-    else s.classList.remove('fullscreen');
-  });
+window.maximizeSlot=function(i){
+  var container=document.getElementById('cameraGridContainer');if(!container)return;
+  var slots=container.querySelectorAll('.grid-slot');if(slots[i])slots[i].classList.toggle('fullscreen');
 };
 
 async function deleteCameraNode(cameraId){
@@ -1267,7 +1227,7 @@ function startHealthDaemon(){
       var cu=(isPrivateIP(cam.cameraUrl)?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL)+'/status';
       try{
         var ctrl=new AbortController();var tid=setTimeout(function(){ctrl.abort()},1500);
-        var res=await fetch(cu,{signal:ctrl.signal});clearTimeout(tid);
+        var res=await fetch(cu,{signal:ctrl.signal,headers:{'ngrok-skip-browser-warning':'true','bypass-tunnel-reminder':'true'}});clearTimeout(tid);
         if(res.status===200){if(cam.status!=='Online'){cam.status='Online';addIncidentLog('Node online: '+cam.cameraName,'SAFE')}}
         else{if(cam.status!=='Offline'){cam.status='Offline';addIncidentLog('Node error: '+cam.cameraName,'CRITICAL')}}
       }catch(e){if(cam.status!=='Offline'){cam.status='Offline';addIncidentLog('Node offline: '+cam.cameraName,'CRITICAL')}}
@@ -1282,7 +1242,7 @@ async function updateStatus(){
   var savedEdge=localStorage.getItem('edgeAgentUrl');
   var SU=(isPrivateIP(activeCamera.cameraUrl)?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL)+'/status';
   try{
-    var res=await fetch(SU,{cache:'no-store'});var data=await res.json();
+    var res=await fetch(SU,{cache:'no-store',headers:{'ngrok-skip-browser-warning':'true','bypass-tunnel-reminder':'true'}});var data=await res.json();
     if(data.confidence!==undefined){
       var conf=data.confidence;
       ['confidence-value','confidence-value-kpi'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=conf+'%'});
