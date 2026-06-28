@@ -129,22 +129,34 @@ def construct_camera_source(url, username, password):
         return url
     if url.isdigit():
         return int(url)
-    if not username or not password:
-        return url
+        
+    from urllib.parse import quote, unquote
         
     for schema in ["rtsp://", "rtmp://", "http://", "https://"]:
         if url.lower().startswith(schema):
             remainder = url[len(schema):]
             first_slash = remainder.find('/')
-            first_at = remainder.find('@')
-            if first_at != -1 and (first_slash == -1 or first_at < first_slash):
-                # Credentials already exist in URL
+            last_at = remainder.rfind('@')
+            
+            # If credentials already embedded in URL (an @ symbol exists before the first /)
+            if last_at != -1 and (first_slash == -1 or last_at < first_slash):
+                creds_part = remainder[:last_at]
+                host_path = remainder[last_at + 1:]
+                if ':' in creds_part:
+                    u, p = creds_part.split(':', 1)
+                    u_clean = unquote(u)
+                    p_clean = unquote(p)
+                    enc_u = quote(u_clean, safe='')
+                    enc_p = quote(p_clean, safe='')
+                    return f"{schema}{enc_u}:{enc_p}@{host_path}"
                 return url
             else:
-                from urllib.parse import quote
-                enc_user = quote(username)
-                enc_pass = quote(password)
-                return f"{schema}{enc_user}:{enc_pass}@{remainder}"
+                if username or password:
+                    enc_u = quote(unquote(username), safe='') if username else ""
+                    enc_p = quote(unquote(password), safe='') if password else ""
+                    if enc_u or enc_p:
+                        return f"{schema}{enc_u}:{enc_p}@{remainder}"
+            break
     return url
 
 def load_or_create_config():

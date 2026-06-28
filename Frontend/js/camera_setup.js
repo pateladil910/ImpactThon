@@ -470,9 +470,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Extract host/ip
     // 1. Remove protocol schema
     cleanUrl = cleanUrl.replace(/^(rtsp|rtmp|http|https):\/\//, '');
-    // 2. Remove credentials if present (anything before '@')
+    // 2. Remove credentials if present (anything before last '@')
     if (cleanUrl.includes('@')) {
-      cleanUrl = cleanUrl.substring(cleanUrl.indexOf('@') + 1);
+      cleanUrl = cleanUrl.substring(cleanUrl.lastIndexOf('@') + 1);
     }
     // 3. Remove port and path (anything starting with ':' or '/')
     const endIdx = cleanUrl.search(/[:\/]/);

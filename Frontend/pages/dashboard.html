@@ -32,6 +32,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link rel="stylesheet" href="../css/index_new.css">
+  <link rel="stylesheet" href="../css/navbar_responsive.css">
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
 <style>
@@ -967,7 +968,7 @@ function showHUDToast(title,body,type){
 function isPrivateIP(u){
   if(!u)return false;
   var c=u.toLowerCase().trim().replace(/^(rtsp|rtmp|http|https):\/\//,'');
-  if(c.includes('@'))c=c.substring(c.indexOf('@')+1);
+  if(c.includes('@'))c=c.substring(c.lastIndexOf('@')+1);
   var ei=c.search(/[:/]/);if(ei!==-1)c=c.substring(0,ei);
   if(/^\d+$/.test(c))return true;
   if(c==='localhost'||c==='127.0.0.1')return true;
