@@ -187,16 +187,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load existing camera configuration on start
   await loadExistingCamera();
 
-  // 3. REAL-TIME LOCAL IP WARNING
+  // 3. REAL-TIME LOCAL IP WARNING + EDGE AGENT SECTION TOGGLE
+  const edgeAgentSection = document.getElementById('edgeAgentSection');
+
   camUrl.addEventListener('input', (e) => {
     const val = e.target.value.toLowerCase();
     const isLocal = isPrivateIP(val);
 
     if (isLocal) {
-      urlWarning.innerHTML = '⚠️ Private IP detected. Browser-direct intranet mode activated.';
+      urlWarning.innerHTML = '⚠️ Private IP detected. Run the AI server on the camera laptop and paste the ngrok URL below.';
       urlWarning.classList.remove('hidden');
+      if (edgeAgentSection) edgeAgentSection.style.display = 'flex';
     } else {
       urlWarning.classList.add('hidden');
+      if (edgeAgentSection) edgeAgentSection.style.display = 'none';
     }
   });
 
@@ -536,7 +540,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateDeployButtonState();
 
     const isLocal = isPrivateIP(url);
-    const testUrl = isLocal ? "http://localhost:5000" : AI_SERVICE_URL;
+    const edgeAgentInput = document.getElementById('edgeAgentUrl');
+    const edgeAgentUrl = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
+
+    let testUrl;
+    if (isLocal) {
+      if (edgeAgentUrl) {
+        testUrl = edgeAgentUrl;  // Use ngrok/remote AI server
+      } else {
+        testUrl = "http://localhost:5000"; // Fallback: proxy via backend (will warn isLocal)
+        showHUDToast('EDGE AGENT URL NEEDED', 'Private IP detected. Paste the ngrok URL in the Edge Agent field below for the camera to work.', 'warning');
+      }
+    } else {
+      testUrl = AI_SERVICE_URL;
+    }
     const testApiUrl = `${testUrl}/api/test_camera?source=${encodeURIComponent(url)}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
 
     // Create AbortController to enforce client-side timeout of 15 seconds
@@ -674,6 +691,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     existingCams.push(newCam);
     localStorage.setItem('safetyShieldCameras', JSON.stringify(existingCams));
     localStorage.setItem('connectedCamera', 'true');
+
+    // Save edge agent URL if provided (for 2-laptop setup)
+    const edgeAgentInput = document.getElementById('edgeAgentUrl');
+    const edgeAgentUrlVal = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
+    if (edgeAgentUrlVal) {
+      localStorage.setItem('edgeAgentUrl', edgeAgentUrlVal);
+    } else {
+      localStorage.removeItem('edgeAgentUrl');
+    }
 
     // Perform database sync upsert
     const payload = {

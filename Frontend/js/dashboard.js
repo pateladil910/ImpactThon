@@ -95,11 +95,24 @@ async function startLiveSurveillance() {
       const cam = data.camera;
       console.log(`🚀 Starting stream for: ${cam.name}`);
 
-      // REQUIRED CHANGE: Apply the saved URL to the camera image
+      // Check if user saved an Edge Agent URL (for 2-laptop/ngrok setup)
+      const savedEdgeUrl = localStorage.getItem('edgeAgentUrl');
+
+      let streamBase;
+      if (savedEdgeUrl && cam.url && isPrivateIP(cam.url)) {
+        streamBase = savedEdgeUrl;
+        console.log(`🔗 Using Edge Agent URL: ${streamBase}`);
+      } else {
+        streamBase = AI_SERVICE_URL;
+      }
+
+      // Apply the saved URL to the camera image
       const cameraImg = document.getElementById("ai-camera");
       if (cameraImg) {
-        // We pass the cam.url to your AI service as a parameter
-        cameraImg.src = `${AI_SERVICE_URL}/video_feed?source=${encodeURIComponent(cam.url)}`;
+        const u = encodeURIComponent(cam.url);
+        const usr = encodeURIComponent(cam.username || '');
+        const pwd = encodeURIComponent(cam.password || '');
+        cameraImg.src = `${streamBase}/video_feed?source=${u}&username=${usr}&password=${pwd}&t=${Date.now()}`;
       }
     } else {
       console.log("No active backend camera found. Running simulated/local feed.");
@@ -107,6 +120,18 @@ async function startLiveSurveillance() {
   } catch (err) {
     console.error("Failed to load saved camera settings.");
   }
+}
+
+function isPrivateIP(urlStr) {
+  if (!urlStr) return false;
+  let c = urlStr.toLowerCase().trim().replace(/^(rtsp|rtmp|http|https):\/\//, '');
+  if (c.includes('@')) c = c.substring(c.lastIndexOf('@') + 1);
+  const ei = c.search(/[:/]/); if (ei !== -1) c = c.substring(0, ei);
+  if (/^\d+$/.test(c)) return true;
+  if (c === 'localhost' || c === '127.0.0.1') return true;
+  if (c.startsWith('192.168.') || c.startsWith('10.')) return true;
+  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(c)) return true;
+  return false;
 }
 
 /* ==========================
