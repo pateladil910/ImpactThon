@@ -74,7 +74,8 @@ html.is-admin .admin-only-nav {
     list-style: none;
     gap: 16px; /* Optimized dense desktop gap to prevent overflow */
     align-items: center;
-    flex-shrink: 0;
+    flex: 1;
+    justify-content: center;
 }
 
 .nav-links a {
