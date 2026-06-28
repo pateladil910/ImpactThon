@@ -1077,7 +1077,10 @@ async function loadCameras(){
     localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
   }
   activeCamera=cameras.find(function(c){return c.active})||cameras[0];
-  if(activeCamera)activeCamera.active=true;
+  if(activeCamera){
+    activeCamera.active=true;
+    gridMapping[0]=activeCamera.cameraUrl;
+  }
   cameras.forEach(function(cam,i){if(gridMapping[i]===undefined)gridMapping[i]=cam.cameraUrl});
   filterAndRenderCameras();renderGrid();updateAllStats();
 }
@@ -1161,6 +1164,7 @@ function renderGrid(){
 
 // ── Webcam + Animated Fallback ──
 function tryWebcamFallback(){
+  if(activeCamera && activeCamera.cameraType !== 'WEBCAM' && activeCamera.cameraUrl !== '0') return;
   var container=document.getElementById('cameraGridContainer');
   if(!container)return;
   var slot0=container.querySelector('.grid-slot');
