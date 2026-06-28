@@ -66,13 +66,13 @@ html.is-admin .admin-only-nav {
     justify-content: space-between;
     align-items: center;
     flex-grow: 1;
-    margin-left: 16px; /* Reduced desktop margin */
+    margin-left: 20px; /* Balanced desktop margin */
 }
 
 .nav-links {
     display: flex;
     list-style: none;
-    gap: 10px; /* Optimized dense desktop gap to prevent overflow */
+    gap: 14px; /* Balanced gap for readability */
     align-items: center;
     flex: 1;
     justify-content: center;
@@ -81,12 +81,12 @@ html.is-admin .admin-only-nav {
 .nav-links a {
     text-decoration: none;
     color: var(--text-muted);
-    font-weight: 500;
-    font-size: 13px;
+    font-weight: 600;
+    font-size: 15px;
     transition: all 0.25s ease;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     position: relative;
-    padding: 4px 0;
+    padding: 6px 2px;
     white-space: nowrap;
 }
 
