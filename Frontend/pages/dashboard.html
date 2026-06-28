@@ -1166,7 +1166,7 @@ function renderGrid(){
     var camUrl=gridMapping[i];var cam=cameras.find(function(c){return c.cameraUrl===camUrl});
     if(cam){
       var isLocal=isPrivateIP(cam.cameraUrl);
-      var savedEdge=localStorage.getItem('edgeAgentUrl');
+      var savedEdge=localStorage.getItem('edgeAgentUrl')||'https://confider-celery-deskbound.ngrok-free.dev';
       var testUrl=isLocal?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL;
       var streamUrl=testUrl+'/video_feed?source='+encodeURIComponent(cam.cameraUrl)+'&username='+encodeURIComponent(cam.username)+'&password='+encodeURIComponent(cam.password)+'&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t='+Date.now();
       slot.innerHTML='<div style="position:absolute;top:8px;left:8px;right:8px;z-index:10;display:flex;flex-direction:column;gap:4px;pointer-events:none"><div style="display:flex;justify-content:space-between;width:100%"><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:4px;font-family:var(--hud)"><span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.1s ease-in-out infinite"></span>LIVE</span><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--cyan);font-family:var(--hud)">'+(cam.brand||'CAM').toUpperCase()+' CH'+(cam.channelId||1)+'</span></div><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:#fff;width:fit-content;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--hud)">'+(cam.cameraName||'Node').toUpperCase()+'</span></div><div style="position:absolute;bottom:8px;right:8px;z-index:10;display:flex;gap:4px"><button onclick="event.stopPropagation();window.togglePinSlot('+i+')" style="background:rgba(2,6,23,.88);border:1px solid var(--cyan-30);border-radius:4px;padding:2px 5px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:var(--hud)">PIN</button><button onclick="event.stopPropagation();window.maximizeSlot('+i+')" style="background:rgba(2,6,23,.88);border:1px solid var(--cyan-30);border-radius:4px;padding:2px 5px;color:#fff;font-size:8px;font-weight:700;cursor:pointer;font-family:var(--hud)">FULL</button></div><img src="'+streamUrl+'" alt="'+cam.cameraName+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" />';
@@ -1255,7 +1255,7 @@ function startHealthDaemon(){
   if(healthInterval)clearInterval(healthInterval);
   healthInterval=setInterval(async function(){
     for(var cam of cameras){
-      var savedEdge=localStorage.getItem('edgeAgentUrl');
+      var savedEdge=localStorage.getItem('edgeAgentUrl')||'https://confider-celery-deskbound.ngrok-free.dev';
       var cu=(isPrivateIP(cam.cameraUrl)?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL)+'/status';
       try{
         var ctrl=new AbortController();var tid=setTimeout(function(){ctrl.abort()},1500);
@@ -1271,7 +1271,7 @@ function startHealthDaemon(){
 var lastSafety=null,lastAction=null;
 async function updateStatus(){
   if(!activeCamera)return;
-  var savedEdge=localStorage.getItem('edgeAgentUrl');
+  var savedEdge=localStorage.getItem('edgeAgentUrl')||'https://confider-celery-deskbound.ngrok-free.dev';
   var SU=(isPrivateIP(activeCamera.cameraUrl)?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL)+'/status';
   try{
     var res=await fetch(SU,{cache:'no-store',headers:{'ngrok-skip-browser-warning':'true','bypass-tunnel-reminder':'true'}});var data=await res.json();
