@@ -102,8 +102,7 @@ async function startLiveSurveillance() {
         cameraImg.src = `${AI_SERVICE_URL}/video_feed?source=${encodeURIComponent(cam.url)}`;
       }
     } else {
-      // If no camera found, send them back to setup
-      window.location.href = "camera_setup.html";
+      console.log("No active backend camera found. Running simulated/local feed.");
     }
   } catch (err) {
     console.error("Failed to load saved camera settings.");
