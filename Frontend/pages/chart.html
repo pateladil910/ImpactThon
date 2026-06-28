@@ -13,6 +13,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Danger Analytics | AI Safety Shield</title>
+  <script src="../js/auth.js"></script>
 
   <!-- CSS -->
   <link rel="stylesheet" href="../css/dashboard.css" />
@@ -263,7 +264,7 @@ s
         }
         
         /* Force list items to be visible by default (allow auth.js display: none overrides) */
-        .nav-menu .nav-links li {
+        .nav-menu .nav-links li:not(.admin-only-nav) {
             display: block;
             visibility: visible !important;
             opacity: 1 !important;

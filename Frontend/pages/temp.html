@@ -29,7 +29,7 @@
             }
             
             /* Force list items to be visible by default (allow auth.js display: none overrides) */
-            .nav-menu .nav-links li {
+            .nav-menu .nav-links li:not(.admin-only-nav) {
                 display: block;
                 visibility: visible !important;
                 opacity: 1 !important;
