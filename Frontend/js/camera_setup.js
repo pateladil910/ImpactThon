@@ -601,7 +601,23 @@ document.addEventListener('DOMContentLoaded', async () => {
           updateDeployButtonState();
           
           if (previewFeed) {
-            previewFeed.src = `${testUrl}/video_feed?source=${encodeURIComponent(url)}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}&t=${Date.now()}`;
+            const cleanUrl = url.trim();
+            const uParam = (user && !cleanUrl.includes('@')) ? `&username=${encodeURIComponent(user)}` : '';
+            const pParam = (pass && !cleanUrl.includes('@')) ? `&password=${encodeURIComponent(pass)}` : '';
+            const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cleanUrl)}${uParam}${pParam}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t=${Date.now()}`;
+            
+            previewFeed.onerror = function() {
+              if (this.dataset.fallbackActive) return;
+              this.dataset.fallbackActive = "true";
+              const snapBase = `${testUrl}/snapshot?source=${encodeURIComponent(cleanUrl)}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`;
+              setInterval(() => {
+                const temp = new Image();
+                temp.onload = () => { this.src = temp.src; };
+                temp.src = `${snapBase}&t=${Date.now()}`;
+              }, 100);
+            };
+            
+            previewFeed.src = streamUrl;
             previewFeed.style.display = 'block';
           }
           if (streamLoader) streamLoader.style.display = 'none';
