@@ -697,6 +697,12 @@ body::before{
             <button class="btn-grid-tab" data-grid="36">36 CH</button>
           </div>
         </div>
+        <!-- Edge Agent URL updater -->
+        <div id="edgeAgentBar" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(6,182,212,0.07);border-bottom:1px solid var(--border)">
+          <span style="font-family:var(--hud);font-size:9px;font-weight:700;color:var(--cyan);white-space:nowrap">EDGE URL:</span>
+          <input id="edgeUrlInput" type="text" placeholder="https://your-ngrok-url.ngrok-free.app" style="flex:1;background:rgba(2,6,23,0.8);border:1px solid var(--cyan-30);border-radius:4px;padding:4px 8px;color:var(--txt);font-family:var(--mono);font-size:10px;outline:none" />
+          <button onclick="window.applyEdgeUrl()" style="background:var(--cyan);color:#000;border:none;border-radius:4px;padding:4px 10px;font-family:var(--hud);font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap">UPDATE &amp; RELOAD</button>
+        </div>
         <div id="cameraGridContainer" class="camera-grid-1"></div>
         <div class="cam-footer">
           <div class="cam-status-text" id="camera-status-text">SYSTEM READY — Click or drag camera nodes to build the CCTV grid. Double-click any tile to fullscreen.</div>
@@ -1071,19 +1077,42 @@ async function loadCameras(){
       localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
     }else cameras=cached;
   }catch(e){cameras=cached}
+  // Remove dummy webcam fallback if real RTSP/IP cameras exist
+  var realCams=cameras.filter(function(c){return c.cameraUrl!=='0'&&!isNaN(c.cameraUrl)===false});
+  if(realCams.length>0)cameras=realCams;
   if(cameras.length===0){
     cameras=[{cameraId:'cam_default',cameraName:'Webcam Node 1',cameraType:'WEBCAM',cameraUrl:'0',username:'',password:'',
       location:'Operator Bay 1',description:'USB fallback webcam',status:'Online',fps:60,latency:7.5,brand:'Generic',channelId:1,active:true}];
     localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
   }
-  activeCamera=cameras.find(function(c){return c.active})||cameras.find(function(c){return c.status==='Online'})||cameras[cameras.length-1];
+  // Prioritize: active → newest RTSP → any online
+  var rtsp=cameras.filter(function(c){return c.cameraUrl!=='0'&&isNaN(c.cameraUrl)});
+  activeCamera=cameras.find(function(c){return c.active&&c.cameraUrl!=='0'})||
+               rtsp.find(function(c){return c.status==='Online'})||
+               rtsp[rtsp.length-1]||
+               cameras[cameras.length-1];
   if(activeCamera){
     cameras.forEach(function(c){c.active=(c.cameraId===activeCamera.cameraId)});
     gridMapping[0]=activeCamera.cameraUrl;
   }
   cameras.forEach(function(cam,i){if(gridMapping[i]===undefined)gridMapping[i]=cam.cameraUrl});
+  // Populate Edge Agent URL input
+  var savedEdge=localStorage.getItem('edgeAgentUrl')||'';
+  var inp=document.getElementById('edgeUrlInput');
+  if(inp)inp.value=savedEdge;
   filterAndRenderCameras();renderGrid();updateAllStats();
 }
+
+window.applyEdgeUrl=function(){
+  var inp=document.getElementById('edgeUrlInput');
+  if(!inp)return;
+  var val=inp.value.trim().replace(/\/$/,'');
+  if(val)localStorage.setItem('edgeAgentUrl',val);
+  else localStorage.removeItem('edgeAgentUrl');
+  gridMapping={};
+  filterAndRenderCameras();renderGrid();
+  showHUDToast('EDGE URL UPDATED','Refreshing stream from '+val,'success');
+};
 
 function filterAndRenderCameras(){
   var sv=(document.getElementById('searchCam')?document.getElementById('searchCam').value:'').toLowerCase();
