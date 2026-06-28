@@ -307,6 +307,9 @@ def force_stop():
 @app.route("/api/test_camera")
 def test_camera():
     from flask import request
+    import socket
+    import urllib.parse
+    
     source = request.args.get("source", "0")
     username = request.args.get("username", "")
     password = request.args.get("password", "")
@@ -325,6 +328,32 @@ def test_camera():
     if isinstance(resolved_source, str) and resolved_source.isdigit():
         resolved_source = int(resolved_source)
 
+    # Fast Socket Pre-Check for IP/RTSP streams to prevent ngrok timeouts if network is unreachable
+    if isinstance(resolved_source, str) and (resolved_source.startswith("rtsp://") or resolved_source.startswith("http://")):
+        try:
+            clean = resolved_source.replace("rtsp://", "").replace("http://", "")
+            if "@" in clean:
+                clean = clean.split("@")[-1]
+            host_port = clean.split("/")[0]
+            if ":" in host_port:
+                host, port_str = host_port.split(":", 1)
+                port = int(port_str)
+            else:
+                host = host_port
+                port = 554 if resolved_source.startswith("rtsp://") else 80
+                
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2.0)
+            result = s.connect_ex((host, port))
+            s.close()
+            if result != 0:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Camera network unreachable ({host}:{port}). Ensure Laptop A is on the same WiFi."
+                }), 200
+        except Exception as se:
+            print(f"Socket probe error: {se}")
+
     try:
         if isinstance(resolved_source, str) and (resolved_source.startswith("rtsp://") or resolved_source.startswith("http://")):
             cap = cv2.VideoCapture(resolved_source, cv2.CAP_FFMPEG)
@@ -332,13 +361,13 @@ def test_camera():
             cap = cv2.VideoCapture(resolved_source)
             
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 4000)
+        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 4000)
 
         if not cap.isOpened():
             return jsonify({
                 "status": "error",
-                "message": "Camera verification failed"
+                "message": "Camera stream failed to open. Verify credentials or camera channel."
             }), 200
 
         # Read 5 consecutive frames
@@ -353,13 +382,13 @@ def test_camera():
                 frame_count += 1
                 if frame_count == 1:
                     height, width = frame.shape[:2]
-            time.sleep(0.05) # small sleep between frame reads
+            time.sleep(0.04)
 
         duration = time.time() - start_time
         cap.release()
 
-        if frame_count >= 5 and width > 0 and height > 0:
-            fps = round(frame_count / duration, 1)
+        if frame_count >= 1 and width > 0 and height > 0:
+            fps = round(frame_count / max(duration, 0.1), 1)
             return jsonify({
                 "status": "success",
                 "message": "Camera Connected Successfully",
@@ -390,5 +419,5 @@ def test_camera():
 if __name__ == "__main__":
     # Render provides a PORT environment variable. If it's not there, use 10000.
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
     # app.run(host="0.0.0.0", port=5001, debug=False)
