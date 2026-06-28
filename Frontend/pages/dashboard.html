@@ -1076,9 +1076,9 @@ async function loadCameras(){
       location:'Operator Bay 1',description:'USB fallback webcam',status:'Online',fps:60,latency:7.5,brand:'Generic',channelId:1,active:true}];
     localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
   }
-  activeCamera=cameras.find(function(c){return c.active})||cameras[0];
+  activeCamera=cameras.find(function(c){return c.active})||cameras.find(function(c){return c.status==='Online'})||cameras[cameras.length-1];
   if(activeCamera){
-    activeCamera.active=true;
+    cameras.forEach(function(c){c.active=(c.cameraId===activeCamera.cameraId)});
     gridMapping[0]=activeCamera.cameraUrl;
   }
   cameras.forEach(function(cam,i){if(gridMapping[i]===undefined)gridMapping[i]=cam.cameraUrl});
