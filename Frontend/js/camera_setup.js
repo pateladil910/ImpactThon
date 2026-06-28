@@ -551,13 +551,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const edgeAgentUrl = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
 
     let testUrl;
-    if (isLocal) {
-      if (edgeAgentUrl) {
-        testUrl = edgeAgentUrl;  // Use ngrok/remote AI server
-      } else {
-        testUrl = "http://localhost:5000"; // Fallback: proxy via backend (will warn isLocal)
-        showHUDToast('EDGE AGENT URL NEEDED', 'Private IP detected. Paste the ngrok URL in the Edge Agent field below for the camera to work.', 'warning');
-      }
+    if (edgeAgentUrl) {
+      testUrl = edgeAgentUrl;
+    } else if (isLocal) {
+      testUrl = "http://localhost:5000";
+      showHUDToast('EDGE AGENT URL NEEDED', 'Private IP detected. Paste the ngrok URL in the Edge Agent field below for the camera to work.', 'warning');
     } else {
       testUrl = AI_SERVICE_URL;
     }
