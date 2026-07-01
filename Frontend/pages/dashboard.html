@@ -603,9 +603,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
-    const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
-      ? "http://localhost:5000"
-      : "https://impactthon-wjut.onrender.com";
+    if (typeof window.API_BASE_URL === 'undefined') {
+      window.API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+        ? "http://localhost:5000"
+        : "https://impactthon-wjut.onrender.com";
+    }
+    var API_BASE_URL = window.API_BASE_URL;
 
     const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
       ? "http://localhost:10000"

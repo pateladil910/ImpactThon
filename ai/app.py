@@ -113,7 +113,10 @@ def video_feed():
     username = request.args.get("username", "")
     password = request.args.get("password", "")
     
+    print(f"[DEBUG] [ROUTE] /video_feed request received: source={source}, username={username}, password={'***' if password else ''}")
+    
     resolved_source = construct_camera_source(source, username, password)
+    print(f"[DEBUG] [ROUTE] Resolved source URL: {resolved_source}")
     
     resp = Response(
         generate_frames(source=resolved_source),
@@ -123,6 +126,8 @@ def video_feed():
     resp.headers['bypass-tunnel-reminder'] = 'true'
     resp.headers['Access-Control-Allow-Origin'] = '*'
     resp.headers['Cache-Control'] = 'no-cache, private, no-store, must-revalidate'
+    
+    print(f"[DEBUG] [ROUTE] /video_feed response headers built and returning to client.")
     return resp
 
 @app.route("/snapshot")

@@ -37,18 +37,9 @@ def box_overlap(boxA, boxB):
 class ThreadedCamera:
     def __init__(self, source):
         self.source = source
-        # Force FFMPEG backend for RTSP/HTTP streams to prevent silent hangs
-        if isinstance(source, str) and (source.startswith("rtsp://") or source.startswith("http://")):
-            self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
-        else:
-            self.cap = cv2.VideoCapture(self.source)
-            
-        # Standard safety timeouts to prevent cv2.VideoCapture blocking indefinitely
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-        self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
-        
-        self.grabbed, self.raw_frame = self.cap.read()
+        self.cap = None
+        self.grabbed = False
+        self.raw_frame = None
         self.processed_frame = None
         self.started = False
         
@@ -83,16 +74,51 @@ class ThreadedCamera:
         return self
 
     def update_capture(self):
+        print(f"[DEBUG] [CAM_THREAD] update_capture thread started for source: {self.source}")
+        
+        # Asynchronous initialization to avoid blocking Flask request threads
+        if self.cap is None:
+            t_start = time.time()
+            if isinstance(self.source, str) and (self.source.startswith("rtsp://") or self.source.startswith("http://")):
+                self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+            else:
+                self.cap = cv2.VideoCapture(self.source)
+            t_cap = time.time()
+            
+            if self.cap:
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+                self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+            
+            print(f"[DEBUG] [CAM_THREAD] VideoCapture initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
+            
+            # Read first frame
+            if self.cap and self.cap.isOpened():
+                t_read_start = time.time()
+                grabbed, frame = self.cap.read()
+                t_read_end = time.time()
+                print(f"[DEBUG] [CAM_THREAD] First frame read in {t_read_end - t_read_start:.3f}s. Success: {grabbed}")
+                
+                if grabbed:
+                    with self.read_lock:
+                        self.grabbed = grabbed
+                        self.raw_frame = frame
+
         while self.started:
-            if not self.cap.isOpened():
+            if not self.cap or not self.cap.isOpened():
                 time.sleep(2.0)
+                t_start = time.time()
                 if isinstance(self.source, str) and (self.source.startswith("rtsp://") or self.source.startswith("http://")):
                     self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
                 else:
                     self.cap = cv2.VideoCapture(self.source)
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-                self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+                t_cap = time.time()
+                
+                if self.cap:
+                    self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                    self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+                    self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+                print(f"[DEBUG] [CAM_THREAD] VideoCapture re-initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
                 continue
             
             grabbed, frame = self.cap.read()
@@ -105,7 +131,8 @@ class ThreadedCamera:
                 with self.read_lock:
                     self.grabbed = False
                     self.processed_frame = None
-                self.cap.release()
+                if self.cap:
+                    self.cap.release()
                 time.sleep(2.0)
 
     def update_inference(self):
@@ -219,7 +246,8 @@ class ThreadedCamera:
             self.capture_thread.join(timeout=0.5)
         if self.inference_thread:
             self.inference_thread.join(timeout=0.5)
-        self.cap.release()
+        if self.cap:
+            self.cap.release()
 
 # ==========================================
 # 🌐 CAMERA POOL (WEAK SESSIONS CLEANUP)
@@ -274,6 +302,7 @@ camera_pool = CameraPool()
 # 🎞️ VIDEO STREAM GENERATOR & STABILITY WRAPPERS
 # ==========================================
 def generate_frames(source=0):
+    print(f"[DEBUG] [GENERATOR] generate_frames generator function started for source: {source}")
     cam = camera_pool.acquire_camera(source)
     frame_count = 0
     
