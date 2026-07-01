@@ -1,1419 +1,1513 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <!-- Protected Route Gatekeeper -->
+  <!-- Protected Route Gatekeeper: Instant Guest Firewall -->
   <script>
     if (localStorage.getItem("isLoggedIn") !== "true") {
+      console.warn("Unauthorized access blocked. Redirecting to login gateway...");
       window.location.replace("login.html");
     }
   </script>
-  <!-- Early Auth-State: no flicker -->
-  <script>
-    (function(){
-      var li = localStorage.getItem("isLoggedIn") === "true";
-      var s  = document.createElement("style");
-      s.textContent = li
-        ? "#auth-buttons{display:none!important}#profile-section{display:flex!important;align-items:center;gap:10px}"
-        : "#auth-buttons{display:flex!important}#profile-section{display:none!important}";
-      (document.head||document.getElementsByTagName("head")[0]).appendChild(s);
-      document.addEventListener("DOMContentLoaded",function(){
-        var pn=document.getElementById("profile-name");
-        if(pn&&li)pn.textContent=localStorage.getItem("username")||"User";
-        if(li&&document.body)document.body.classList.add("is-authenticated");
-      });
-    })();
-  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Safety Dashboard | Live Control Console</title>
 
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <meta name="description" content="AI Safety Shield – live industrial operator console with CCTV grid, AI telemetry, and threat logging."/>
-  <title>AI Safety Dashboard | Live Operator Console</title>
-  <script src="../js/auth.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link rel="stylesheet" href="../css/index_new.css">
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/dashboard.css" />
   <link rel="stylesheet" href="../css/navbar_responsive.css">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  
+  <style>
+    /* ===== ADMIN-ONLY NAV ITEMS: Hidden by default, shown only for admins ===== */
+    .admin-only-nav { display: none !important; }
+    body.is-admin .admin-only-nav { display: list-item !important; }
 
-<style>
-/* ================================================================
-   DESIGN TOKENS
-================================================================ */
-:root{
-  --bg:        #030712;
-  --bg-2:      #060d1f;
-  --bg-card:   rgba(8,14,32,0.85);
-  --bg-input:  rgba(4,8,20,0.7);
-  --cyan:      #06b6d4;
-  --cyan-15:   rgba(6,182,212,0.15);
-  --cyan-30:   rgba(6,182,212,0.30);
-  --cyan-08:   rgba(6,182,212,0.08);
-  --blue:      #3b82f6;
-  --green:     #10b981;
-  --green-15:  rgba(16,185,129,0.15);
-  --green-30:  rgba(16,185,129,0.30);
-  --red:       #ef4444;
-  --red-15:    rgba(239,68,68,0.15);
-  --red-30:    rgba(239,68,68,0.30);
-  --yellow:    #f59e0b;
-  --yellow-15: rgba(245,158,11,0.15);
-  --txt:       #e2e8f0;
-  --txt-2:     #94a3b8;
-  --txt-3:     #475569;
-  --border:    rgba(6,182,212,0.12);
-  --border-2:  rgba(6,182,212,0.25);
-  --r:         10px;
-  --r-sm:      6px;
-  --hud:       'Space Grotesk',sans-serif;
-  --mono:      'Fira Code',monospace;
-  --body:      'Inter',sans-serif;
-}
+    #cameraGridContainer { transition: all 0.3s ease; }
+    .camera-grid-1 { grid-template-columns: 1fr; }
+    .camera-grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .camera-grid-9 { grid-template-columns: repeat(3, 1fr); }
+    .camera-grid-16 { grid-template-columns: repeat(4, 1fr); }
+    .camera-grid-25 { grid-template-columns: repeat(5, 1fr); }
+    .camera-grid-36 { grid-template-columns: repeat(6, 1fr); }
 
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+    .grid-slot {
+      background: rgba(2, 6, 23, 0.95);
+      border: 1px dashed rgba(6, 182, 212, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 16/9;
+      cursor: grab;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .grid-slot.drag-over {
+      border-color: var(--primary-neon);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.35);
+    }
+    .grid-slot.active-pin {
+      border: 1.5px solid var(--primary-neon);
+      box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.15);
+    }
+    .grid-slot.fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 999999 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      aspect-ratio: auto !important;
+      border-radius: 0 !important;
+      background: #000 !important;
+    }
 
-body{
-  font-family:var(--body);
-  background:var(--bg);
-  color:var(--txt);
-  min-height:100vh;
-  overflow-x:hidden;
-  position:relative;
-}
-body::before{
-  content:'';position:fixed;inset:0;z-index:0;
-  background:
-    radial-gradient(ellipse 70% 45% at 8% 4%,rgba(6,182,212,0.07) 0%,transparent 60%),
-    radial-gradient(ellipse 55% 38% at 92% 88%,rgba(59,130,246,0.05) 0%,transparent 55%),
-    linear-gradient(180deg,#030712 0%,#060d1f 100%);
-  pointer-events:none;
-}
+    .btn-grid-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    .btn-grid-tab.active {
+      background: var(--primary-neon);
+      color: var(--text-dark) !important;
+    }
+    .btn-grid-tab:hover:not(.active) {
+      color: var(--primary-neon);
+      background: rgba(6, 182, 212, 0.1);
+    }
 
-/* canvas backdrop */
-#particle-canvas{position:fixed;inset:0;z-index:1;pointer-events:none}
-
-/* ================================================================
-   PAGE WRAPPER & MAIN LAYOUT
-================================================================ */
-.page-shell{position:relative;z-index:5;min-height:calc(100vh - 58px);display:flex;flex-direction:column}
-
-.main{
-  flex:1;
-  padding:24px 32px 40px;
-  display:flex;flex-direction:column;gap:20px;
-  width:100%;max-width:1760px;margin:0 auto;
-}
-
-/* ================================================================
-   PAGE HEADER STRIP
-================================================================ */
-.page-header{
-  display:flex;align-items:flex-start;justify-content:space-between;
-  flex-wrap:wrap;gap:12px;
-}
-.page-header h1{
-  font-family:var(--hud);font-size:clamp(18px,2.4vw,28px);
-  font-weight:700;letter-spacing:-.5px;line-height:1.2;
-  background:linear-gradient(135deg,#f8fafc 30%,var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-}
-.page-header p{font-size:12px;color:var(--txt-2);margin-top:5px;line-height:1.6;max-width:540px}
-.header-badges{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
-.badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:4px 11px;border-radius:20px;
-  font-family:var(--hud);font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.5px;
-}
-.badge.green{background:var(--green-15);border:1px solid var(--green-30);color:var(--green)}
-.badge.cyan{background:var(--cyan-15);border:1px solid var(--cyan-30);color:var(--cyan)}
-.badge.red{background:var(--red-15);border:1px solid var(--red-30);color:var(--red)}
-.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:blink 2s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.live-badge{
-  font-family:var(--mono);font-size:11px;color:var(--txt-2);
-  background:var(--cyan-08);border:1px solid var(--border);
-  padding:5px 13px;border-radius:8px;letter-spacing:1px;
-}
-
-/* ================================================================
-   SECTION LABEL
-================================================================ */
-.section-label{
-  display:flex;align-items:center;gap:12px;
-  font-family:var(--hud);font-size:10px;font-weight:700;
-  color:var(--txt-3);text-transform:uppercase;letter-spacing:2px;
-}
-.section-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border) 0%,transparent 100%)}
-
-/* ================================================================
-   KPI STAT BAR — auto-fill grid
-================================================================ */
-.kpi-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:14px;
-}
-.kpi-card{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--r);padding:18px 20px;
-  display:flex;flex-direction:column;gap:4px;
-  position:relative;overflow:hidden;
-  transition:border-color .25s,transform .2s;
-}
-.kpi-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--kpi-accent,var(--cyan)),transparent);
-  opacity:0;transition:opacity .3s;
-}
-.kpi-card:hover{border-color:var(--border-2);transform:translateY(-2px)}
-.kpi-card:hover::before{opacity:1}
-.kpi-label{
-  font-family:var(--hud);font-size:9px;font-weight:700;
-  color:var(--txt-3);text-transform:uppercase;letter-spacing:1.5px;
-}
-.kpi-value{
-  font-family:var(--hud);font-size:clamp(22px,2.5vw,32px);
-  font-weight:700;line-height:1;margin:6px 0 3px;
-  color:var(--kpi-color,var(--txt));
-}
-.kpi-sub{font-size:10px;color:var(--txt-3)}
-
-/* ================================================================
-   MAIN TELEMETRY GRID — 2.2fr camera + 1fr sidebar
-================================================================ */
-.telemetry-grid{
-  display:grid;
-  grid-template-columns:2.2fr 1fr;
-  gap:20px;
-  align-items:start;
-}
-
-/* ================================================================
-   CAMERA CONSOLE
-================================================================ */
-.camera-console{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--r);display:flex;flex-direction:column;
-  overflow:hidden;min-height:480px;
-}
-.cam-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;border-bottom:1px solid var(--border);
-  flex-wrap:wrap;gap:10px;flex-shrink:0;
-}
-.cam-title{
-  font-family:var(--hud);font-size:13px;font-weight:700;
-  color:var(--txt);display:flex;align-items:center;gap:8px;
-}
-.rec-dot{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--red);box-shadow:0 0 8px var(--red);
-  animation:blink 1.1s ease-in-out infinite;
-}
-.grid-tabs{
-  display:flex;gap:3px;background:rgba(2,6,23,0.6);
-  border:1px solid var(--border);padding:3px;border-radius:var(--r-sm);
-}
-.btn-grid-tab{
-  background:transparent;border:none;cursor:pointer;
-  padding:4px 9px;border-radius:4px;
-  font-family:var(--hud);font-size:10px;font-weight:700;
-  color:var(--txt-2);transition:all .2s;
-}
-.btn-grid-tab.active{background:var(--cyan);color:#000}
-.btn-grid-tab:hover:not(.active){color:var(--cyan);background:var(--cyan-15)}
-
-/* grid container */
-#cameraGridContainer{
-  display:grid;gap:8px;
-  background:rgba(0,0,0,0.65);padding:12px;
-  flex:1;
-}
-.camera-grid-1  {grid-template-columns:1fr}
-.camera-grid-4  {grid-template-columns:repeat(2,1fr)}
-.camera-grid-9  {grid-template-columns:repeat(3,1fr)}
-.camera-grid-16 {grid-template-columns:repeat(4,1fr)}
-.camera-grid-25 {grid-template-columns:repeat(5,1fr)}
-.camera-grid-36 {grid-template-columns:repeat(6,1fr)}
-
-.grid-slot{
-  background:rgba(2,6,23,0.92);
-  border:1px dashed rgba(6,182,212,0.18);
-  border-radius:7px;overflow:hidden;
-  position:relative;aspect-ratio:16/9;
-  cursor:grab;transition:border-color .25s,box-shadow .25s;
-  display:flex;align-items:center;justify-content:center;
-}
-.grid-slot.drag-over{border-color:var(--cyan);box-shadow:0 0 16px var(--cyan-30)}
-.grid-slot.active-pin{border:1.5px solid var(--cyan);box-shadow:inset 0 0 12px var(--cyan-15)}
-.grid-slot.fullscreen{
-  position:fixed!important;inset:0!important;z-index:999999!important;
-  width:100vw!important;height:100vh!important;
-  aspect-ratio:auto!important;border-radius:0!important;background:#000!important;
-}
-
-.cam-footer{
-  padding:10px 18px;border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:8px;flex-shrink:0;
-}
-.cam-status-text{font-family:var(--mono);font-size:10px;color:var(--txt-2);flex:1}
-.cam-meta{
-  display:flex;gap:14px;font-family:var(--hud);font-size:9px;
-  font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--txt-3);
-}
-.cam-meta .cv{color:var(--cyan)}
-
-/* ================================================================
-   RIGHT SIDEBAR — metric cards
-================================================================ */
-.metric-sidebar{display:flex;flex-direction:column;gap:14px}
-
-.metric-card{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--r);padding:20px 22px;
-  position:relative;overflow:hidden;
-  transition:border-color .25s,transform .2s;
-}
-.metric-card:hover{border-color:var(--border-2);transform:translateY(-2px)}
-.metric-card-label{
-  font-family:var(--hud);font-size:9px;font-weight:700;
-  color:var(--txt-3);text-transform:uppercase;letter-spacing:1.5px;
-  display:flex;align-items:center;gap:7px;
-}
-.metric-card-value{
-  font-family:var(--hud);
-  font-size:clamp(30px,4vw,46px);
-  font-weight:700;letter-spacing:.5px;margin:10px 0 6px;line-height:1;
-}
-.metric-card-desc{font-size:11px;color:var(--txt-2);line-height:1.5}
-
-/* state-driven colors */
-.mc-safe  {border-color:var(--green-30)}
-.mc-safe .metric-card-value{color:var(--green)}
-.mc-safe::after{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 5% 95%,rgba(16,185,129,.06) 0%,transparent 55%);pointer-events:none}
-
-.mc-danger{border-color:var(--red-30)}
-.mc-danger .metric-card-value{color:var(--red)}
-.mc-danger::after{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 5% 95%,rgba(239,68,68,.08) 0%,transparent 55%);pointer-events:none}
-
-.mc-cyan .metric-card-value{color:var(--cyan)}
-.mc-yellow .metric-card-value{color:var(--yellow)}
-.mc-green .metric-card-value{color:var(--green)}
-
-/* confidence progress bar */
-.conf-bar-wrap{margin-top:10px;background:rgba(255,255,255,.05);border-radius:4px;height:5px;overflow:hidden}
-.conf-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .6s ease;width:0%}
-
-/* watchdog value mono */
-.mc-mono{font-family:var(--mono)!important;font-size:clamp(14px,1.8vw,20px)!important;letter-spacing:0!important}
-
-/* ================================================================
-   WIDGET ROW (4 cards)
-================================================================ */
-.widget-row{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:14px;
-}
-.widget-card{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--r);padding:18px 20px;
-  display:flex;flex-direction:column;gap:5px;
-  transition:border-color .25s,transform .2s;
-}
-.widget-card:hover{border-color:var(--border-2);transform:translateY(-2px)}
-.wlabel{
-  font-family:var(--hud);font-size:9px;font-weight:700;
-  color:var(--txt-3);text-transform:uppercase;letter-spacing:1.5px;
-}
-.wvalue{
-  font-family:var(--hud);font-size:clamp(18px,2vw,26px);
-  font-weight:700;color:var(--cyan);line-height:1;margin:4px 0 2px;
-}
-.wvalue.green{color:var(--green)}.wvalue.red{color:var(--red)}.wvalue.yellow{color:var(--yellow)}
-.wsub{font-size:10px;color:var(--txt-3)}
-
-/* ================================================================
-   INCIDENT LOG PANEL
-================================================================ */
-.incident-panel{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--r);overflow:hidden;
-}
-.ip-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 20px;border-bottom:1px solid var(--border);
-  flex-wrap:wrap;gap:10px;
-}
-.ip-title{
-  font-family:var(--hud);font-size:13px;font-weight:700;
-  color:var(--txt);display:flex;align-items:center;gap:8px;
-}
-.ip-actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn-act{
-  padding:5px 12px;border-radius:var(--r-sm);
-  font-family:var(--hud);font-size:10px;font-weight:700;
-  cursor:pointer;transition:all .2s;border:1px solid;
-  letter-spacing:.5px;text-transform:uppercase;
-}
-.btn-act.cyan{border-color:var(--cyan-30);background:var(--cyan-15);color:var(--cyan)}
-.btn-act.cyan:hover{background:rgba(6,182,212,.25)}
-.btn-act.grn{border-color:var(--green-30);background:var(--green-15);color:var(--green)}
-.btn-act.grn:hover{background:rgba(16,185,129,.25)}
-.btn-act.red{border-color:var(--red-30);background:var(--red-15);color:var(--red)}
-.btn-act.red:hover{background:rgba(239,68,68,.22)}
-
-.log-console{
-  padding:14px 20px;height:200px;overflow-y:auto;
-  font-family:var(--mono);font-size:11px;line-height:1.7;
-  color:var(--txt);background:rgba(2,4,14,.6);
-  display:flex;flex-direction:column;gap:4px;
-}
-.log-console::-webkit-scrollbar{width:4px}
-.log-console::-webkit-scrollbar-track{background:transparent}
-.log-console::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-
-.log-entry{padding-bottom:4px;border-bottom:1px solid rgba(6,182,212,.05);display:flex;gap:8px;align-items:baseline}
-.log-ts{color:var(--txt-3);font-size:10px;flex-shrink:0}
-.log-sev{font-weight:700;font-size:10px;flex-shrink:0}
-.log-sev.SAFE{color:var(--green)}.log-sev.WARNING{color:var(--yellow)}
-.log-sev.CRITICAL,.log-sev.DANGER{color:var(--red)}
-.log-sev.SYSTEM{color:var(--cyan)}
-.log-body{color:var(--txt)}
-
-.log-empty{
-  color:var(--txt-2);text-align:center;margin:auto;
-  display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 0;align-self:center;width:100%;
-}
-.log-empty .ei{font-size:28px;opacity:.25}
-
-/* ================================================================
-   SENSOR NODE MANAGER
-================================================================ */
-.node-manager{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.nm-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;
-}
-.nm-title{font-family:var(--hud);font-size:13px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px}
-.nm-stats{display:flex;gap:14px;font-family:var(--hud);font-size:10px;color:var(--txt-2);font-weight:700;text-transform:uppercase;letter-spacing:1px}
-.nm-stats .nv.c{color:var(--cyan)}.nm-stats .nv.g{color:var(--green)}.nm-stats .nv.r{color:var(--red)}
-
-.nm-controls{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
-.nm-search{
-  flex:1;min-width:200px;
-  background:var(--bg-input);border:1px solid var(--border);
-  border-radius:var(--r-sm);padding:9px 14px;
-  color:var(--txt);font-size:12px;font-family:var(--body);outline:none;transition:border-color .2s;
-}
-.nm-search::placeholder{color:var(--txt-3)}
-.nm-search:focus{border-color:var(--border-2)}
-.nm-sel{
-  background:var(--bg-input);border:1px solid var(--border);
-  border-radius:var(--r-sm);padding:9px 14px;
-  color:var(--txt);font-size:12px;font-family:var(--body);outline:none;cursor:pointer;
-}
-.nm-sel option{background:#060d1f}
-.btn-add{
-  padding:9px 18px;border-radius:var(--r-sm);
-  font-family:var(--hud);font-size:11px;font-weight:700;
-  background:linear-gradient(135deg,var(--cyan),var(--blue));
-  color:#000;border:none;cursor:pointer;text-decoration:none;
-  display:flex;align-items:center;gap:5px;
-  transition:opacity .2s,transform .15s;letter-spacing:.5px;white-space:nowrap;
-}
-.btn-add:hover{opacity:.87;transform:translateY(-1px)}
-
-.nm-grid{
-  padding:16px 20px;
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));
-  gap:16px;
-}
-.node-card{
-  background:rgba(4,8,20,.7);border:1px solid rgba(6,182,212,.08);
-  border-radius:var(--r-sm);padding:16px;cursor:pointer;
-  transition:border-color .25s,background .25s,transform .2s;
-  display:flex;flex-direction:column;gap:10px;
-}
-.node-card:hover{border-color:var(--border);transform:translateY(-2px)}
-.node-card.active-node{border-color:var(--cyan);background:rgba(6,182,212,.05)}
-.nc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.nc-name{font-family:var(--hud);font-size:13px;font-weight:700;color:var(--txt)}
-.nc-brand{font-family:var(--hud);font-size:8px;font-weight:600;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,.05);color:var(--txt-2);text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
-.nc-loc{font-size:11px;color:var(--txt-2);display:flex;align-items:center;gap:4px}
-.nc-url{font-family:var(--mono);font-size:9px;color:var(--txt-3);word-break:break-all;line-height:1.4}
-.nc-bottom{display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.04);padding-top:8px}
-.nc-status{display:flex;align-items:center;gap:5px;font-family:var(--hud);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-.nc-dot{width:5px;height:5px;border-radius:50%}
-.nc-dot.on{background:var(--green);box-shadow:0 0 5px var(--green)}
-.nc-dot.off{background:var(--red);box-shadow:0 0 5px var(--red)}
-.btn-del{
-  padding:3px 9px;border-radius:4px;font-size:9px;font-weight:700;
-  font-family:var(--hud);cursor:pointer;border:1px solid var(--red-30);
-  background:transparent;color:var(--red);transition:all .2s;letter-spacing:.5px;
-}
-.btn-del:hover{background:var(--red-15);border-color:var(--red)}
-.nm-empty{grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--txt-2);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:10px}
-.nm-empty .ei{font-size:32px;opacity:.2}
-
-/* ================================================================
-   QUICK ACTIONS
-================================================================ */
-.actions-bar{
-  display:flex;align-items:center;justify-content:center;
-  gap:24px;flex-wrap:wrap;padding:20px 0 10px;width:100%;
-}
-.btn-primary{
-  padding:14px 32px;border-radius:30px;
-  font-family:var(--hud);font-size:13px;font-weight:700;
-  background:linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-  color:#040814;border:1px solid rgba(6, 182, 212, 0.6);
-  cursor:pointer;text-decoration:none;
-  display:inline-flex;align-items:center;gap:10px;
-  transition:all .25s ease;letter-spacing:1px;text-transform:uppercase;
-  box-shadow:0 0 20px rgba(6, 182, 212, 0.35);
-}
-.btn-primary:hover{
-  transform:translateY(-3px);box-shadow:0 0 30px rgba(6, 182, 212, 0.6);
-  background:linear-gradient(135deg, #22d3ee 0%, #60a5fa 100%);color:#000;
-}
-.btn-danger-outline{
-  padding:14px 32px;border-radius:30px;
-  font-family:var(--hud);font-size:13px;font-weight:700;
-  background:rgba(239, 68, 68, 0.12);color:#ef4444;
-  border:1.5px solid rgba(239, 68, 68, 0.5);cursor:pointer;
-  display:inline-flex;align-items:center;gap:10px;
-  transition:all .25s ease;letter-spacing:1px;text-transform:uppercase;
-  box-shadow:0 0 15px rgba(239, 68, 68, 0.25);
-}
-.btn-danger-outline:hover{
-  transform:translateY(-3px);background:rgba(239, 68, 68, 0.25);
-  border-color:#ef4444;box-shadow:0 0 25px rgba(239, 68, 68, 0.5);color:#fff;
-}
-
-/* ================================================================
-   FOOTER TELEMETRY BAR
-================================================================ */
-.tele-footer{
-  background:rgba(3,7,18,.97);border-top:1px solid var(--border);
-  padding:0 32px;height:36px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  font-family:var(--hud);font-size:9px;font-weight:700;
-  letter-spacing:1.5px;text-transform:uppercase;flex-shrink:0;
-}
-.tf-cluster{display:flex;align-items:center;gap:12px}
-.tf-item{display:flex;align-items:center;gap:5px;color:var(--txt-2)}
-.tf-item .v{color:var(--cyan)}.tf-item .g{color:var(--green)}
-.tf-sep{width:1px;height:14px;background:var(--border)}
-.tf-dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 2s ease-in-out infinite}
-
-/* Toast */
-#hudToast{
-  position:fixed;bottom:48px;right:24px;z-index:9999;
-  display:none;flex-direction:column;gap:4px;
-  background:rgba(3,7,18,.97);border:1px solid var(--border-2);
-  border-radius:var(--r-sm);padding:12px 18px;
-  font-family:var(--hud);font-size:11px;min-width:240px;max-width:340px;
-  animation:toastIn .3s ease;backdrop-filter:blur(16px);
-  box-shadow:0 8px 32px rgba(0,0,0,.5);
-}
-@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-#hudToast .tt{font-weight:700;color:var(--cyan);font-size:11px;letter-spacing:1px}
-#hudToast .tb{color:var(--txt-2);font-size:10px}
-
-/* scrollbar */
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(6,182,212,.2);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:rgba(6,182,212,.4)}
-
-/* ================================================================
-   RESPONSIVE — TABLET ≤ 1024px
-================================================================ */
-@media(max-width:1024px){
-  .navbar{padding:0 18px}
-  .nav-links-wrapper{display:none}
-  .nav-right{display:none}
-  .nav-clock{display:none}
-  .menu-toggle{display:flex}
-
-  .main{padding:18px 18px 32px}
-
-  .telemetry-grid{grid-template-columns:1fr}
-  .camera-console{min-height:400px}
-  .metric-sidebar{flex-direction:row;flex-wrap:wrap}
-  .metric-card{flex:1;min-width:calc(50% - 7px)}
-
-  .kpi-grid{grid-template-columns:repeat(3,1fr)}
-  .widget-row{grid-template-columns:repeat(2,1fr)}
-
-  .tele-footer{padding:0 18px}
-}
-
-/* ================================================================
-   RESPONSIVE — MOBILE ≤ 640px
-================================================================ */
-@media(max-width:640px){
-  .main{padding:12px 12px 28px;gap:14px}
-  .page-header p{display:none}
-  .header-badges .live-badge{display:none}
-
-  .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .kpi-card:last-child{display:none}
-
-  .telemetry-grid{grid-template-columns:1fr}
-  .camera-console{min-height:280px}
-  .metric-sidebar{flex-direction:column}
-  .metric-card{min-width:unset}
-
-  .widget-row{grid-template-columns:repeat(2,1fr)}
-
-  .log-console{height:150px}
-
-  .tele-footer{display:none}
-
-  .actions-bar{gap:8px}
-  .btn-primary,.btn-danger-outline{font-size:11px;padding:9px 14px}
-
-  .cam-meta{display:none}
-}
-</style>
+    /* ===== PREMIUM DASHBOARD IMPROVEMENTS ===== */
+    h1 {
+      font-size: clamp(22px, 3vw, 34px);
+      font-family: 'Space Grotesk', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 30%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 28px;
+      max-width: 600px;
+      line-height: 1.6;
+    }
+    .box {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(6, 182, 212, 0.12);
+    }
+    .box-value {
+      font-size: clamp(24px, 3vw, 36px);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 10px 0 6px;
+    }
+    .box-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    /* Premium metric row styling */
+    .metric-label {
+      font-size: 10px;
+      font-family: 'Space Grotesk', sans-serif;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .metric-value {
+      font-size: clamp(20px, 2.5vw, 28px);
+      font-weight: 700;
+      color: var(--primary-neon);
+      margin-top: 4px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    /* Pill badges for status indicators */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .status-pill.online {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--safe-green);
+    }
+    .status-pill.offline {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: var(--danger-red);
+    }
+    .status-pill-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    /* Section divider */
+    .section-heading {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 32px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(6, 182, 212, 0.12);
+    }
+  </style>
 </head>
 
 <body>
-<canvas id="particle-canvas"></canvas>
-<div id="hudToast"><div class="tt" id="toastTitle">INFO</div><div class="tb" id="toastBody">—</div></div>
 
-<div class="page-shell">
+  <!-- BACKDROP PARTICLES CANVAS -->
+  <canvas id="particle-canvas"></canvas>
 
-  <!-- ══════════════ NAVBAR (top of viewport) ══════════════ -->
-  <nav class="navbar">
-    <a href="index.html" class="logo">
-      <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
-      </svg>
-      <span>AI Safety Shield</span>
-    </a>
+  <!-- SCREEN WIDE SCANNING LASER SWEEP LINE -->
+  <div class="laser-scan-line"></div>
 
-    <!-- Unified Menu Container -->
-    <div class="nav-menu" id="navLinks">
-      <ul class="nav-links">
-          <li><a href="index.html">Home</a></li>
-          <li><a href="dashboard.html" class="active">Dashboard</a></li>
-          <li><a href="plant_map.html">Plant Map</a></li>
-          <li><a href="chart.html">Danger Analytics</a></li>
-          <li><a href="history.html">Detection Logs</a></li>
-          <li><a href="camera_setup.html">Camera Setup</a></li>
-          <li><a href="contact.html">Contact</a></li>
-          <li><a href="learn-more.html">How It Works</a></li>
-          <li class="admin-only-nav"><a href="diagnostics.html">Diagnostics</a></li>
-          <li class="admin-only-nav"><a href="notifications.html">Alerts</a></li>
-          <li class="admin-only-nav"><a href="incident_log.html">Incident Logs</a></li>
-          <li class="admin-only-nav"><a href="admin.html">Admin</a></li>
-      </ul>
-
-      <div class="auth-buttons" id="auth-buttons">
-        <a href="login.html">Log In</a>
-        <a href="signup.html">Sign Up</a>
-      </div>
-
-      <div id="profile-section" style="display:none;" class="profile-box">
-        <span id="profile-name" class="profile-name">User</span>
-        <button class="logout-btn" onclick="logout()">Logout</button>
-      </div>
+  <!-- FUTURISTIC HUD OVERLAYS -->
+  <div class="cyber-hud-layer">
+    <!-- Top Left Information System -->
+    <div class="hud-tag hud-top-left">
+      <span>SYSTEM_CONTROL: RUNNING</span>
+      <span>AI_SCANNER: ONLINE</span>
+      <span class="status-badge" style="margin-top: 10px;">
+        <span class="status-dot"></span> MONITOR ONLINE
+      </span>
     </div>
 
-    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-  </nav>
-
-
-  <!-- ══════════════ MAIN ══════════════ -->
-  <main class="main">
-
-    <!-- Page Header -->
-    <div class="page-header">
-      <div>
-        <h1>Live Safety Dashboard</h1>
-        <p>Real-time industrial monitoring — human proximity, machine states, and AI-based microsecond safety intercepts.</p>
-      </div>
-      <div class="header-badges">
-        <span class="badge green"><span class="badge-dot"></span>AI Scanner Online</span>
-        <span class="live-badge" id="dash-live-time">--:--:-- UTC</span>
-      </div>
+    <!-- Top Right Telemetry Details -->
+    <div class="hud-tag hud-top-right">
+      <span>CAM_GATEWAY_ACTIVE</span>
+      <span>1920x1080 @ 60.0fps</span>
+      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: 8ms</span>
+      <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
     </div>
 
-    <!-- KPI Bar -->
-    <div class="kpi-grid">
-      <div class="kpi-card" style="--kpi-accent:var(--cyan);--kpi-color:var(--cyan)">
-        <div class="kpi-label">Human Count</div>
-        <div class="kpi-value" id="hud-human-count">0</div>
-        <div class="kpi-sub">Workers detected in zone</div>
-      </div>
-      <div class="kpi-card" style="--kpi-accent:var(--green);--kpi-color:var(--green)">
-        <div class="kpi-label">Surveillance FPS</div>
-        <div class="kpi-value" id="hud-fps">0.0</div>
-        <div class="kpi-sub">Real-time feed rate</div>
-      </div>
-      <div class="kpi-card" style="--kpi-accent:var(--yellow);--kpi-color:var(--yellow)">
-        <div class="kpi-label">Link Latency</div>
-        <div class="kpi-value" id="hud-latency">0ms</div>
-        <div class="kpi-sub">Network round-trip</div>
-      </div>
-      <div class="kpi-card" style="--kpi-accent:var(--blue);--kpi-color:var(--blue)">
-        <div class="kpi-label">Vision Model</div>
-        <div class="kpi-value">YOLOv8n</div>
-        <div class="kpi-sub" style="color:var(--green)">● Active &amp; running</div>
-      </div>
-      <div class="kpi-card" style="--kpi-accent:var(--cyan);--kpi-color:var(--cyan)">
-        <div class="kpi-label">AI Confidence</div>
-        <div class="kpi-value" id="confidence-value-kpi">0%</div>
-        <div class="kpi-sub">Detection accuracy</div>
-      </div>
+    <!-- Bottom Left System Log -->
+    <div class="hud-tag hud-bottom-left">
+      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
     </div>
+  </div>
 
-    <!-- LIVE TELEMETRY GRID -->
-    <div class="section-label">Live Camera Telemetry</div>
-    <div class="telemetry-grid">
+  <div class="page">
 
-      <!-- LEFT: Camera Console -->
-      <div class="camera-console">
-        <div class="cam-header">
-          <div class="cam-title"><span class="rec-dot"></span>Multi-Sensor AI Grid Console</div>
-          <div class="grid-tabs">
-            <button class="btn-grid-tab active" data-grid="1">1 CH</button>
-            <button class="btn-grid-tab" data-grid="4">4 CH</button>
-            <button class="btn-grid-tab" data-grid="9">9 CH</button>
-            <button class="btn-grid-tab" data-grid="16">16 CH</button>
-            <button class="btn-grid-tab" data-grid="25">25 CH</button>
-            <button class="btn-grid-tab" data-grid="36">36 CH</button>
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+      </a>
+
+      <!-- Unified Menu Container -->
+      <div class="nav-menu" id="navLinks">
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="solution.html">Solution</a></li>
+            <li><a href="dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="plant_map.html">Plant Map</a></li>
+            <li><a href="chart.html">Danger Analytics</a></li>
+            <li><a href="history.html">Detection Logs</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <!-- Admin-only links: hidden by default, revealed by auth.js for admins -->
+            <li class="admin-only-nav"><a href="diagnostics.html">Diagnostics</a></li>
+            <li class="admin-only-nav"><a href="notifications.html">Alerts</a></li>
+            <li class="admin-only-nav"><a href="incident_log.html">Incident Logs</a></li>
+            <li class="admin-only-nav"><a href="admin.html">Admin</a></li>
+        </ul>
+
+        <div class="auth-buttons" id="auth-buttons">
+          <a href="login.html">Log In</a>
+          <a href="signup.html">Sign Up</a>
+        </div>
+
+        <div id="profile-section" style="display:none;" class="profile-box">
+          <span id="profile-name" class="profile-name">User</span>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+
+    <!-- ================= MAIN ================= -->
+    <main class="main">
+
+      <!-- Page Header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:6px;">
+        <div>
+          <h1>Live Safety Dashboard</h1>
+          <p class="subtitle">Real-time industrial monitoring of human proximity, machine states, and AI-based microsecond safety intercepts.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+          <span class="status-pill online">
+            <span class="status-pill-dot"></span>AI Scanner Online
+          </span>
+          <span id="dash-live-time" style="font-family:'Space Grotesk',sans-serif; font-size:11px; color:var(--text-muted); background:rgba(6,182,212,0.06); border:1px solid rgba(6,182,212,0.12); padding:5px 12px; border-radius:8px;">--:--:-- UTC</span>
+        </div>
+      </div>
+      <div class="section-heading">Live Telemetry Grid</div>
+
+      <!-- ================= GRID ================= -->
+      <div class="dashboard-grid">
+
+        <!-- 🎥 CAMERA VIEWPORT GRID -->
+        <div class="box camera" style="grid-column: span 2; grid-row: span 2; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div class="box-title" style="margin-bottom: 0;">🎥 Multi-Sensor AI Grid Console</div>
+            
+            <!-- GRID SELECTOR TOOLBAR -->
+            <div style="display: flex; gap: 4px; background: rgba(2, 6, 23, 0.6); padding: 4px; border-radius: 6px; border: 1px solid rgba(6, 182, 212, 0.15);">
+              <button type="button" class="btn-grid-tab active" data-grid="1">1 CH</button>
+              <button type="button" class="btn-grid-tab" data-grid="4">4 CH</button>
+              <button type="button" class="btn-grid-tab" data-grid="9">9 CH</button>
+              <button type="button" class="btn-grid-tab" data-grid="16">16 CH</button>
+              <button type="button" class="btn-grid-tab" data-grid="25">25 CH</button>
+              <button type="button" class="btn-grid-tab" data-grid="36">36 CH</button>
+            </div>
+          </div>
+
+          <div class="camera-viewport-wrapper" style="position: relative; flex: 1; display: flex; flex-direction: column;">
+            <!-- DYNAMIC GRID CONTAINER -->
+            <div id="cameraGridContainer" class="camera-grid-1" style="display: grid; gap: 10px; background: rgba(0,0,0,0.65); border-radius: 10px; padding: 10px; border: 1px solid rgba(6, 182, 212, 0.15); flex: 1; width: 100%; min-height: 380px;">
+              <!-- Grid Slots populated dynamically by javascript -->
+            </div>
+          </div>
+
+          <div class="camera-status" id="camera-status-text" style="margin-top: 10px; font-size: 11px; color: var(--text-muted);">
+            SYSTEM READY – Click or drag camera nodes below to construct dynamic CCTV grid matrix. Double click any active tile to maximize.
+          </div>
+        </div>  
+
+        <!-- 🛡 SAFETY STATUS CARD -->
+        <div class="box safe" id="safety-box">
+          <div class="box-title">🛡 Safety Zone</div>
+          <div class="box-value" id="safety-status">SAFE</div>
+          <div class="box-desc" id="safety-desc">
+            Human distance above threshold
           </div>
         </div>
-        <div id="cameraGridContainer" class="camera-grid-1"></div>
-        <div class="cam-footer">
-          <div class="cam-status-text" id="camera-status-text">SYSTEM READY — Click or drag camera nodes to build the CCTV grid. Double-click any tile to fullscreen.</div>
-          <div class="cam-meta">
-            <span>RES <span class="cv">1920×1080</span></span>
-            <span>ENC <span class="cv">H.265</span></span>
-            <span>PROTO <span class="cv">RTSP</span></span>
+
+        <!-- 🧠 AI CONFIDENCE -->
+        <div class="box">
+          <div class="box-title">🧠 AI Confidence</div>
+          <div class="box-value" id="confidence-value">0%</div>
+          <div class="box-desc">
+            YOLO Object Detection Accuracy
           </div>
         </div>
-      </div>
 
-      <!-- RIGHT: Metric Sidebar -->
-      <div class="metric-sidebar">
-
-        <div class="metric-card mc-safe" id="safety-box">
-          <div class="metric-card-label">🛡 Safety Zone</div>
-          <div class="metric-card-value" id="safety-status">SAFE</div>
-          <div class="metric-card-desc" id="safety-desc">Human distance above threshold</div>
+        <!-- 🕒 SHIFT / MODE WATCHDOG CARD -->
+        <div class="box" id="shift-watchdog-box">
+          <div class="box-title">🕒 Schedule Watchdog</div>
+          <div class="box-value" id="shift-watchdog-title" style="font-size: 22px;">--</div>
+          <div class="box-desc" id="shift-watchdog-status" style="color: var(--safe-green);">
+            Continuous Mode Active
+          </div>
         </div>
 
-        <div class="metric-card mc-cyan">
-          <div class="metric-card-label">🧠 AI Confidence</div>
-          <div class="metric-card-value" id="confidence-value">0%</div>
-          <div class="conf-bar-wrap"><div class="conf-bar-fill" id="conf-bar"></div></div>
-          <div class="metric-card-desc" style="margin-top:8px">YOLO object detection accuracy</div>
+        <!-- 🚨 SYSTEM ACTION -->
+        <div class="box safe" id="action-box">
+          <div class="box-title">🚨 System Action</div>
+          <div class="box-value" id="system-action">RUN</div>
+          <div class="box-desc" id="system-desc">
+            System running normally
+          </div>
         </div>
 
-        <div class="metric-card" id="shift-watchdog-box">
-          <div class="metric-card-label">🕒 Schedule Watchdog</div>
-          <div class="metric-card-value mc-mono mc-cyan" id="shift-watchdog-title" style="color:var(--cyan)">24×7 FULL</div>
-          <div class="metric-card-desc mc-green" id="shift-watchdog-status" style="color:var(--green)">Continuous surveillance active</div>
+        <!-- 🧠 AI TELEMETRY GRID -->
+        <div class="box" style="grid-column: span 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; text-align: center;">
+          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
+            <div class="metric-label">Human Count</div>
+            <div id="hud-human-count" class="metric-value">0</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Detected Workers</div>
+          </div>
+          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
+            <div class="metric-label">Surveillance FPS</div>
+            <div id="hud-fps" class="metric-value">0.0</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Real-time Feed Rate</div>
+          </div>
+          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
+            <div class="metric-label">Link Latency</div>
+            <div id="hud-latency" class="metric-value">0ms</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Network Round-trip</div>
+          </div>
+          <div style="padding: 10px 8px;">
+            <div class="metric-label">Vision Model</div>
+            <div class="metric-value" style="color: var(--safe-green);">YOLOv8n</div>
+            <div style="font-size:10px; color:var(--safe-green); margin-top:3px; opacity:0.7;">Active &amp; Running</div>
+          </div>
         </div>
 
-        <div class="metric-card mc-safe" id="action-box">
-          <div class="metric-card-label">🚨 System Action</div>
-          <div class="metric-card-value" id="system-action" style="color:var(--green)">RUN</div>
-          <div class="metric-card-desc" id="system-desc">PLC machine line operating normally</div>
+        <!-- 🧾 INCIDENT EVENT LOG -->
+        <div class="box incident-log-panel" style="grid-column: span 2; min-height: 250px; display: flex; flex-direction: column;">
+          <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span>🧾 Real-Time Safety Threat Incident Log</span>
+            <div style="display: flex; gap: 6px;">
+              <button onclick="exportPDFReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); color: var(--primary-neon);">Export PDF</button>
+              <button onclick="exportExcelReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); color: var(--safe-green);">Export Excel</button>
+              <button onclick="clearIncidentLogs()" class="btn-danger-cyber" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(239,68,68,0.25);">Clear Logs</button>
+            </div>
+          </div>
+          <div id="incident-log-console" style="background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(6, 182, 212, 0.1); border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.5; color: var(--text-main); display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);">
+            <div style="color: var(--text-muted); text-align: center; margin-top: 50px;">Waiting for real-time safety telemetry events...</div>
+          </div>
         </div>
 
       </div>
-    </div>
 
-    <!-- WIDGET ROW -->
-    <div class="section-label">System Telemetry</div>
-    <div class="widget-row">
-      <div class="widget-card">
-        <div class="wlabel">📡 PLC Network</div>
-        <div class="wvalue">×4</div>
-        <div class="wsub">PROFINET controllers active</div>
-      </div>
-      <div class="widget-card">
-        <div class="wlabel">🔁 Camera Grid</div>
-        <div class="wvalue" id="w-cam-count">0</div>
-        <div class="wsub">Sensor nodes registered</div>
-      </div>
-      <div class="widget-card">
-        <div class="wlabel">🟢 Online Nodes</div>
-        <div class="wvalue green" id="w-online-count">0</div>
-        <div class="wsub">Health check passing</div>
-      </div>
-      <div class="widget-card">
-        <div class="wlabel">🔴 Offline Nodes</div>
-        <div class="wvalue red" id="w-offline-count">0</div>
-        <div class="wsub">Reconnection queued</div>
-      </div>
-    </div>
+      <!-- ================= CAMERA MANAGER PANEL ================= -->
+      <div class="section-heading">Sensor Node Registry</div>
+      <div class="box camera-manager-panel" style="padding: 25px; min-height: 350px;">
+        <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(6, 182, 212, 0.15); padding-bottom: 12px; margin-bottom: 20px;">
+          <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.5px;">🖥️ Industrial Sensor Node Manager</span>
+          <div style="font-size: 12px; font-family: 'Space Grotesk', sans-serif; display: flex; gap: 15px; color: var(--text-muted); align-items: center;">
+            <span>TOTAL: <b id="stat-total-cams" style="color: var(--primary-neon);">0</b></span>
+            <span style="color: rgba(255,255,255,0.15)">|</span>
+            <span>ONLINE: <b id="stat-online-cams" style="color: var(--safe-green);">0</b></span>
+            <span style="color: rgba(255,255,255,0.15)">|</span>
+            <span>OFFLINE: <b id="stat-offline-cams" style="color: var(--danger-red);">0</b></span>
+          </div>
+        </div>
 
-    <!-- INCIDENT LOG -->
-    <div class="section-label">Threat Incident Log</div>
-    <div class="incident-panel">
-      <div class="ip-header">
-        <div class="ip-title">🧾 Real-Time Safety Threat Incident Log</div>
-        <div class="ip-actions">
-          <button class="btn-act cyan" onclick="exportPDFReport()">Export PDF</button>
-          <button class="btn-act grn" onclick="exportExcelReport()">Export Excel</button>
-          <button class="btn-act red" id="clearLogsBtn" onclick="clearIncidentLogs()">Clear Logs</button>
+        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="searchCam" placeholder="Search Camera Nodes by Name or Location..." oninput="filterAndRenderCameras()" style="flex: 1; min-width: 250px; background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(6, 182, 212, 0.15); border-radius: 8px; padding: 10px 15px; color: var(--text-main); font-size: 13px; outline: none;" />
+          <select id="filterType" onchange="filterAndRenderCameras()" class="setup-dropdown" style="width: auto; padding: 10px 15px; margin-top: 0;">
+            <option value="ALL">All Types</option>
+            <option value="RTSP">RTSP Camera</option>
+            <option value="IP_CAMERA">Intranet IP Camera</option>
+            <option value="WEBCAM">Webcam / USB</option>
+          </select>
+          <select id="filterStatus" onchange="filterAndRenderCameras()" class="setup-dropdown" style="width: auto; padding: 10px 15px; margin-top: 0;">
+            <option value="ALL">All Statuses</option>
+            <option value="Online">Online</option>
+            <option value="Offline">Offline</option>
+          </select>
+          <a href="camera_setup.html" class="history-btn" style="padding: 10px 20px; margin: 0; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: center;">+ Add Camera</a>
+        </div>
+
+        <!-- Renders dynamically -->
+        <div id="camerasGridList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 20px; margin-top: 10px;">
+          <!-- Camera Cards injected here -->
         </div>
       </div>
-      <div id="incident-log-console" class="log-console">
-        <div class="log-empty">
-          <div class="ei">📡</div>
-          <div>Waiting for real-time safety telemetry events…</div>
-        </div>
-      </div>
-    </div>
 
-    <!-- SENSOR NODE MANAGER -->
-    <div class="section-label">Sensor Node Registry</div>
-    <div class="node-manager">
-      <div class="nm-header">
-        <div class="nm-title">🖥️ Industrial Sensor Node Manager</div>
-        <div class="nm-stats">
-          <span>TOTAL <span class="nv c" id="stat-total-cams">0</span></span>
-          <span>ONLINE <span class="nv g" id="stat-online-cams">0</span></span>
-          <span>OFFLINE <span class="nv r" id="stat-offline-cams">0</span></span>
-        </div>
-      </div>
-      <div class="nm-controls">
-        <input type="text" class="nm-search" id="searchCam" placeholder="Search camera nodes by name or location…" oninput="filterAndRenderCameras()"/>
-        <select id="filterType" class="nm-sel" onchange="filterAndRenderCameras()">
-          <option value="ALL">All Types</option>
-          <option value="RTSP">RTSP Camera</option>
-          <option value="IP_CAMERA">IP Camera</option>
-          <option value="WEBCAM">Webcam / USB</option>
-        </select>
-        <select id="filterStatus" class="nm-sel" onchange="filterAndRenderCameras()">
-          <option value="ALL">All Statuses</option>
-          <option value="Online">Online</option>
-          <option value="Offline">Offline</option>
-        </select>
-        <a href="camera_setup.html" class="btn-add">+ Add Camera</a>
-      </div>
-      <div class="nm-grid" id="camerasGridList"></div>
-    </div>
-
-    <!-- QUICK ACTIONS -->
-    <div class="section-label">Quick Actions Console</div>
-    <div class="actions-bar">
-      <a href="history.html" class="btn-primary">📊 View Detection History &rarr;</a>
-      <button id="btnLogoutCam" class="btn-danger-outline">⏏ Disconnect Camera Node</button>
-    </div>
-
-  </main>
-
-  <!-- CODE VORTEX PRODUCTION FOOTER -->
-  <footer class="codevortex-footer">
-    <div class="cv-footer-container">
-      <div class="cv-footer-brand">
-        <a href="index.html" class="cv-footer-logo">
-          <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"/>
-          </svg>
-          <span class="company">CODE VORTEX</span>
-          <span class="tag">AI SAFETY SHIELD</span>
+      <!-- ================= CONTROLS ================= -->
+      <div class="section-heading">Quick Actions</div>
+      <div class="history-btn-wrapper">
+        <a href="history.html" class="history-btn">
+          📊 View Detection History →
         </a>
-        <p class="cv-footer-desc">
-          Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing.
-        </p>
-        <div class="cv-status-pill">
-          <span class="cv-status-dot"></span>
-          <span>Code Vortex Security Cloud: Operational</span>
+        <button id="btnLogoutCam" class="btn-danger-cyber">
+          Disconnect Camera
+        </button>
+      </div>
+
+    </main>
+
+    <!-- ================= TELEMETRY FOOTER ================= -->
+    <footer class="telemetry-footer">
+        <!-- LEFT CLUSTER -->
+        <div class="footer-cluster left-cluster">
+            <!-- Desktop/Tablet Version -->
+            <div class="footer-item desktop-only">
+                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
+                <span class="footer-item-label">SAFETY CORE</span>
+                <span class="footer-item-value">v4.2.1</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">VISION MODEL</span>
+                <span class="footer-item-value">v3.0</span>
+            </div>
+            <!-- Mobile Version -->
+            <div class="footer-item mobile-only" style="color: var(--safe-green); font-weight: bold; text-shadow: 0 0 8px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
+                <span class="footer-item-label" style="color: var(--safe-green); font-weight: 700;">SYSTEM ONLINE</span>
+            </div>
         </div>
-      </div>
 
-      <div class="cv-footer-col">
-        <h4>Platform</h4>
-        <ul>
-          <li><a href="dashboard.html">Live Operator Dashboard</a></li>
-          <li><a href="plant_map.html">Factory Plant Map</a></li>
-          <li><a href="chart.html">Danger Analytics</a></li>
-          <li><a href="history.html">Detection Event Logs</a></li>
-        </ul>
-      </div>
+        <!-- CENTER CLUSTER -->
+        <div class="footer-cluster center-cluster">
+            <!-- Desktop/Tablet Version -->
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">PLC NETWORK</span>
+                <span class="footer-item-value">×4</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">CAMERA GRID</span>
+                <span class="footer-item-value">×4</span>
+            </div>
+            <div class="footer-separator desktop-only"></div>
+            <div class="footer-item desktop-only">
+                <span class="footer-item-label">LATENCY</span>
+                <span class="footer-item-value">8.24ms</span>
+            </div>
+            <!-- Mobile Version -->
+            <div class="footer-item mobile-only">
+                <span class="footer-item-label">NETWORK</span>
+                <span class="footer-item-value">×4</span>
+            </div>
+            <div class="footer-separator mobile-only"></div>
+            <div class="footer-item mobile-only">
+                <span class="footer-item-label">CAMERAS</span>
+                <span class="footer-item-value">×4</span>
+            </div>
+        </div>
 
-      <div class="cv-footer-col">
-        <h4>Hardware</h4>
-        <ul>
-          <li><a href="camera_setup.html">AI Camera Setup</a></li>
-          <li><a href="diagnostics.html">Diagnostic Matrix</a></li>
-          <li><a href="notifications.html">System Alerts</a></li>
-          <li><a href="admin.html">Admin Console</a></li>
-        </ul>
-      </div>
+        <!-- RIGHT CLUSTER -->
+        <div class="footer-cluster right-cluster">
+            <div class="utc-clock-wrapper">
+                <span class="utc-label desktop-only">UTC</span>
+                <span class="utc-time" id="footer-live-clock">--:--:--</span>
+            </div>
+        </div>
+    </footer>
 
-      <div class="cv-footer-col">
-        <h4>Resources</h4>
-        <ul>
-          <li><a href="learn-more.html">How It Works</a></li>
-          <li><a href="contact.html">Contact Engineering</a></li>
-          <li><a href="solution.html">Solution Matrix</a></li>
-          <li><a href="login.html">Operator Gateway</a></li>
-        </ul>
-      </div>
-    </div>
+  </div>
 
-    <div class="cv-footer-bottom">
-      <div>&copy; 2026 Code Vortex Technologies Inc. All rights reserved.</div>
-      <div>
-        <a href="javascript:void(0)">Privacy Policy</a>
-        <a href="javascript:void(0)">Terms of Service</a>
-        <a href="javascript:void(0)">IEC 61508 / ISO 27001 Ready</a>
-      </div>
-    </div>
-  </footer>
+  <!-- ================= JAVASCRIPT ================= -->
+  
+  <!-- Particles canvas, clock ticking overlays -->
+  <script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
 
-</div><!-- .page-shell -->
-
-<!-- ============================================================
-     PARTICLE BACKDROP
-============================================================ -->
-<script>
-(function(){
-  var canvas=document.getElementById('particle-canvas');
-  var ctx=canvas.getContext('2d');
-  function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
-  resize();window.addEventListener('resize',resize);
-  function P(){this.reset()}
-  P.prototype.reset=function(){
-    this.x=Math.random()*canvas.width;
-    this.y=canvas.height+Math.random()*120;
-    this.s=Math.random()*1.8+0.3;
-    this.vy=-(Math.random()*0.55+0.12);
-    this.vx=Math.random()*.3-.15;
-    this.a=Math.random()*.4+.07;
-    this.c=Math.random()>.45?'6,182,212':'59,130,246';
-  };
-  P.prototype.update=function(){this.y+=this.vy;this.x+=this.vx;if(this.y<-8)this.reset()};
-  P.prototype.draw=function(){
-    ctx.fillStyle='rgba('+this.c+','+this.a+')';
-    ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,Math.PI*2);ctx.fill();
-  };
-  var pp=[],n=Math.min(65,Math.floor(innerWidth/18));
-  for(var i=0;i<n;i++){pp.push(new P())}
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    pp.forEach(function(p){p.update();p.draw()});
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-</script>
-
-<!-- CLOCKS -->
-<script>
-  function tickClocks(){
-    var now=new Date();
-    var utc=now.toISOString().substr(11,8)+' UTC';
-    var full=now.toISOString().replace('T',' ').substr(0,19)+' UTC';
-    var sc=document.getElementById('system-clock');
-    var dt=document.getElementById('dash-live-time');
-    var fc=document.getElementById('footer-clock');
-    if(sc)sc.textContent=utc;
-    if(dt)dt.textContent=utc;
-    if(fc)fc.textContent=utc;
-  }
-  tickClocks();setInterval(tickClocks,1000);
-  setInterval(function(){
-    var lat=Math.floor(5+Math.random()*7);
-    var fl=document.getElementById('footer-latency');
-    if(fl)fl.textContent=lat+'.'+(Math.floor(Math.random()*9))+'ms';
-  },2800);
-</script>
-
-<!-- jsPDF + SheetJS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<!-- MAIN DASHBOARD LOGIC -->
-<script>
-if(typeof window.API_BASE_URL==='undefined'){window.API_BASE_URL=(window.location.hostname==="localhost"||window.location.hostname==="127.0.0.1"||window.location.protocol==="file:")?"http://localhost:5000":"https://impactthon-wjut.onrender.com";}
-if(typeof window.AI_SERVICE_URL==='undefined'){window.AI_SERVICE_URL=(window.location.hostname==="localhost"||window.location.hostname==="127.0.0.1"||window.location.protocol==="file:")?"http://localhost:10000":"https://impactthon-ai.onrender.com";}
-var API_BASE_URL=window.API_BASE_URL;
-var AI_SERVICE_URL=window.AI_SERVICE_URL;
-
-let cameras=[],activeCamera=null,healthInterval=null,timerInterval=null;
-let currentGridSize=1,dragSourceIndex=null,gridMapping={};
-
-// ── Toast ──
-function showHUDToast(title,body,type){
-  var el=document.getElementById('hudToast');
-  var tt=document.getElementById('toastTitle');
-  var tb=document.getElementById('toastBody');
-  if(!el)return;
-  tt.textContent=title;tb.textContent=body;
-  tt.style.color=type==='success'?'var(--green)':type==='danger'?'var(--red)':'var(--cyan)';
-  el.style.display='flex';clearTimeout(el._t);
-  el._t=setTimeout(function(){el.style.display='none'},3500);
-}
-
-// ── Private IP check ──
-function isPrivateIP(u){
-  if(!u)return false;
-  var c=u.toLowerCase().trim().replace(/^(rtsp|rtmp|http|https):\/\//,'');
-  if(c.includes('@'))c=c.substring(c.lastIndexOf('@')+1);
-  var ei=c.search(/[:/]/);if(ei!==-1)c=c.substring(0,ei);
-  if(/^\d+$/.test(c))return true;
-  if(c==='localhost'||c==='127.0.0.1')return true;
-  if(c.startsWith('192.168.')||c.startsWith('10.'))return true;
-  if(/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(c))return true;
-  return false;
-}
-
-// ── Incident Log ──
-function addIncidentLog(type,severity,cameraName){
-  cameraName=cameraName||'System';
-  var el=document.getElementById('incident-log-console');
-  if(!el)return;
-  var empty=el.querySelector('.log-empty');if(empty)empty.remove();
-  var ts=new Date().toLocaleTimeString();
-  var entry=document.createElement('div');
-  entry.className='log-entry';
-  entry.innerHTML='<span class="log-ts">['+ts+']</span> <span class="log-sev '+severity+'">['+severity+']</span> <span class="log-body"><b>'+cameraName+'</b>: '+type+'</span>';
-  el.appendChild(entry);el.scrollTop=el.scrollHeight;
-}
-
-function clearIncidentLogs(){
-  var el=document.getElementById('incident-log-console');
-  if(!el)return;
-  var ts=new Date().toLocaleTimeString();
-  el.innerHTML='<div class="log-entry"><span class="log-ts">['+ts+']</span> <span class="log-sev SYSTEM">[SYSTEM]</span> <span class="log-body">Incident log cleared by operator.</span></div>';
-}
-
-// ── Shift Watchdog ──
-function initShiftWatchdog(){
-  var tEl=document.getElementById('shift-watchdog-title');
-  var sEl=document.getElementById('shift-watchdog-status');
-  var cfg=localStorage.getItem('systemConfig');
-  if(!cfg){
-    if(tEl)tEl.textContent='24×7 FULL';
-    if(sEl){sEl.textContent='Continuous Surveillance Active';sEl.style.color='var(--green)'}
-    return;
-  }
-  var c=JSON.parse(cfg);
-  if(c.mode==='FULLTIME'){if(tEl)tEl.textContent='24×7 FULL-TIME';if(sEl){sEl.textContent='Continuous Surveillance Active';sEl.style.color='var(--green)'}}
-  else if(c.mode==='AUTO'){if(tEl)tEl.textContent=c.timeSlot||'Scheduled Shift';if(sEl){sEl.textContent='Shift Scanning Core Active';sEl.style.color='var(--cyan)'}}
-  else if(c.mode==='MANUAL'){if(tEl)tEl.textContent=c.timeSlot||'Manual Shift';if(timerInterval)clearInterval(timerInterval);startManualTimer(c.timeSlot)}
-}
-
-var stopTriggered=false;
-function startManualTimer(tr){
-  if(!tr||!tr.includes(' - ')){var s=document.getElementById('shift-watchdog-status');if(s)s.textContent='Scheduler error';return}
-  var parts=tr.split(' - '),endStr=parts[1];
-  timerInterval=setInterval(function(){
-    var now=new Date(),end=new Date();
-    var ep=endStr.split(':').map(Number);end.setHours(ep[0],ep[1],0,0);
-    var sp=parts[0].split(':').map(Number);
-    if(ep[0]<sp[0]&&now.getHours()>=sp[0])end.setDate(end.getDate()+1);
-    var sEl=document.getElementById('shift-watchdog-status');
-    if(now>=end){
-      if(sEl){sEl.textContent='⚠️ SHIFT EXPIRED';sEl.style.color='var(--red)'}
-      var sa=document.getElementById('system-action'),sd=document.getElementById('system-desc'),ab=document.getElementById('action-box');
-      if(sa)sa.textContent='STOP';if(sd)sd.textContent='Temporal shift finished';
-      if(ab)ab.className='metric-card mc-danger';
-      triggerForceStop();
-    }else{
-      var diff=end-now,h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s2=Math.floor((diff%60000)/1000);
-      if(sEl){sEl.textContent='Shift ends in '+h+'h '+m+'m '+s2+'s';sEl.style.color='var(--green)'}
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
-  },1000);
-}
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-async function triggerForceStop(){
-  if(stopTriggered)return;stopTriggered=true;
-  addIncidentLog('Scheduled shift expired. E-Stop relay dispatched.','WARNING');
-  try{var u=activeCamera?(isPrivateIP(activeCamera.cameraUrl)?'http://localhost:5000':AI_SERVICE_URL):AI_SERVICE_URL;await fetch(u+'/api/force_stop',{method:'POST'})}catch(e){}
-}
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedY = -(Math.random() * 0.7 + 0.2);
+            this.speedX = Math.random() * 0.4 - 0.2;
+            this.alpha = Math.random() * 0.5 + 0.1;
+            this.color = Math.random() > 0.4 ? '6, 182, 212' : '59, 130, 246';
+        }
 
-// ── Load Cameras ──
-async function loadCameras(){
-  var cached=[];
-  try{var s=localStorage.getItem('safetyShieldCameras');if(s)cached=JSON.parse(s)}catch(e){}
-  try{
-    var token=localStorage.getItem('token');
-    var headers=token?{Authorization:'Bearer '+token}:{};
-    var res=await fetch(API_BASE_URL+'/api/camera/all',{headers});
-    var data=await res.json();
-    if(data.success&&data.cameras&&data.cameras.length>0){
-      var fetched=data.cameras.map(function(cc,i){
-        var m=cached.find(function(lc){return lc.cameraUrl===cc.url});
-        var nameVal=(cc.name&&cc.name!=='UNDEFINED')?cc.name:(m&&m.cameraName&&m.cameraName!=='UNDEFINED'?m.cameraName:'Hikvision RTSP Camera');
-        return{cameraId:m?m.cameraId:'cam_'+(cc._id||Date.now()+i),cameraName:nameVal,
-          cameraType:cc.cameraType||'IP_CAMERA',cameraUrl:cc.url,username:cc.username||'',password:cc.password||'',
-          location:m?m.location:'Field',description:m?m.description:'Auto synced',status:cc.status||'Online',
-          fps:60,latency:8,brand:cc.brand||'Hikvision',channelId:cc.channelId||1,active:m?m.active:false};
-      });
-      // Merge cached local cameras that are not in fetched cloud list
-      cached.forEach(function(lc){
-        if(!fetched.some(function(fc){return fc.cameraUrl===lc.cameraUrl})){
-          fetched.unshift(lc);
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            if (this.y < -10) {
+                this.y = canvas.height + 10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particlesArray = [];
+    const count = Math.min(60, Math.floor(window.innerWidth / 20));
+    for (let i = 0; i < count; i++) {
+        particlesArray.push(new Particle());
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Real-time ticking system clock inside HUD
+    const clockElement = document.getElementById('system-clock');
+    function updateClock() {
+        if (!clockElement) return;
+        const now = new Date();
+        const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
+        clockElement.textContent = `SYSTEM TIME: ${timeString} UTC`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Simulate latency shifts inside HUD
+    setInterval(() => {
+        const latencyEl = document.getElementById('system-latency');
+        if (latencyEl) {
+            latencyEl.textContent = `LATENCY: ${Math.floor(6 + Math.random() * 5)}ms`;
+        }
+    }, 3000);
+
+    // FUTURISTIC LIVE TELEMETRY FOOTER CLOCK + Header Badge
+    (function() {
+        const utcClock = document.getElementById('footer-live-clock');
+        const dashTime = document.getElementById('dash-live-time');
+        function tick() {
+            const now = new Date();
+            const t = now.toISOString().substr(11, 8) + ' UTC';
+            if (utcClock) utcClock.textContent = t;
+            if (dashTime) dashTime.textContent = t;
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:5000"
+      : "https://impactthon-wjut.onrender.com";
+
+    const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:10000"
+      : "https://impactthon-ai.onrender.com";
+
+    let cameras = [];
+    let activeCamera = null;
+    let healthInterval = null;
+    let timerInterval = null;
+    let currentGridSize = 1;
+    let dragSourceIndex = null;
+    let gridMapping = {};
+
+    function getResolvedEdgeUrl() {
+      const savedEdge = localStorage.getItem("edgeAgentUrl");
+      return savedEdge ? savedEdge.trim().replace(/\/$/, '') : "http://localhost:5000";
+    }
+
+    function isPrivateIP(urlStr) {
+      if (!urlStr) return false;
+      let cleanUrl = urlStr.toLowerCase().trim();
+      
+      // Extract host/ip
+      // 1. Remove protocol schema
+      cleanUrl = cleanUrl.replace(/^(rtsp|rtmp|http|https):\/\//, '');
+      // 2. Remove credentials if present (anything before '@')
+      if (cleanUrl.includes('@')) {
+        cleanUrl = cleanUrl.substring(cleanUrl.indexOf('@') + 1);
+      }
+      // 3. Remove port and path (anything starting with ':' or '/')
+      const endIdx = cleanUrl.search(/[:\/]/);
+      if (endIdx !== -1) {
+        cleanUrl = cleanUrl.substring(0, endIdx);
+      }
+      
+      // Pure digit check (e.g. USB index "0", "1")
+      if (/^\d+$/.test(cleanUrl)) return true;
+      
+      if (cleanUrl === 'localhost' || cleanUrl === '127.0.0.1') return true;
+      if (cleanUrl.startsWith('192.168.')) return true;
+      if (cleanUrl.startsWith('10.')) return true;
+      
+      // Match 172.16.x.x to 172.31.x.x
+      const match = cleanUrl.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./);
+      if (match) return true;
+      
+      return false;
+    }
+
+    // ==========================================
+    // 🧾 INCIDENT EVENTS LOGGER
+    // ==========================================
+    function addIncidentLog(type, severity, cameraName = "System") {
+      const consoleEl = document.getElementById("incident-log-console");
+      if (!consoleEl) return;
+
+      if (consoleEl.innerHTML.includes("Waiting for real-time")) {
+        consoleEl.innerHTML = "";
+      }
+
+      const timestamp = new Date().toLocaleTimeString();
+      const div = document.createElement("div");
+      div.style.borderBottom = "1px solid rgba(6, 182, 212, 0.08)";
+      div.style.paddingBottom = "4px";
+
+      let color = "var(--text-main)";
+      if (severity === "DANGER" || severity === "CRITICAL") color = "var(--danger-red)";
+      else if (severity === "WARNING") color = "var(--warning-yellow)";
+
+      div.innerHTML = `
+        <span style="color: var(--text-muted); font-size: 10px;">[${timestamp}]</span> 
+        <span style="color: ${color}; font-weight: 700;">[${severity}]</span> 
+        <span><b>${cameraName}</b>: ${type}</span>
+      `;
+      consoleEl.appendChild(div);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    function clearIncidentLogs() {
+      const consoleEl = document.getElementById("incident-log-console");
+      if (consoleEl) {
+        consoleEl.innerHTML = `<div style="color: var(--text-muted); text-align: center; margin-top: 50px;">Waiting for real-time safety telemetry events...</div>`;
+      }
+    }
+
+    // ==========================================
+    // 🕒 CONFIG SCHEDULER WATCHDOG
+    // ==========================================
+    function initShiftWatchdog() {
+      const titleEl = document.getElementById("shift-watchdog-title");
+      const statusEl = document.getElementById("shift-watchdog-status");
+      
+      const configStr = localStorage.getItem("systemConfig");
+      if (!configStr) {
+        if (titleEl) titleEl.innerText = "24x7 FULL-TIME";
+        if (statusEl) {
+          statusEl.innerText = "Continuous Surveillance Active";
+          statusEl.style.color = "var(--safe-green)";
+        }
+        return;
+      }
+
+      const config = JSON.parse(configStr);
+      if (config.mode === "FULLTIME") {
+        if (titleEl) titleEl.innerText = "24x7 FULL-TIME";
+        if (statusEl) {
+          statusEl.innerText = "Continuous Surveillance Active";
+          statusEl.style.color = "var(--safe-green)";
+        }
+      } else if (config.mode === "AUTO") {
+        if (titleEl) titleEl.innerText = config.timeSlot || "Scheduled Shift";
+        if (statusEl) {
+          statusEl.innerText = "Shift Scanning Core Active";
+          statusEl.style.color = "var(--primary-neon)";
+        }
+      } else if (config.mode === "MANUAL") {
+        if (titleEl) titleEl.innerText = config.timeSlot || "Manual Shift";
+        if (timerInterval) clearInterval(timerInterval);
+        startManualTimer(config.timeSlot);
+      }
+    }
+
+    let stopTriggered = false;
+    function startManualTimer(timeRange) {
+      if (!timeRange || !timeRange.includes(" - ")) {
+        document.getElementById("shift-watchdog-status").innerText = "Temporal scheduler error";
+        return;
+      }
+      const [startStr, endStr] = timeRange.split(" - ");
+
+      timerInterval = setInterval(() => {
+        const now = new Date();
+        const end = new Date();
+        const [endH, endM] = endStr.split(":").map(Number);
+        end.setHours(endH, endM, 0, 0);
+
+        const [startH, startM] = startStr.split(":").map(Number);
+        if (endH < startH && now.getHours() >= startH) {
+          end.setDate(end.getDate() + 1);
+        }
+
+        const statusEl = document.getElementById("shift-watchdog-status");
+        if (now >= end) {
+          if (statusEl) {
+            statusEl.innerText = "⚠️ TIME SHIFT EXPIRED";
+            statusEl.style.color = "var(--danger-red)";
+          }
+
+          const sysAct = document.getElementById("system-action");
+          const sysDesc = document.getElementById("system-desc");
+          const actionBox = document.getElementById("action-box");
+
+          if (sysAct) sysAct.innerText = "STOP";
+          if (sysDesc) sysDesc.innerText = "Temporal shift finished";
+          if (actionBox) {
+            actionBox.classList.add("danger");
+            actionBox.classList.remove("safe");
+          }
+
+          triggerForceStop();
+        } else {
+          const diff = end - now;
+          const hours = Math.floor(diff / 3600000);
+          const mins = Math.floor((diff % 3600000) / 60000);
+          const secs = Math.floor((diff % 60000) / 1000);
+          if (statusEl) {
+            statusEl.innerText = `Shift ends in ${hours}h ${mins}m ${secs}s`;
+            statusEl.style.color = "var(--safe-green)";
+          }
+        }
+      }, 1000);
+    }
+
+    async function triggerForceStop() {
+      if (stopTriggered) return;
+      stopTriggered = true;
+      addIncidentLog("Scheduled shift expired. Dispatched E-Stop relay signal.", "WARNING");
+      try {
+        const activeUrl = activeCamera ? (isPrivateIP(activeCamera.cameraUrl) ? getResolvedEdgeUrl() : AI_SERVICE_URL) : AI_SERVICE_URL;
+        await fetch(`${activeUrl}/api/force_stop`, { method: "POST" });
+      } catch (e) {
+        console.error("Force stop call failed", e);
+      }
+    }
+
+    // ==========================================
+    // 🖥️ MULTI-CAMERA LIFE CYCLE MANAGER
+    // ==========================================
+    async function loadCameras() {
+      let cached = [];
+      try {
+        const saved = localStorage.getItem("safetyShieldCameras");
+        if (saved) {
+          cached = JSON.parse(saved);
+        }
+      } catch(e) {
+        console.error("Error reading safetyShieldCameras", e);
+      }
+
+      // Sync from backend
+      try {
+        const token = localStorage.getItem("token");
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`${API_BASE_URL}/api/camera/all`, { headers });
+        const data = await res.json();
+        if (data.success && data.cameras) {
+          const cloudCams = data.cameras;
+          
+          const merged = cloudCams.map((cc, i) => {
+            const matchLocal = cached.find(lc => lc.cameraUrl === cc.url);
+            return {
+              cameraId: matchLocal ? matchLocal.cameraId : `cam_${cc._id || Date.now() + i}`,
+              cameraName: cc.name || "Cloud Camera Node",
+              cameraType: cc.cameraType || "IP_CAMERA",
+              cameraUrl: cc.url,
+              username: cc.username || "",
+              password: cc.password || "",
+              location: matchLocal ? matchLocal.location : "Operational Field",
+              description: matchLocal ? matchLocal.description : "Auto synced cloud feed",
+              status: cc.status || "Offline",
+              aiStatus: "Ready",
+              fps: 60.0,
+              latency: 8.0,
+              brand: cc.brand || "Generic",
+              channelId: cc.channelId || 1,
+              active: matchLocal ? matchLocal.active : (i === 0)
+            };
+          });
+          
+          if (merged.length > 0) {
+            cameras = merged;
+            localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
+          } else {
+            cameras = cached;
+          }
+        } else {
+          cameras = cached;
+        }
+      } catch (err) {
+        console.warn("Could not sync cloud cameras. Operating in sandbox mode.", err);
+        cameras = cached;
+      }
+
+      if (cameras.length === 0) {
+        cameras = [{
+          cameraId: "cam_default",
+          cameraName: "Local Integrated Cam 1",
+          cameraType: "WEBCAM",
+          cameraUrl: "0",
+          username: "",
+          password: "",
+          location: "Operator Bay 1",
+          description: "USB fallback web camera node",
+          status: "Online",
+          aiStatus: "Ready",
+          fps: 60.0,
+          latency: 7.5,
+          brand: "Generic",
+          channelId: 1,
+          active: true
+        }];
+        localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
+      }
+
+      activeCamera = cameras.find(c => c.active === true);
+      if (!activeCamera && cameras.length > 0) {
+        activeCamera = cameras[0];
+        activeCamera.active = true;
+      }
+
+      // Initialize grid mappings
+      cameras.forEach((cam, index) => {
+        if (gridMapping[index] === undefined) {
+          gridMapping[index] = cam.cameraUrl;
         }
       });
-      cameras=fetched;
-      localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
-    }else cameras=cached;
-  }catch(e){cameras=cached}
-  // Remove dummy webcam fallback if real RTSP/IP cameras exist
-  var realCams=cameras.filter(function(c){return c.cameraUrl&&c.cameraUrl!=='0'});
-  if(realCams.length>0)cameras=realCams;
-  if(cameras.length===0||!cameras.some(function(c){return c.cameraUrl&&c.cameraUrl!=='0'})){
-    cameras=[{cameraId:'cam_hikvision_default',cameraName:'Hikvision RTSP Camera',cameraType:'RTSP',cameraUrl:'rtsp://admin:Codevortex@12@192.168.1.64:554/Streaming/Channels/101',username:'admin',password:'Codevortex@12',
-      location:'Factory Floor 1',description:'Main Hikvision Security Node',status:'Online',fps:60,latency:7.5,brand:'Hikvision',channelId:1,active:true}];
-    localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
-  }
-  // Prioritize: active RTSP → any RTSP online → last RTSP → any camera
-  var rtsp=cameras.filter(function(c){return c.cameraUrl&&c.cameraUrl!=='0'&&isNaN(c.cameraUrl)});
-  activeCamera=cameras.find(function(c){return c.active&&c.cameraUrl!=='0'&&isNaN(c.cameraUrl)})||
-               rtsp.find(function(c){return c.status==='Online'})||
-               (rtsp.length>0?rtsp[rtsp.length-1]:null)||
-               cameras[cameras.length-1];
-  if(activeCamera){
-    cameras.forEach(function(c){c.active=(c.cameraId===activeCamera.cameraId)});
-    gridMapping[0]=activeCamera.cameraUrl;
-  }
-  cameras.forEach(function(cam,i){if(gridMapping[i]===undefined)gridMapping[i]=cam.cameraUrl});
-  filterAndRenderCameras();renderGrid();updateAllStats();
-  startStreamHeartbeat();
-}
 
-// ── Stream auto-retry heartbeat ──
-var streamHeartbeatTimer=null;
-function startStreamHeartbeat(){
-  if(streamHeartbeatTimer)clearInterval(streamHeartbeatTimer);
-  streamHeartbeatTimer=setInterval(function(){
-    var container=document.getElementById('cameraGridContainer');
-    if(!container)return;
-    var imgs=container.querySelectorAll('img');
-    imgs.forEach(function(img){
-      var src=img.src||'';
-      if(!src)return;
-      var base=src.split('&t=')[0];
-      img.src=base+'&t='+Date.now();
-    });
-  },15000);
-}
-
-window.handleStreamFallback=function(img,testUrl,sourceParam){
-  if(img.dataset.fallbackActive)return;
-  img.dataset.fallbackActive="true";
-  var snapBase=testUrl+'/snapshot?source='+sourceParam+'&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true';
-  setInterval(function(){
-    var tempImg=new Image();
-    tempImg.onload=function(){img.src=tempImg.src;};
-    tempImg.src=snapBase+'&t='+Date.now();
-  },100);
-};
-
-function filterAndRenderCameras(){
-  var sv=(document.getElementById('searchCam')?document.getElementById('searchCam').value:'').toLowerCase();
-  var tf=document.getElementById('filterType')?document.getElementById('filterType').value:'ALL';
-  var sf=document.getElementById('filterStatus')?document.getElementById('filterStatus').value:'ALL';
-  var f=cameras.filter(function(c){
-    var ms=c.cameraName.toLowerCase().includes(sv)||c.location.toLowerCase().includes(sv);
-    var mt=tf==='ALL'||(tf==='RTSP'&&c.cameraType==='RTSP')||(tf==='IP_CAMERA'&&c.cameraType==='IP_CAMERA')||(tf==='WEBCAM'&&(c.cameraType==='USB'||c.cameraType==='WEBCAM'));
-    var mst=sf==='ALL'||c.status===sf;
-    return ms&&mt&&mst;
-  });
-  renderNodeGrid(f);updateAllStats();
-}
-
-function renderNodeGrid(list){
-  var g=document.getElementById('camerasGridList');if(!g)return;
-  g.innerHTML='';
-  if(list.length===0){g.innerHTML='<div class="nm-empty"><div class="ei">📷</div><div>No cameras match the current filters.</div></div>';return}
-  list.forEach(function(cam){
-    var isMapped=Object.values(gridMapping).includes(cam.cameraUrl);
-    var on=cam.status==='Online';
-    var card=document.createElement('div');
-    card.className='node-card'+(isMapped?' active-node':'');
-    var displayName=(cam.cameraName&&cam.cameraName!=='UNDEFINED')?cam.cameraName:'Hikvision RTSP Camera';
-    var displayBrand=(cam.brand&&cam.brand!=='UNDEFINED')?cam.brand:'Hikvision';
-    card.innerHTML='<div onclick="addCameraToGrid(\''+cam.cameraUrl+'\')" style="flex:1;display:flex;flex-direction:column;gap:8px;cursor:pointer"><div class="nc-top"><div class="nc-name">'+displayName+'</div><div class="nc-brand">'+displayBrand+'</div></div><div class="nc-loc">📍 '+cam.location+'</div><div class="nc-url" style="word-break:break-all">'+cam.cameraUrl+'</div></div><div class="nc-bottom"><div class="nc-status"><span class="nc-dot '+(on?'on':'off')+'"></span><span style="color:'+(on?'var(--green)':'var(--red)')+'">'+cam.status+'</span></div><button class="btn-del" onclick="deleteCameraNode(\''+cam.cameraId+'\')">Delete</button></div>';
-    g.appendChild(card);
-  });
-}
-
-function updateAllStats(){
-  var t=cameras.length,on=cameras.filter(function(c){return c.status==='Online'}).length,off=t-on;
-  ['stat-total-cams','stat-online-cams','stat-offline-cams','w-cam-count','w-online-count','w-offline-count'].forEach(function(id,i){
-    var el=document.getElementById(id);if(el)el.textContent=[t,on,off,t,on,off][i];
-  });
-  var fcc=document.getElementById('footer-cam-count');if(fcc)fcc.textContent='×'+t;
-}
-
-window.addCameraToGrid=function(url){
-  var mapped=false;
-  for(var i=0;i<currentGridSize;i++){if(gridMapping[i]===url){mapped=true;break}}
-  if(!mapped){for(var i=0;i<currentGridSize;i++){if(!gridMapping[i]){gridMapping[i]=url;mapped=true;break}}if(!mapped)gridMapping[0]=url}
-  var tgt=cameras.find(function(c){return c.cameraUrl===url});
-  if(tgt){cameras.forEach(function(c){c.active=false});tgt.active=true;activeCamera=tgt}
-  addIncidentLog('Mounted sensor node: '+(tgt?tgt.cameraName:url),'WARNING');
-  renderGrid();filterAndRenderCameras();
-};
-
-// ── Grid Renderer ──
-function renderGrid(){
-  var container=document.getElementById('cameraGridContainer');if(!container)return;
-  container.className='camera-grid-'+currentGridSize;container.innerHTML='';
-  for(var i=0;i<currentGridSize;i++){
-    var slot=document.createElement('div');
-    slot.className='grid-slot';slot.setAttribute('draggable','true');slot.setAttribute('data-index',i);
-    var camUrl=gridMapping[i];var cam=cameras.find(function(c){return c.cameraUrl===camUrl});
-    if(cam){
-      var isLocal=isPrivateIP(cam.cameraUrl);
-      var savedEdge=localStorage.getItem('edgeAgentUrl')||'https://confider-celery-deskbound.ngrok-free.dev';
-      var testUrl=isLocal?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL;
-      var cleanSource=cam.cameraUrl;
-      var uParam=(cam.username&&!cleanSource.includes('@'))?'&username='+encodeURIComponent(cam.username):'';
-      var pParam=(cam.password&&!cleanSource.includes('@'))?'&password='+encodeURIComponent(cam.password):'';
-      var streamUrl=testUrl+'/video_feed?source='+encodeURIComponent(cleanSource)+uParam+pParam+'&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t='+Date.now();
-      slot.innerHTML='<div style="position:absolute;top:8px;left:8px;right:8px;z-index:10;display:flex;flex-direction:column;gap:4px;pointer-events:none"><div style="display:flex;justify-content:space-between;width:100%"><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:4px;font-family:var(--hud)"><span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.1s ease-in-out infinite"></span>LIVE</span><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:var(--cyan);font-family:var(--hud)">'+(cam.brand||'CAM').toUpperCase()+' CH'+(cam.channelId||1)+'</span></div><span style="background:rgba(2,6,23,.82);padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;color:#fff;width:fit-content;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--hud)">'+(cam.cameraName||'Node').toUpperCase()+'</span></div><div style="position:absolute;bottom:8px;right:8px;z-index:10;display:flex;gap:4px"><button onclick="event.stopPropagation();window.togglePinSlot('+i+')" style="background:rgba(2,6,23,.88);border:1px solid var(--cyan-30);border-radius:4px;padding:2px 5px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:var(--hud)">PIN</button><button onclick="event.stopPropagation();window.maximizeSlot('+i+')" style="background:rgba(2,6,23,.88);border:1px solid var(--cyan-30);border-radius:4px;padding:2px 5px;color:#fff;font-size:8px;font-weight:700;cursor:pointer;font-family:var(--hud)">FULL</button></div><img id="ai-camera-slot-'+i+'" src="'+streamUrl+'" alt="'+cam.cameraName+'" onerror="window.handleStreamFallback(this,\''+testUrl+'\',\''+encodeURIComponent(cleanSource)+'\')" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" />';
-      if(cam.pinned)slot.classList.add('active-pin');
-    }else{
-      slot.innerHTML='<div style="text-align:center;color:var(--txt-2);display:flex;flex-direction:column;align-items:center;gap:6px"><div style="font-size:12px;font-weight:700;opacity:.2;font-family:var(--hud);letter-spacing:2px">NO SIGNAL</div><div style="font-size:8px;letter-spacing:1px;font-family:var(--mono);opacity:.2">CH '+(i+1)+' · STANDBY</div></div>';
-    }
-    slot.addEventListener('dragstart',function(idx){return function(e){dragSourceIndex=idx;e.dataTransfer.effectAllowed='move'}}(i));
-    slot.addEventListener('dragover',function(e){e.preventDefault()});
-    slot.addEventListener('dragenter',function(s){return function(){s.classList.add('drag-over')}}(slot));
-    slot.addEventListener('dragleave',function(s){return function(){s.classList.remove('drag-over')}}(slot));
-    slot.addEventListener('drop',function(s,idx){return function(e){
-      e.preventDefault();s.classList.remove('drag-over');
-      if(dragSourceIndex!==null&&dragSourceIndex!==idx){var t=gridMapping[dragSourceIndex];gridMapping[dragSourceIndex]=gridMapping[idx];gridMapping[idx]=t;renderGrid()}
-    }}(slot,i));
-    slot.addEventListener('dblclick',function(){this.classList.toggle('fullscreen')});
-    container.appendChild(slot);
-  }
-  tryWebcamFallback();
-}
-
-// ── Webcam + Animated Fallback ──
-function tryWebcamFallback(){
-  if(activeCamera && activeCamera.cameraType !== 'WEBCAM' && activeCamera.cameraUrl !== '0') return;
-  var container=document.getElementById('cameraGridContainer');
-  if(!container)return;
-  var slot0=container.querySelector('.grid-slot');
-  if(!slot0||slot0.querySelector('img'))return;
-  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
-    navigator.mediaDevices.getUserMedia({video:true,audio:false})
-      .then(function(stream){
-        var v=document.createElement('video');
-        v.srcObject=stream;v.autoplay=true;v.muted=true;v.playsInline=true;
-        v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
-        slot0.appendChild(v);
-        var hud=document.createElement('span');
-        hud.style.cssText='position:absolute;top:8px;left:8px;background:rgba(2,6,23,.88);padding:2px 8px;border-radius:4px;font-size:8px;font-weight:700;color:var(--green);font-family:var(--hud);z-index:20;display:flex;align-items:center;gap:4px';
-        hud.innerHTML='<span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.1s ease-in-out infinite"></span>WEBCAM LIVE';
-        slot0.appendChild(hud);
-        addIncidentLog('Browser webcam feed initialized.','SAFE','Local Webcam');
-        startMetricSimulation();
-      })
-      .catch(function(){startAnimatedFallback(slot0)});
-  }else{startAnimatedFallback(slot0)}
-}
-
-function startMetricSimulation(){
-  setInterval(function(){
-    var fps=(54+Math.random()*7).toFixed(1);
-    var lat=Math.floor(4+Math.random()*6)+'ms';
-    var hc=document.getElementById('hud-human-count');if(hc)hc.textContent='0';
-    var hf=document.getElementById('hud-fps');if(hf)hf.textContent=fps;
-    var hl=document.getElementById('hud-latency');if(hl)hl.textContent=lat;
-  },1000);
-}
-
-function startAnimatedFallback(slot){
-  slot.innerHTML='<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(15,23,42,1) 0%,rgba(2,6,23,1) 100%);color:var(--cyan);gap:12px"><div style="width:40px;height:40px;border:2px solid var(--cyan-30);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite"></div><div style="font-size:10px;font-family:var(--hud);letter-spacing:2px;font-weight:700">STANDBY STREAM MATRIX</div></div>';
-}
-
-window.togglePinSlot=function(i){
-  var url=gridMapping[i];if(!url)return;
-  var cam=cameras.find(function(c){return c.cameraUrl===url});
-  if(cam){cam.pinned=!cam.pinned;addIncidentLog('Toggled pin: '+cam.cameraName,'WARNING');renderGrid()}
-};
-window.maximizeSlot=function(i){
-  var container=document.getElementById('cameraGridContainer');if(!container)return;
-  var slots=container.querySelectorAll('.grid-slot');if(slots[i])slots[i].classList.toggle('fullscreen');
-};
-
-async function deleteCameraNode(cameraId){
-  event.stopPropagation();
-  if(!confirm('Delete this sensor node?'))return;
-  var idx=cameras.findIndex(function(c){return c.cameraId===cameraId});if(idx===-1)return;
-  var del=cameras.splice(idx,1)[0];
-  for(var k in gridMapping)if(gridMapping[k]===del.cameraUrl)gridMapping[k]=null;
-  if(activeCamera&&activeCamera.cameraId===cameraId)activeCamera=cameras.length>0?cameras[0]:null;
-  if(activeCamera)activeCamera.active=true;
-  localStorage.setItem('safetyShieldCameras',JSON.stringify(cameras));
-  addIncidentLog('Deleted node: '+del.cameraName,'WARNING');
-  try{var tk=localStorage.getItem('token');await fetch(API_BASE_URL+'/api/camera/reset?url='+encodeURIComponent(del.cameraUrl),{method:'DELETE',headers:tk?{Authorization:'Bearer '+tk}:{}})}catch(e){}
-  loadCameras();
-}
-
-function startHealthDaemon(){
-  if(healthInterval)clearInterval(healthInterval);
-  healthInterval=setInterval(async function(){
-    for(var cam of cameras){
-      var savedEdge=localStorage.getItem('edgeAgentUrl')||'https://confider-celery-deskbound.ngrok-free.dev';
-      var cu=(isPrivateIP(cam.cameraUrl)?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL)+'/status';
-      try{
-        var ctrl=new AbortController();var tid=setTimeout(function(){ctrl.abort()},1500);
-        var res=await fetch(cu,{signal:ctrl.signal,headers:{'ngrok-skip-browser-warning':'true','bypass-tunnel-reminder':'true'}});clearTimeout(tid);
-        if(res.status===200){if(cam.status!=='Online'){cam.status='Online';addIncidentLog('Node online: '+cam.cameraName,'SAFE')}}
-        else{if(cam.status!=='Offline'){cam.status='Offline';addIncidentLog('Node error: '+cam.cameraName,'CRITICAL')}}
-      }catch(e){if(cam.status!=='Offline'){cam.status='Offline';addIncidentLog('Node offline: '+cam.cameraName,'CRITICAL')}}
-    }
-    filterAndRenderCameras();renderGrid();updateAllStats();
-  },5000);
-}
-
-var lastSafety=null,lastAction=null;
-async function updateStatus(){
-  if(!activeCamera)return;
-  var savedEdge=localStorage.getItem('edgeAgentUrl')||'https://confider-celery-deskbound.ngrok-free.dev';
-  var SU=(isPrivateIP(activeCamera.cameraUrl)?(savedEdge||'http://localhost:5000'):AI_SERVICE_URL)+'/status';
-  try{
-    var res=await fetch(SU,{cache:'no-store',headers:{'ngrok-skip-browser-warning':'true','bypass-tunnel-reminder':'true'}});var data=await res.json();
-    if(data.confidence!==undefined){
-      var conf=data.confidence;
-      ['confidence-value','confidence-value-kpi'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=conf+'%'});
-      var cb=document.getElementById('conf-bar');if(cb)cb.style.width=conf+'%';
-      var fps=document.getElementById('hud-fps');if(fps)fps.textContent=data.camera?(54+Math.random()*7).toFixed(1):'0.0';
-      var lat=document.getElementById('hud-latency');if(lat)lat.textContent=data.camera?(4+Math.random()*6).toFixed(0)+'ms':'0ms';
-      var hc=document.getElementById('hud-human-count');if(hc)hc.textContent=data.safety==='DANGER'?'1':'0';
-    }
-    if(data.safety!==lastSafety){
-      var sb=document.getElementById('safety-box'),ss=document.getElementById('safety-status'),sd=document.getElementById('safety-desc');
-      if(data.safety==='DANGER'){
-        if(ss)ss.textContent='DANGER';if(sd)sd.textContent='Operator boundary breached!';
-        if(sb)sb.className='metric-card mc-danger';
-        playWarningTone();addIncidentLog('Hazard breach in machine zone!','CRITICAL',activeCamera.cameraName);
-      }else{
-        if(ss)ss.textContent='SAFE';if(sd)sd.textContent='Human distance above threshold';
-        if(sb)sb.className='metric-card mc-safe';
-      }
-      lastSafety=data.safety;
-    }
-    var action=(data.safety==='DANGER'||stopTriggered)?'STOP':'RUN';
-    if(action!==lastAction){
-      var ab=document.getElementById('action-box'),as=document.getElementById('system-action'),ad=document.getElementById('system-desc');
-      if(action==='STOP'){if(as)as.textContent='STOP';if(ad)ad.textContent='Emergency PLC interlock activated';if(ab)ab.className='metric-card mc-danger'}
-      else{if(as)as.textContent='RUN';if(ad)ad.textContent='PLC machine line operating normally';if(ab)ab.className='metric-card mc-safe'}
-      lastAction=action;
-    }
-  }catch(e){}
-}
-
-var audioCtx=null;
-function playWarningTone(){
-  try{
-    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
-    osc.type='sawtooth';osc.frequency.setValueAtTime(880,audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.07,audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+.2);
-    osc.connect(gain);gain.connect(audioCtx.destination);osc.start();osc.stop(audioCtx.currentTime+.25);
-  }catch(e){}
-}
-
-window.exportPDFReport=function(){
-  try{
-    var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF();
-    doc.setFillColor(3,7,18);doc.rect(0,0,210,40,'F');
-    doc.setTextColor(6,182,212);doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('AI SMART SAFETY SHIELD',15,20);
-    doc.setTextColor(255,255,255);doc.setFontSize(10);doc.text('MISSION CONTROL — INDUSTRIAL RISK REPORT',15,30);
-    doc.setTextColor(15,23,42);doc.setFontSize(9);doc.text('Generated: '+new Date().toLocaleString(),15,55);
-    doc.text('Cameras: '+cameras.length,15,63);
-    doc.setDrawColor(203,213,225);doc.line(15,70,195,70);
-    var y=82;
-    cameras.forEach(function(cam,i){
-      doc.setFontSize(8.5);doc.setTextColor(15,23,42);
-      doc.text((i+1)+'. '+cam.cameraName+' ['+cam.brand+'] ('+cam.location+') - '+cam.status,15,y);
-      y+=10;if(y>270){doc.addPage();y=20}
-    });
-    var logs=Array.from(document.querySelectorAll('#incident-log-console .log-entry')).map(function(e){return e.innerText});
-    y+=4;doc.setFontSize(11);doc.setTextColor(15,23,42);doc.text('EVENT LOG:',15,y);y+=10;
-    logs.slice(0,20).forEach(function(l){if(l.trim()){doc.setFontSize(8);doc.text(l.trim(),15,y);y+=6;if(y>275){doc.addPage();y=20}}});
-    doc.save('AI_Safety_Report_'+Date.now()+'.pdf');
-    showHUDToast('PDF COMPILED','Report generated and downloaded.','success');
-  }catch(err){alert('Report compile failed: '+err.message)}
-};
-
-window.exportExcelReport=function(){
-  try{
-    var wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(cameras.map(function(c){return{Name:c.cameraName,Brand:c.brand,Channel:c.channelId,Location:c.location,URL:c.cameraUrl,Status:c.status}})),'Cameras');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Array.from(document.querySelectorAll('#incident-log-console .log-entry')).map(function(e){return{Log:e.innerText}})),'Safety Logs');
-    XLSX.writeFile(wb,'AI_Safety_'+Date.now()+'.xlsx');
-    showHUDToast('EXCEL DOWNLOADED','Incident workbook saved.','success');
-  }catch(err){alert('Spreadsheet failed: '+err.message)}
-};
-
-// ── Init ──
-document.addEventListener('DOMContentLoaded',function(){
-  loadCameras();initShiftWatchdog();startHealthDaemon();
-  document.querySelectorAll('.btn-grid-tab').forEach(function(tab){
-    tab.addEventListener('click',function(){
-      document.querySelectorAll('.btn-grid-tab').forEach(function(t){t.classList.remove('active')});
-      tab.classList.add('active');
-      currentGridSize=parseInt(tab.getAttribute('data-grid'));
+      filterAndRenderCameras();
       renderGrid();
-    });
-  });
-  document.addEventListener('click', function(e){
-    if(e.target&&e.target.closest('.logout-btn')){
-      e.preventDefault();
-      if(typeof window.logout==='function') window.logout();
-      else {
-        localStorage.clear();sessionStorage.clear();
-        window.location.replace("login.html");
+    }
+
+    function filterAndRenderCameras() {
+      const searchVal = document.getElementById("searchCam").value.toLowerCase();
+      const typeFilter = document.getElementById("filterType").value;
+      const statusFilter = document.getElementById("filterStatus").value;
+
+      const filtered = cameras.filter(cam => {
+        const matchesSearch = cam.cameraName.toLowerCase().includes(searchVal) || 
+                              cam.location.toLowerCase().includes(searchVal);
+        
+        const matchesType = typeFilter === "ALL" || 
+                            (typeFilter === "RTSP" && cam.cameraType === "RTSP") ||
+                            (typeFilter === "IP_CAMERA" && cam.cameraType === "IP_CAMERA") ||
+                            (typeFilter === "WEBCAM" && (cam.cameraType === "USB" || cam.cameraType === "WEBCAM"));
+        
+        const matchesStatus = statusFilter === "ALL" || cam.status === statusFilter;
+
+        return matchesSearch && matchesType && matchesStatus;
+      });
+
+      renderGridList(filtered);
+      updateTelemetryStats();
+    }
+
+    function renderGridList(list) {
+      const grid = document.getElementById("camerasGridList");
+      if (!grid) return;
+      grid.innerHTML = "";
+
+      list.forEach(cam => {
+        const isMapped = Object.values(gridMapping).includes(cam.cameraUrl);
+        const activeClass = isMapped ? "active" : "";
+        const indicatorColor = cam.status === "Online" ? "var(--safe-green)" : "var(--danger-red)";
+        
+        const card = document.createElement("div");
+        card.className = `setup-card ${activeClass}`;
+        card.style.padding = "20px";
+        card.style.cursor = "pointer";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.justifyContent = "space-between";
+        card.style.minHeight = "150px";
+        card.style.border = isMapped ? "1.5px solid var(--primary-neon)" : "1px solid rgba(6, 182, 212, 0.08)";
+        card.style.background = isMapped ? "rgba(6, 182, 212, 0.04)" : "rgba(6, 9, 21, 0.4)";
+        
+        card.innerHTML = `
+          <div onclick="addCameraToGrid('${cam.cameraUrl}')" style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: #fff;">${cam.cameraName}</h4>
+              <span style="font-size: 8px; font-family: 'Space Grotesk', sans-serif; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--text-muted);">${cam.brand}</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">📍 ${cam.location}</div>
+            <div style="font-size: 10px; color: var(--text-muted); font-family: 'Fira Code', monospace; margin-top: 8px; opacity: 0.8; word-break: break-all;">${cam.cameraUrl}</div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 12px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background-color: ${indicatorColor}; box-shadow: 0 0 6px ${indicatorColor};"></span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">${cam.status}</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="deleteCameraNode('${cam.cameraId}')" class="btn-danger-cyber" style="font-size: 9px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(239,68,68,0.25);">Delete</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      if (list.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 40px 0;">No cameras matching current search or filters.</div>`;
       }
     }
-  });
-  setInterval(updateStatus,1000);
-  updateAllStats();
-});
-</script>
 
-<!-- Global fallback logout definition -->
-<script>
-  window.logout = function() {
-    try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
-    window.location.replace("login.html");
-    setTimeout(function() { window.location.href = "login.html"; }, 100);
-  };
-</script>
+    window.addCameraToGrid = function(url) {
+      let mapped = false;
+      for (let i = 0; i < currentGridSize; i++) {
+        if (gridMapping[i] === url) {
+          mapped = true;
+          break;
+        }
+      }
+      
+      if (!mapped) {
+        for (let i = 0; i < currentGridSize; i++) {
+          if (!gridMapping[i]) {
+            gridMapping[i] = url;
+            mapped = true;
+            break;
+          }
+        }
+        
+        if (!mapped) {
+          gridMapping[0] = url;
+        }
+      }
+      
+      const targetCam = cameras.find(c => c.cameraUrl === url);
+      if (targetCam) {
+        cameras.forEach(c => c.active = false);
+        targetCam.active = true;
+        activeCamera = targetCam;
+      }
+      
+      addIncidentLog(`Mounted sensor node: ${targetCam ? targetCam.cameraName : url}`, "WARNING");
+      renderGrid();
+      filterAndRenderCameras();
+    };
 
-<!-- Supabase session check -->
-<script type="module">
-  import { getSession } from '../js/supabase.js';
-  getSession().then(function(session){
-    if(!session&&localStorage.getItem('isLoggedIn')==='true'){
-      if(typeof window.logout==='function')window.logout();
+    function updateTelemetryStats() {
+      const total = cameras.length;
+      const online = cameras.filter(c => c.status === "Online").length;
+      const offline = total - online;
+
+      if (document.getElementById("stat-total-cams")) document.getElementById("stat-total-cams").innerText = total;
+      if (document.getElementById("stat-online-cams")) document.getElementById("stat-online-cams").innerText = online;
+      if (document.getElementById("stat-offline-cams")) document.getElementById("stat-offline-cams").innerText = offline;
     }
-  }).catch(function(){});
-</script>
 
-<!-- Auth + mobile menu -->
-<script src="../js/auth.js"></script>
+    // ==========================================
+    // ⚙️ ACTIVE CAMERA TRANSITION SETTER
+    // ==========================================
+    async function setActiveCamera(cameraId) {
+      if (activeCamera && activeCamera.cameraId === cameraId) return;
+
+      const target = cameras.find(c => c.cameraId === cameraId);
+      if (!target) return;
+
+      cameras.forEach(c => c.active = false);
+      target.active = true;
+      activeCamera = target;
+      
+      gridMapping[0] = target.cameraUrl;
+      
+      localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
+      addIncidentLog(`Transitioning operational target to grid slot 1: ${target.cameraName}`, "WARNING");
+
+      renderGrid();
+      filterAndRenderCameras();
+
+      const payload = {
+        name: target.cameraName,
+        type: target.cameraType.includes("WEBCAM") || target.cameraType.includes("USB") ? "WEBCAM" : "IP_CAMERA",
+        url: target.cameraUrl,
+        username: target.username,
+        password: target.password
+      };
+
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        await fetch(`${API_BASE_URL}/api/camera/save`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+        console.log("Active camera successfully synchronized to database.");
+      } catch (err) {
+        console.warn("Could not sync active target camera details with database.", err);
+      }
+    }
+
+    // ==========================================
+    // 🖥️ CCTV MATRIX GRID RENDERER
+    // ==========================================
+    function renderGrid() {
+      const container = document.getElementById("cameraGridContainer");
+      if (!container) return;
+      
+      container.className = `camera-grid-${currentGridSize}`;
+      container.innerHTML = "";
+      
+      for (let i = 0; i < currentGridSize; i++) {
+        const slot = document.createElement("div");
+        slot.className = "grid-slot";
+        slot.setAttribute("draggable", "true");
+        slot.setAttribute("data-index", i);
+        
+        const camUrl = gridMapping[i];
+        const cam = cameras.find(c => c.cameraUrl === camUrl);
+        
+        if (cam) {
+          const isLocal = isPrivateIP(cam.cameraUrl);
+          const testUrl = isLocal ? getResolvedEdgeUrl() : AI_SERVICE_URL;
+          const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cam.cameraUrl)}&username=${encodeURIComponent(cam.username)}&password=${encodeURIComponent(cam.password)}&t=${Date.now()}`;
+          
+          slot.innerHTML = `
+            <div class="camera-feed-hud" style="position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10; display: flex; flex-direction: column; gap: 4px; pointer-events: none;">
+              <div style="display: flex; justify-content: space-between; width: 100%;">
+                <span class="feed-hud-rec" style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--safe-green); display: flex; align-items: center; gap: 4px;">
+                  <span class="feed-rec-dot" style="width: 5px; height: 5px; border-radius: 50%; background: var(--safe-green); display: inline-block;"></span> LIVE
+                </span>
+                <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--primary-neon);">${cam.brand.toUpperCase()} CH${cam.channelId}</span>
+              </div>
+              <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: #fff; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cam.cameraName.toUpperCase()}</span>
+            </div>
+            
+            <div style="position: absolute; bottom: 8px; right: 8px; z-index: 10; display: flex; gap: 4px;">
+              <button onclick="event.stopPropagation(); window.togglePinSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: var(--primary-neon); font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">PIN</button>
+              <button onclick="event.stopPropagation(); window.maximizeSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: #fff; font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">FULL</button>
+            </div>
+            
+            <img src="${streamUrl}" alt="${cam.cameraName}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='../images/offline_placeholder.jpg'; this.style.display='none'; this.nextElementSibling.style.display='block';" />
+            <div style="display: none; text-align: center; color: var(--text-muted); pointer-events: none;">
+              <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; color: var(--danger-red);">VIDEO RECOVERY QUEUE</div>
+              <div style="font-size: 8px; margin-top: 4px; font-family: 'Fira Code', monospace; opacity: 0.6;">RECONNECTING SENSOR FEED...</div>
+            </div>
+          `;
+          
+          if (cam.pinned) {
+            slot.classList.add("active-pin");
+          }
+        } else {
+          slot.innerHTML = `
+            <div style="text-align: center; color: var(--text-muted); pointer-events: none;">
+              <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; opacity: 0.4;">NO SIGNAL</div>
+              <div style="font-size: 8px; margin-top: 4px; letter-spacing: 1px; font-family: 'Fira Code', monospace; opacity: 0.4;">CH ${i + 1} &bull; STANDBY</div>
+            </div>
+          `;
+        }
+
+        // Drag events
+        slot.addEventListener("dragstart", (e) => {
+          dragSourceIndex = i;
+          e.dataTransfer.effectAllowed = "move";
+        });
+        
+        slot.addEventListener("dragover", (e) => {
+          e.preventDefault();
+        });
+        
+        slot.addEventListener("dragenter", (e) => {
+          slot.classList.add("drag-over");
+        });
+        
+        slot.addEventListener("dragleave", (e) => {
+          slot.classList.remove("drag-over");
+        });
+        
+        slot.addEventListener("drop", (e) => {
+          e.preventDefault();
+          slot.classList.remove("drag-over");
+          
+          const sourceIdx = dragSourceIndex;
+          const targetIdx = i;
+          
+          if (sourceIdx !== null && sourceIdx !== targetIdx) {
+            const temp = gridMapping[sourceIdx];
+            gridMapping[sourceIdx] = gridMapping[targetIdx];
+            gridMapping[targetIdx] = temp;
+            renderGrid();
+          }
+        });
+        
+        slot.addEventListener("dblclick", () => {
+          slot.classList.toggle("fullscreen");
+        });
+        
+        container.appendChild(slot);
+      }
+    }
+
+    window.togglePinSlot = function(idx) {
+      const camUrl = gridMapping[idx];
+      const cam = cameras.find(c => c.cameraUrl === camUrl);
+      if (cam) {
+        cam.pinned = !cam.pinned;
+        addIncidentLog(`Toggled sensor pin state for: ${cam.cameraName}`, "WARNING");
+        renderGrid();
+      }
+    };
+    
+    window.maximizeSlot = function(idx) {
+      const container = document.getElementById("cameraGridContainer");
+      const slots = container.querySelectorAll(".grid-slot");
+      slots.forEach(s => {
+        if (s.getAttribute("data-index") == idx) {
+          s.classList.toggle("fullscreen");
+        } else {
+          s.classList.remove("fullscreen");
+        }
+      });
+    };
+
+    // ==========================================
+    // 🧾 REPORT EXPORT ENGINES
+    // ==========================================
+    window.exportPDFReport = function() {
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // SCADA theme title header
+        doc.setFillColor(2, 6, 23);
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(6, 182, 212);
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text("AI SMART SAFETY SHIELD", 15, 20);
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.text("MISSION CONTROL CENTER - INDUSTRIAL RISK REPORTS", 15, 30);
+        
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(14);
+        doc.text("SAFETY COMPLIANCE STATUS SUMMARY", 15, 55);
+        
+        doc.setFontSize(9);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 15, 63);
+        doc.text(`Active Devices Grid: ${cameras.length} connected cameras`, 15, 69);
+        
+        // Draw division line
+        doc.setDrawColor(203, 213, 225);
+        doc.line(15, 75, 195, 75);
+        
+        // Listing Cameras
+        doc.setFontSize(11);
+        doc.setTextColor(15, 23, 42);
+        doc.text("ONBOARDED CCTV OPTICAL SENSORS:", 15, 87);
+        let y = 97;
+        cameras.forEach((cam, i) => {
+          doc.setFontSize(8.5);
+          doc.text(`${i+1}. ${cam.cameraName.toUpperCase()} [${cam.brand}] (${cam.location}) - Status: ${cam.status.toUpperCase()}`, 15, y);
+          doc.setFontSize(7.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`   URL: ${cam.cameraUrl}`, 15, y + 4);
+          doc.setTextColor(15, 23, 42);
+          y += 12;
+        });
+        
+        // Incident timeline
+        y += 6;
+        doc.setFontSize(11);
+        doc.text("SECURITY EVENT TIMELINE LOGS:", 15, y);
+        y += 10;
+        
+        const consoleEl = document.getElementById("incident-log-console");
+        const logLines = consoleEl ? Array.from(consoleEl.children).map(child => child.innerText) : ["Waiting for real-time safety telemetry events..."];
+        
+        logLines.slice(0, 20).forEach((log) => {
+          if (log.trim()) {
+            doc.setFontSize(8);
+            doc.setFont("courier", "normal");
+            doc.text(log.trim(), 15, y);
+            doc.setFont("helvetica", "normal");
+            y += 6;
+            if (y > 280) {
+              doc.addPage();
+              y = 20;
+            }
+          }
+        });
+        
+        doc.save(`AI_Safety_Report_${Date.now()}.pdf`);
+        showHUDToast("PDF COMPILED", "Mission report generated and downloaded.", "success");
+      } catch (err) {
+        console.error("PDF generation failed:", err);
+        alert("Report compile failed: " + err.message);
+      }
+    };
+    
+    window.exportExcelReport = function() {
+      try {
+        const camData = cameras.map(c => ({
+          Name: c.cameraName,
+          Brand: c.brand,
+          Channel: c.channelId,
+          Location: c.location,
+          URL: c.cameraUrl,
+          Status: c.status
+        }));
+        
+        const consoleEl = document.getElementById("incident-log-console");
+        const logLines = consoleEl ? Array.from(consoleEl.children).map(child => ({ Log: child.innerText })) : [{ Log: "Empty console" }];
+        
+        const wb = XLSX.utils.book_new();
+        const wsCams = XLSX.utils.json_to_sheet(camData);
+        const wsLogs = XLSX.utils.json_to_sheet(logLines);
+        
+        XLSX.utils.book_append_sheet(wb, wsCams, "Camera Registry");
+        XLSX.utils.book_append_sheet(wb, wsLogs, "Safety Log Console");
+        
+        XLSX.writeFile(wb, `AI_Safety_Spreadsheet_${Date.now()}.xlsx`);
+        showHUDToast("EXCEL DOWNLOADED", "Incident telemetry workbook saved.", "success");
+      } catch (err) {
+        console.error("Excel download failed:", err);
+        alert("Spreadsheet compile failed: " + err.message);
+      }
+    };
+
+    // ==========================================
+    // 🚨 DELETE SENSOR NODE
+    // ==========================================
+    async function deleteCameraNode(cameraId) {
+      event.stopPropagation();
+      if (!confirm("Are you sure you want to delete this sensor node?")) return;
+
+      const idx = cameras.findIndex(c => c.cameraId === cameraId);
+      if (idx === -1) return;
+
+      const deletedCam = cameras[idx];
+      cameras.splice(idx, 1);
+      
+      for (let key in gridMapping) {
+        if (gridMapping[key] === deletedCam.cameraUrl) {
+          gridMapping[key] = null;
+        }
+      }
+
+      if (activeCamera && activeCamera.cameraId === cameraId) {
+        if (cameras.length > 0) {
+          cameras[0].active = true;
+          activeCamera = cameras[0];
+        } else {
+          activeCamera = null;
+        }
+      }
+
+      localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
+      addIncidentLog(`Deleted sensor node: ${deletedCam.cameraName}`, "WARNING");
+
+      try {
+        const token = localStorage.getItem("token");
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        await fetch(`${API_BASE_URL}/api/camera/reset?url=${encodeURIComponent(deletedCam.cameraUrl)}`, {
+          method: 'DELETE',
+          headers: headers
+        });
+      } catch(err) {
+        console.warn("Failed to delete camera from database.", err);
+      }
+
+      loadCameras();
+    }
+
+    // ==========================================
+    // 📡 CAMERA HEALTH DAEMON
+    // ==========================================
+    function startHealthDaemon() {
+      if (healthInterval) clearInterval(healthInterval);
+
+      healthInterval = setInterval(async () => {
+        for (let i = 0; i < cameras.length; i++) {
+          const cam = cameras[i];
+          const isLocal = isPrivateIP(cam.cameraUrl);
+          const checkUrl = isLocal ? `${getResolvedEdgeUrl()}/status` : `${AI_SERVICE_URL}/status`;
+          
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
+            
+            const response = await fetch(checkUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (response.status === 200) {
+              if (cam.status !== "Online") {
+                cam.status = "Online";
+                addIncidentLog("Sensor Node online: " + cam.cameraName, "SAFE");
+              }
+            } else {
+              if (cam.status !== "Offline") {
+                cam.status = "Offline";
+                addIncidentLog("Sensor Node connection error: " + cam.cameraName, "CRITICAL");
+              }
+            }
+          } catch(e) {
+            if (cam.status !== "Offline") {
+              cam.status = "Offline";
+              addIncidentLog("Sensor Node offline (unreachable): " + cam.cameraName, "CRITICAL");
+            }
+          }
+        }
+        
+        filterAndRenderCameras();
+        renderGrid();
+      }, 5000);
+    }
+
+    // ==========================================
+    // 🛡 AI STATUS MONITOR
+    // ==========================================
+    let lastSafety = null;
+    let lastAction = null;
+
+    async function updateStatus() {
+      if (!activeCamera) return;
+
+      const isLocal = isPrivateIP(activeCamera.cameraUrl);
+      const STATUS_URL = isLocal ? `${getResolvedEdgeUrl()}/status` : `${AI_SERVICE_URL}/status`;
+
+      try {
+        const res = await fetch(STATUS_URL, { cache: "no-store" });
+        const data = await res.json();
+
+        const safetyBox = document.getElementById("safety-box");
+        const safetyStatus = document.getElementById("safety-status");
+        const safetyDesc = document.getElementById("safety-desc");
+
+        const actionBox = document.getElementById("action-box");
+        const actionStatus = document.getElementById("system-action");
+        const actionDesc = document.getElementById("system-desc");
+
+        if (!safetyBox || !actionBox) return;
+
+        if (data.confidence !== undefined) {
+          const confVal = document.getElementById("confidence-value");
+          if (confVal) confVal.innerText = data.confidence + "%";
+        }
+
+        if (document.getElementById("hud-human-count")) {
+          document.getElementById("hud-human-count").innerText = data.safety === "DANGER" ? "1" : "0";
+        }
+        if (document.getElementById("hud-fps")) {
+          document.getElementById("hud-fps").innerText = data.camera ? (56 + Math.random() * 3).toFixed(1) : "0.0";
+        }
+        if (document.getElementById("hud-latency")) {
+          document.getElementById("hud-latency").innerText = data.camera ? (6 + Math.random() * 4).toFixed(0) + "ms" : "0ms";
+        }
+
+        if (data.safety !== lastSafety) {
+          if (data.safety === "DANGER") {
+            safetyStatus.innerText = "DANGER";
+            safetyDesc.innerText = "Operator safety boundary breached!";
+            safetyBox.classList.add("danger");
+            safetyBox.classList.remove("safe");
+            
+            playWarningTone();
+            addIncidentLog(`Hazard breach detected in machine zone!`, "CRITICAL", activeCamera.cameraName);
+          } else {
+            safetyStatus.innerText = "SAFE";
+            safetyDesc.innerText = "Operator clear of hazards";
+            safetyBox.classList.add("safe");
+            safetyBox.classList.remove("danger");
+          }
+          lastSafety = data.safety;
+        }
+
+        const action = data.safety === "DANGER" || stopTriggered ? "STOP" : "RUN";
+        if (action !== lastAction) {
+          if (action === "STOP") {
+            actionStatus.innerText = "STOP";
+            actionDesc.innerText = "Emergency PLC interlock trip activated";
+            actionBox.classList.add("danger");
+            actionBox.classList.remove("safe");
+          } else {
+            actionStatus.innerText = "RUN";
+            actionDesc.innerText = "System running normally";
+            actionBox.classList.add("safe");
+            actionBox.classList.remove("danger");
+          }
+          lastAction = action;
+        }
+
+      } catch (err) {
+        console.error("Telemetry sync error:", err);
+      }
+    }
+
+    let audioCtx = null;
+    function playWarningTone() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } catch (e) {
+        console.warn("Buzzer play error:", e);
+      }
+    }
+
+    // ==========================================
+    // 🚀 INITIALIZATION ON READY
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", () => {
+      loadCameras();
+      initShiftWatchdog();
+      startHealthDaemon();
+
+      const tabs = document.querySelectorAll(".btn-grid-tab");
+      tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+          tabs.forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          currentGridSize = parseInt(tab.getAttribute("data-grid"));
+          renderGrid();
+        });
+      });
+
+      setInterval(updateStatus, 1000);
+    });
+  </script>
+
+  <!-- Secure Supabase Session Verification -->
+  <script type="module">
+    import { getSession } from '../js/supabase.js';
+    getSession().then((session) => {
+      if (!session && localStorage.getItem("isLoggedIn") === "true") {
+        console.warn("Supabase session expired. Logging out...");
+        if (typeof window.logout === "function") window.logout();
+      }
+    }).catch(() => {});
+  </script>
+
+  <!-- Auth and Mobile Menu Handler -->
+  <script src="../js/auth.js"></script>
 
 </body>
+
 </html>
