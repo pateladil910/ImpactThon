@@ -167,297 +167,305 @@ class ThreadedCamera:
         last_results = []
         
         while self.started:
-            # Thread-safe read of latest raw frame
-            with self.read_lock:
-                grabbed = self.grabbed
-                frame = self.raw_frame.copy() if (self.raw_frame is not None and grabbed) else None
+            try:
+                # Thread-safe read of latest raw frame
+                with self.read_lock:
+                    grabbed = self.grabbed
+                    frame = self.raw_frame.copy() if (self.raw_frame is not None and grabbed) else None
+                    
+                if not grabbed or frame is None:
+                    time.sleep(0.05)
+                    continue
+                    
+                # Process Frame Details
+                frame = cv2.resize(frame, (640, 480))
+                danger_in_frame = False
                 
-            if not grabbed or frame is None:
-                time.sleep(0.05)
-                continue
+                # Draw Machine Zone
+                cv2.rectangle(
+                    frame,
+                    (MACHINE_ZONE[0], MACHINE_ZONE[1]),
+                    (MACHINE_ZONE[2], MACHINE_ZONE[3]),
+                    (0, 255, 255),
+                    3
+                )
+                cv2.putText(frame, "MACHINE ZONE",
+                            (MACHINE_ZONE[0], MACHINE_ZONE[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
                 
-            # Process Frame Details
-            frame = cv2.resize(frame, (640, 480))
-            danger_in_frame = False
-            
-            # Draw Machine Zone
-            cv2.rectangle(
-                frame,
-                (MACHINE_ZONE[0], MACHINE_ZONE[1]),
-                (MACHINE_ZONE[2], MACHINE_ZONE[3]),
-                (0, 255, 255),
-                3
-            )
-            cv2.putText(frame, "MACHINE ZONE",
-                        (MACHINE_ZONE[0], MACHINE_ZONE[1] - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-            
-            # YOLO detect humans only (Class 0)
-            t_inf_start = time.time()
-            if frame_count % FRAME_SKIP == 0:
-                results = model(frame, conf=0.25, classes=[0], verbose=False)
-                last_results = results
-                
-                # Diagnostics Logging
+                # YOLO detect humans only (Class 0)
+                t_inf_start = time.time()
+                if frame_count % FRAME_SKIP == 0:
+                    results = model(frame, conf=0.25, classes=[0], verbose=False)
+                    last_results = results
+                    
+                    # Diagnostics Logging
+                    for r in results:
+                        cls_ids = [int(box.cls[0].item()) for box in r.boxes]
+                        scores = [float(box.conf[0].item()) for box in r.boxes]
+                        has_person = 0 in cls_ids
+                        h, w = frame.shape[:2]
+                        print(f"[DEBUG] [YOLO_INFERENCE] Model: yolov8n.pt | Conf Thresh: 0.25 | Resolution: {w}x{h} | Detected Classes: {cls_ids} | Scores: {[round(s, 2) for s in scores]} | Person Present: {has_person}")
+                else:
+                    results = last_results
+                t_inf_end = time.time()
+                latency_ms = (t_inf_end - t_inf_start) * 1000.0
+                    
+                person_boxes = []
+                person_scores = []
                 for r in results:
-                    cls_ids = [int(box.cls[0].item()) for box in r.boxes]
-                    scores = [float(box.conf[0].item()) for box in r.boxes]
-                    has_person = 0 in cls_ids
-                    h, w = frame.shape[:2]
-                    print(f"[DEBUG] [YOLO_INFERENCE] Model: yolov8n.pt | Conf Thresh: 0.25 | Resolution: {w}x{h} | Detected Classes: {cls_ids} | Scores: {[round(s, 2) for s in scores]} | Person Present: {has_person}")
-            else:
-                results = last_results
-            t_inf_end = time.time()
-            latency_ms = (t_inf_end - t_inf_start) * 1000.0
+                    for box in r.boxes:
+                        person_boxes.append(box)
+                        person_scores.append(float(box.conf[0].item()))
                 
-            person_boxes = []
-            person_scores = []
-            for r in results:
-                for box in r.boxes:
-                    person_boxes.append(box)
-                    person_scores.append(float(box.conf[0].item()))
-            
-            human_count = len(person_boxes)
-            ai_confidence = int(max(person_scores) * 100) if human_count > 0 else 0
-            
-            danger_in_frame = False
-            
-            for box in person_boxes:
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                foot_x = (x1 + x2) // 2
-                foot_y = y2
+                human_count = len(person_boxes)
+                ai_confidence = int(max(person_scores) * 100) if human_count > 0 else 0
                 
-                # Check if bottom-center lies inside MACHINE_ZONE
-                in_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (MACHINE_ZONE[1] <= foot_y <= MACHINE_ZONE[3])
+                danger_in_frame = False
                 
-                yolo_conf = float(box.conf[0].item())
-                yolo_conf_pct = int(yolo_conf * 100)
-                
-                # Compute distance-based confidence for UI HUD
-                mz_cx = (MACHINE_ZONE[0] + MACHINE_ZONE[2]) // 2
-                mz_cy = (MACHINE_ZONE[1] + MACHINE_ZONE[3]) // 2
-                dist = np.sqrt((foot_x - mz_cx)**2 + (foot_y - mz_cy)**2)
-                calculated_conf = max(0, min(100, int(100 - (dist / 6))))
-                
-                if in_zone:
-                    danger_in_frame = True
-                    calculated_conf = 100
-                    color = (0, 0, 255)
-                    label = f"DANGER (PERSON {yolo_conf_pct}%)"
+                for box in person_boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    foot_x = (x1 + x2) // 2
+                    foot_y = y2
+                    
+                    # Check if bottom-center lies inside MACHINE_ZONE
+                    in_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (MACHINE_ZONE[1] <= foot_y <= MACHINE_ZONE[3])
+                    
+                    yolo_conf = float(box.conf[0].item())
+                    yolo_conf_pct = int(yolo_conf * 100)
+                    
+                    # Compute distance-based confidence for UI HUD
+                    mz_cx = (MACHINE_ZONE[0] + MACHINE_ZONE[2]) // 2
+                    mz_cy = (MACHINE_ZONE[1] + MACHINE_ZONE[3]) // 2
+                    dist = np.sqrt((foot_x - mz_cx)**2 + (foot_y - mz_cy)**2)
+                    calculated_conf = max(0, min(100, int(100 - (dist / 6))))
+                    
+                    if in_zone:
+                        danger_in_frame = True
+                        calculated_conf = 100
+                        color = (0, 0, 255)
+                        label = f"DANGER (PERSON {yolo_conf_pct}%)"
+                    else:
+                        color = (0, 255, 0)
+                        label = f"PERSON {yolo_conf_pct}% (SAFE {calculated_conf}%)"
+                        
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
+                    cv2.putText(frame, label, (x1, y1 - 8),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+                                    
+                # Debounce state machine
+                if danger_in_frame:
+                    self.danger_counter += 1
+                    self.safe_counter = 0
                 else:
-                    color = (0, 255, 0)
-                    label = f"PERSON {yolo_conf_pct}% (SAFE {calculated_conf}%)"
+                    self.safe_counter += 1
+                    self.danger_counter = 0
                     
-                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
-                cv2.putText(frame, label, (x1, y1 - 8),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-                                
-            # Debounce state machine
-            if danger_in_frame:
-                self.danger_counter += 1
-                self.safe_counter = 0
-            else:
-                self.safe_counter += 1
-                self.danger_counter = 0
-                
-            if self.danger_counter >= ENTER_THRESHOLD:
-                new_state = "DANGER"
-            elif self.safe_counter >= EXIT_THRESHOLD:
-                new_state = "SAFE"
-            else:
-                new_state = self.safety_state
-                
-            state_changed = (new_state != self.safety_state)
-            self.safety_state = new_state
-            self.current_confidence = ai_confidence
-            
-            # Estimate rolling FPS
-            if not hasattr(self, '_fps_start_time'):
-                self._fps_start_time = time.time()
-                self._fps_frames = 0
-            self._fps_frames += 1
-            elapsed = time.time() - self._fps_start_time
-            if elapsed >= 2.0:
-                self._current_fps = self._fps_frames / elapsed
-                self._fps_start_time = time.time()
-                self._fps_frames = 0
-            elif not hasattr(self, '_current_fps'):
-                self._current_fps = 20.0
-                
-            # Check alert and database logging trigger conditions (DANGER state only)
-            trigger_email = False
-            if self.safety_state == "DANGER":
-                if self._last_safety_state == "SAFE":
-                    trigger_email = True
-                elif now_time - self._last_email_sent_time >= EMAIL_ALERT_INTERVAL:
-                    trigger_email = True
-
-            should_log = trigger_email
-            
-            if should_log:
-                event_name = "Human detected inside danger zone"
-                
-                img_b64 = ""
-                try:
-                    _, buffer = cv2.imencode(".jpg", frame)
-                    import base64
-                    img_b64 = base64.b64encode(buffer).decode("utf-8")
-                except Exception as e:
-                    print(f"Error encoding snapshot: {e}")
-                
-                from datetime import datetime
-                import pytz
-                IST = pytz.timezone("Asia/Kolkata")
-                
-                email_db_status = "pending"
-                
-                from bson import ObjectId
-                event_id = ObjectId()
-                
-                try:
-                    from db import history_collection
-                    history_collection.insert_one({
-                        "_id": event_id,
-                        "event": event_name,
-                        "status": self.safety_state,
-                        "timestamp": datetime.utcnow(),
-                        "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
-                        "photo_base64": img_b64,
-                        "confidence": ai_confidence,
-                        "human_count": human_count,
-                        "camera_id": str(self.source),
-                        "email_status": email_db_status
-                    })
-                    print(f"[EVENT] event stored: {event_name} | Status: {self.safety_state} | Count: {human_count} | Email Status: {email_db_status}")
-                except Exception as db_err:
-                    print(f"Error inserting event into MongoDB: {db_err}")
-                
-                if trigger_email:
-                    self._last_email_sent_time = now_time
+                if self.danger_counter >= ENTER_THRESHOLD:
+                    new_state = "DANGER"
+                elif self.safe_counter >= EXIT_THRESHOLD:
+                    new_state = "SAFE"
+                else:
+                    new_state = self.safety_state
                     
-                    camera_display_name = f"Optical Node {self.source}"
-                    timestamp_str = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
-                    attachment_name = datetime.now(IST).strftime("incident_%Y%m%d_%H%M%S.jpg")
+                state_changed = (new_state != self.safety_state)
+                self.safety_state = new_state
+                self.current_confidence = ai_confidence
+                
+                # Estimate rolling FPS
+                if not hasattr(self, '_fps_start_time'):
+                    self._fps_start_time = time.time()
+                    self._fps_frames = 0
+                self._fps_frames += 1
+                elapsed = time.time() - self._fps_start_time
+                if elapsed >= 2.0:
+                    self._current_fps = self._fps_frames / elapsed
+                    self._fps_start_time = time.time()
+                    self._fps_frames = 0
+                elif not hasattr(self, '_current_fps'):
+                    self._current_fps = 20.0
                     
-                    # Save snapshot to disk
-                    import os
-                    try:
-                        snapshots_dir = os.path.join(os.path.dirname(__file__), "snapshots")
-                        os.makedirs(snapshots_dir, exist_ok=True)
-                        snapshot_path = os.path.join(snapshots_dir, attachment_name)
-                        cv2.imwrite(snapshot_path, frame)
-                        print(f"[SNAPSHOT] Saved to disk: {snapshot_path}")
-                    except Exception as write_err:
-                        print(f"Error saving snapshot to disk: {write_err}")
-                    
-                    html_body = f"""
-                    <html>
-                    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 20px;">
-                      <div style="max-width: 600px; margin: 0 auto; background: rgba(30, 41, 59, 0.75); border: 1px solid #ef4444; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                        <div style="background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 20px; text-align: center; border-bottom: 2px solid #ef4444;">
-                          <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: bold;">⚠️ Safety Intrusion Alert ⚠️</h1>
-                        </div>
-                        <div style="padding: 24px; background-color: #0f172a;">
-                          <p style="font-size: 15px; margin: 0 0 20px 0; color: #cbd5e1; line-height: 1.6;">
-                            An operator safety boundary breach has been detected inside the machine zone. The interlock matrix has triggered a <strong>PLC EMERGENCY TRIP</strong>.
-                          </p>
-                          
-                          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; color: #cbd5e1;">
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Sensor Location:</td>
-                              <td style="padding: 10px 0; color: #f1f5f9;">{camera_display_name}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Timestamp (IST):</td>
-                              <td style="padding: 10px 0; color: #f1f5f9;">{timestamp_str}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Active Workers:</td>
-                              <td style="padding: 10px 0; color: #f1f5f9;">{human_count}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">AI Proximity Confidence:</td>
-                              <td style="padding: 10px 0; color: #10b981; font-weight: bold;">{ai_confidence}%</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Safety Status:</td>
-                              <td style="padding: 10px 0; color: #ef4444; font-weight: bold;">{self.safety_state}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Machine Zone Limits:</td>
-                              <td style="padding: 10px 0; font-family: monospace; color: #f1f5f9;">{MACHINE_ZONE}</td>
-                            </tr>
-                          </table>
-                          
-                          <div style="border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 8px; overflow: hidden; background: #020617; text-align: center; padding: 12px; margin-bottom: 20px;">
-                            <div style="font-size: 11px; font-weight: bold; color: #06b6d4; margin-bottom: 8px; text-transform: uppercase;">📸 Incident Telemetry Snapshot</div>
-                            <img src="cid:incident_snapshot" alt="Incident Snapshot" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" />
-                          </div>
-                          
-                          <p style="font-size: 11px; color: #64748b; text-align: center; margin: 20px 0 0 0; line-height: 1.4;">
-                            Secure Shield Core Integration Matrix &bull; IEC 61508 SIL 3 Certified
-                          </p>
-                        </div>
-                      </div>
-                    </body>
-                    </html>
-                    """
-                    
-                    def send_async(eid, msg_body, img, fname):
-                        from mailer import send_alert_email
-                        try:
-                            print(f"[EMAIL_ALERT] Dispatching incident email asynchronously...")
-                            send_alert_email(custom_message="SAFETY BREACH ALERT", image_base64=img, filename=fname, html_body=msg_body)
-                            print(f"[EMAIL_ALERT] Success! Updating database status to 'sent' for event {eid}")
-                            history_collection.update_one({"_id": eid}, {"$set": {"email_status": "sent"}})
-                        except Exception as ex:
-                            print(f"[EMAIL_ALERT] Failure: {ex}. Updating database status to 'failed' for event {eid}")
-                            try:
-                                history_collection.update_one({"_id": eid}, {"$set": {"email_status": "failed"}})
-                            except Exception as db_ex:
-                                print(f"Error updating email status: {db_ex}")
-
-                    threading.Thread(target=send_async, args=(event_id, html_body, img_b64, attachment_name), daemon=True).start()
-
-            self._last_safety_state = self.safety_state
-                    
-            # Update ThreadedCamera instance variables (single source of truth)
-            self.human_count = human_count
-            self.latency_ms = latency_ms
-            if human_count > 0:
-                self.last_detection_time = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
-            
-            # Update global synchronized status object
-            with system_status_lock:
-                system_status["human_count"] = self.human_count
-                system_status["ai_confidence"] = self.current_confidence
-                system_status["danger_state"] = self.safety_state
-                system_status["machine_state"] = "STOP" if self.safety_state == "DANGER" else "RUN"
-                system_status["fps"] = round(self._current_fps, 1)
-                system_status["latency"] = round(self.latency_ms, 1)
-                system_status["camera_status"] = "Online" if self.grabbed else "Offline"
-                system_status["last_detection_time"] = self.last_detection_time
+                # Define now_time explicitly
+                now_time = time.time()
+                
+                # Check alert and database logging trigger conditions (DANGER state only)
+                trigger_email = False
                 if self.safety_state == "DANGER":
-                    system_status["last_snapshot"] = "Snapshot Active"
-                else:
-                    system_status["last_snapshot"] = ""
+                    if self._last_safety_state == "SAFE":
+                        trigger_email = True
+                    elif now_time - self._last_email_sent_time >= EMAIL_ALERT_INTERVAL:
+                        trigger_email = True
+                        
+                should_log = trigger_email
                 
-                # Print debug status log
-                if frame_count % 10 == 0:
-                    print(f"[STATUS] human_count={system_status['human_count']} | confidence={system_status['ai_confidence']}% | danger_state={system_status['danger_state']}")
-            
-            # Overlay status banner
-            banner_color = (0, 0, 255) if self.safety_state == "DANGER" else (0, 255, 0)
-            banner_text = "SYSTEM STOPPED" if self.safety_state == "DANGER" else "SYSTEM RUNNING"
-            cv2.putText(frame, banner_text, (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.1, banner_color, 3)
-            
-            # Save processed frame securely
-            with self.read_lock:
-                self.processed_frame = frame
+                if should_log:
+                    event_name = "Human detected inside danger zone"
+                    
+                    img_b64 = ""
+                    try:
+                        _, buffer = cv2.imencode(".jpg", frame)
+                        import base64
+                        img_b64 = base64.b64encode(buffer).decode("utf-8")
+                    except Exception as e:
+                        print(f"Error encoding snapshot: {e}")
+                    
+                    from datetime import datetime
+                    import pytz
+                    IST = pytz.timezone("Asia/Kolkata")
+                    
+                    email_db_status = "pending"
+                    
+                    from bson import ObjectId
+                    event_id = ObjectId()
+                    
+                    try:
+                        from db import history_collection
+                        history_collection.insert_one({
+                            "_id": event_id,
+                            "event": event_name,
+                            "status": self.safety_state,
+                            "timestamp": datetime.utcnow(),
+                            "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
+                            "photo_base64": img_b64,
+                            "confidence": ai_confidence,
+                            "human_count": human_count,
+                            "camera_id": str(self.source),
+                            "email_status": email_db_status
+                        })
+                        print(f"[EVENT] event stored: {event_name} | Status: {self.safety_state} | Count: {human_count} | Email Status: {email_db_status}")
+                    except Exception as db_err:
+                        print(f"Error inserting event into MongoDB: {db_err}")
+                    
+                    if trigger_email:
+                        self._last_email_sent_time = now_time
+                        
+                        camera_display_name = f"Optical Node {self.source}"
+                        timestamp_str = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+                        attachment_name = datetime.now(IST).strftime("incident_%Y%m%d_%H%M%S.jpg")
+                        
+                        # Save snapshot to disk
+                        import os
+                        try:
+                            snapshots_dir = os.path.join(os.path.dirname(__file__), "snapshots")
+                            os.makedirs(snapshots_dir, exist_ok=True)
+                            snapshot_path = os.path.join(snapshots_dir, attachment_name)
+                            cv2.imwrite(snapshot_path, frame)
+                            print(f"[SNAPSHOT] Saved to disk: {snapshot_path}")
+                        except Exception as write_err:
+                            print(f"Error saving snapshot to disk: {write_err}")
+                        
+                        html_body = f"""
+                        <html>
+                        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 20px;">
+                          <div style="max-width: 600px; margin: 0 auto; background: rgba(30, 41, 59, 0.75); border: 1px solid #ef4444; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                            <div style="background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 20px; text-align: center; border-bottom: 2px solid #ef4444;">
+                              <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: bold;">⚠️ Safety Intrusion Alert ⚠️</h1>
+                            </div>
+                            <div style="padding: 24px; background-color: #0f172a;">
+                              <p style="font-size: 15px; margin: 0 0 20px 0; color: #cbd5e1; line-height: 1.6;">
+                                An operator safety boundary breach has been detected inside the machine zone. The interlock matrix has triggered a <strong>PLC EMERGENCY TRIP</strong>.
+                              </p>
+                              
+                              <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; color: #cbd5e1;">
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                                  <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Sensor Location:</td>
+                                  <td style="padding: 10px 0; color: #f1f5f9;">{camera_display_name}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                                  <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Timestamp (IST):</td>
+                                  <td style="padding: 10px 0; color: #f1f5f9;">{timestamp_str}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                                  <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Active Workers:</td>
+                                  <td style="padding: 10px 0; color: #f1f5f9;">{human_count}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                                  <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">AI Proximity Confidence:</td>
+                                  <td style="padding: 10px 0; color: #10b981; font-weight: bold;">{ai_confidence}%</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                                  <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Safety Status:</td>
+                                  <td style="padding: 10px 0; color: #ef4444; font-weight: bold;">{self.safety_state}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                                  <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Machine Zone Limits:</td>
+                                  <td style="padding: 10px 0; font-family: monospace; color: #f1f5f9;">{MACHINE_ZONE}</td>
+                                </tr>
+                              </table>
+                              
+                              <div style="border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 8px; overflow: hidden; background: #020617; text-align: center; padding: 12px; margin-bottom: 20px;">
+                                <div style="font-size: 11px; font-weight: bold; color: #06b6d4; margin-bottom: 8px; text-transform: uppercase;">📸 Incident Telemetry Snapshot</div>
+                                <img src="cid:incident_snapshot" alt="Incident Snapshot" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" />
+                              </div>
+                              
+                              <p style="font-size: 11px; color: #64748b; text-align: center; margin: 20px 0 0 0; line-height: 1.4;">
+                                Secure Shield Core Integration Matrix &bull; IEC 61508 SIL 3 Certified
+                              </p>
+                            </div>
+                          </div>
+                        </body>
+                        </html>
+                        """
+                        
+                        def send_async(eid, msg_body, img, fname):
+                            from mailer import send_alert_email
+                            try:
+                                print(f"[EMAIL_ALERT] Dispatching incident email asynchronously...")
+                                send_alert_email(custom_message="SAFETY BREACH ALERT", image_base64=img, filename=fname, html_body=msg_body)
+                                print(f"[EMAIL_ALERT] Success! Updating database status to 'sent' for event {eid}")
+                                history_collection.update_one({"_id": eid}, {"$set": {"email_status": "sent"}})
+                            except Exception as ex:
+                                print(f"[EMAIL_ALERT] Failure: {ex}. Updating database status to 'failed' for event {eid}")
+                                try:
+                                    history_collection.update_one({"_id": eid}, {"$set": {"email_status": "failed"}})
+                                except Exception as db_ex:
+                                    print(f"Error updating email status: {db_ex}")
+
+                        threading.Thread(target=send_async, args=(event_id, html_body, img_b64, attachment_name), daemon=True).start()
+
+                self._last_safety_state = self.safety_state
+                        
+                # Update ThreadedCamera instance variables (single source of truth)
+                self.human_count = human_count
+                self.latency_ms = latency_ms
+                if human_count > 0:
+                    self.last_detection_time = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
                 
-            frame_count += 1
-            if frame_count > 1_000_000:
-                frame_count = 0
+                # Update global synchronized status object
+                with system_status_lock:
+                    system_status["human_count"] = self.human_count
+                    system_status["ai_confidence"] = self.current_confidence
+                    system_status["danger_state"] = self.safety_state
+                    system_status["machine_state"] = "STOP" if self.safety_state == "DANGER" else "RUN"
+                    system_status["fps"] = round(self._current_fps, 1)
+                    system_status["latency"] = round(self.latency_ms, 1)
+                    system_status["camera_status"] = "Online" if self.grabbed else "Offline"
+                    system_status["last_detection_time"] = self.last_detection_time
+                    if self.safety_state == "DANGER":
+                        system_status["last_snapshot"] = "Snapshot Active"
+                    else:
+                        system_status["last_snapshot"] = ""
+                    
+                    # Print debug status log
+                    if frame_count % 10 == 0:
+                        print(f"[STATUS] human_count={system_status['human_count']} | confidence={system_status['ai_confidence']}% | danger_state={system_status['danger_state']}")
+                
+                # Overlay status banner
+                banner_color = (0, 0, 255) if self.safety_state == "DANGER" else (0, 255, 0)
+                banner_text = "SYSTEM STOPPED" if self.safety_state == "DANGER" else "SYSTEM RUNNING"
+                cv2.putText(frame, banner_text, (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.1, banner_color, 3)
+                
+                # Save processed frame securely
+                with self.read_lock:
+                    self.processed_frame = frame
+                    
+                frame_count += 1
+                if frame_count > 1_000_000:
+                    frame_count = 0
+            except Exception as loop_ex:
+                import traceback
+                print(f"[CRITICAL_ERROR] Exception in update_inference loop: {loop_ex}")
+                traceback.print_exc()
                 
             # Throttle loop to ~20 FPS (50ms sleep)
             time.sleep(0.05)
