@@ -126,6 +126,11 @@ class ThreadedCamera:
                 with self.read_lock:
                     self.grabbed = grabbed
                     self.raw_frame = frame
+                if not hasattr(self, '_capture_count'):
+                    self._capture_count = 0
+                self._capture_count += 1
+                if self._capture_count % 100 == 0:
+                    print(f"[DEBUG] [CAM_THREAD] id={id(self)} | update_capture() read #{self._capture_count} frames | shape={frame.shape}")
             else:
                 print(f"[CAM_WATCHDOG] Frame read failed for {self.source}. Reconnecting...")
                 with self.read_lock:
@@ -229,16 +234,32 @@ class ThreadedCamera:
             with self.read_lock:
                 self.processed_frame = frame
                 
+            if not hasattr(self, '_inference_count'):
+                self._inference_count = 0
+            self._inference_count += 1
+            if self._inference_count % 100 == 0:
+                print(f"[DEBUG] [INFERENCE_THREAD] id={id(self)} | update_inference() processed #{self._inference_count} frames")
+                
             # Throttle loop to ~20 FPS (50ms sleep)
             time.sleep(0.05)
 
     def read(self):
         with self.read_lock:
-            # Atomic access touch avoids lock contention
             self.last_access = time.time()
-            if self.processed_frame is None:
-                return False, None
-            return self.grabbed, self.processed_frame.copy()
+            raw_none = self.raw_frame is None
+            proc_none = self.processed_frame is None
+            
+            if not hasattr(self, '_read_count'):
+                self._read_count = 0
+            self._read_count += 1
+            if self._read_count % 100 == 0:
+                print(f"[DEBUG] [CAM_READ] id={id(self)} | read() #{self._read_count} | grabbed={self.grabbed} | raw_none={raw_none} | proc_none={proc_none}")
+            
+            if not proc_none:
+                return self.grabbed, self.processed_frame.copy()
+            elif not raw_none:
+                return self.grabbed, self.raw_frame.copy()
+            return False, None
 
     def release(self):
         self.started = False
@@ -267,11 +288,16 @@ class CameraPool:
             resolved_source = int(source) if str(source).isdigit() else source
             self.last_active_source = resolved_source
             
-            if resolved_source not in self.cameras:
-                print(f"[CAMERA_POOL] Spawning ThreadedCamera loop for source: {resolved_source}")
+            reused = resolved_source in self.cameras
+            if not reused:
+                print(f"[CAMERA_POOL] Spawning new ThreadedCamera loop for source: {resolved_source}")
                 self.cameras[resolved_source] = ThreadedCamera(resolved_source).start()
+            else:
+                print(f"[CAMERA_POOL] Reusing existing ThreadedCamera instance for source: {resolved_source}")
                 
-            return self.cameras[resolved_source]
+            cam_instance = self.cameras[resolved_source]
+            print(f"[CAMERA_POOL] Source: {resolved_source} | Memory ID: {id(cam_instance)} | Reused: {reused}")
+            return cam_instance
 
     def _auto_cleanup_loop(self):
         while True:
@@ -313,6 +339,7 @@ def generate_frames(source=0):
             # Offline/Broken stream watchdog fallback
             if not grabbed or frame is None:
                 if frame_count % 30 == 0:
+                    print(f"[DEBUG] [GENERATOR] Stream '{source}' offline or frame is None. grabbed={grabbed}, frame_is_none={frame is None}")
                     print(f"[WARNING] Stream '{source}' offline/connecting. Rendering offline screen.")
                 
                 error_frame = np.zeros((480, 640, 3), dtype=np.uint8)
