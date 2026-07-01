@@ -854,25 +854,13 @@
         cameras = cached;
       }
 
-      if (cameras.length === 0) {
-        cameras = [{
-          cameraId: "cam_default",
-          cameraName: "Local Integrated Cam 1",
-          cameraType: "WEBCAM",
-          cameraUrl: "0",
-          username: "",
-          password: "",
-          location: "Operator Bay 1",
-          description: "USB fallback web camera node",
-          status: "Online",
-          aiStatus: "Ready",
-          fps: 60.0,
-          latency: 7.5,
-          brand: "Generic",
-          channelId: 1,
-          active: true
-        }];
-        localStorage.setItem("safetyShieldCameras", JSON.stringify(cameras));
+      // Filter out dummy webcam ("0") if at least one real camera exists
+      const realCams = cameras.filter(c => c.cameraUrl && c.cameraUrl !== '0');
+      if (realCams.length > 0) {
+        cameras = realCams;
+      } else {
+        // If there are no real cameras, we do not initialize a fake webcam.
+        cameras = [];
       }
 
       activeCamera = cameras.find(c => c.active === true);
@@ -882,6 +870,9 @@
       }
 
       // Initialize grid mappings
+      if (activeCamera) {
+        gridMapping[0] = activeCamera.cameraUrl;
+      }
       cameras.forEach((cam, index) => {
         if (gridMapping[index] === undefined) {
           gridMapping[index] = cam.cameraUrl;
@@ -1063,6 +1054,19 @@
       
       container.className = `camera-grid-${currentGridSize}`;
       container.innerHTML = "";
+      
+      if (cameras.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; text-align: center; color: var(--text-muted); border: 1px dashed rgba(6, 182, 212, 0.3); border-radius: 12px; background: rgba(6, 9, 21, 0.4); padding: 30px; width: 100%;">
+            <div style="font-size: 18px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; color: var(--warning-yellow); text-shadow: 0 0 10px rgba(245, 158, 11, 0.2);">⚠️ NO SENSORS CONFIGURED</div>
+            <div style="font-size: 11px; margin-top: 10px; font-family: 'Space Grotesk', sans-serif; opacity: 0.8; line-height: 1.6;">
+              Please configure your optical safety parameters and camera link in the<br/>
+              <a href="camera_setup.html" style="color: var(--primary-neon); pointer-events: auto; text-decoration: underline; font-weight: bold;">Camera Setup Gateway</a>.
+            </div>
+          </div>
+        `;
+        return;
+      }
       
       for (let i = 0; i < currentGridSize; i++) {
         const slot = document.createElement("div");
