@@ -183,55 +183,28 @@ def status():
             "message": "TIMER EXPIRED - FORCE STOP"
         })
 
-    state = get_safety_state()
+    # Read centralized synchronized system status
+    from danger_zone_detection import system_status, system_status_lock
+    with system_status_lock:
+        status_copy = system_status.copy()
+
+    state = status_copy["danger_state"]
     now = time.time()
 
     # ===============================
     # 🔴 DANGER (STABLE CHECK)
     # ===============================
     if state == "DANGER":
-
         if danger_start_time is None:
             danger_start_time = now
 
-        if now - danger_start_time >= DANGER_CONFIRM_SECONDS:
+        # 🔌 RELAY DEBOUNCE
+        if esp and last_relay_state != "DANGER":
+            esp.write(b"DANGER\n")
+            last_relay_state = "DANGER"
+            print("📡 ESP32 -> DANGER")
 
-            # 📧 EMAIL (ONCE PER DANGER)
-            if not email_sent_for_current_danger:
-                # Capture Photo
-                img_b64 = None
-                frame = get_latest_frame()
-                if frame is not None:
-                    _, buffer = cv2.imencode(".jpg", frame)
-                    img_b64 = base64.b64encode(buffer).decode("utf-8")
-
-                try:
-                    threading.Thread(
-                        target=send_email_async,
-                        args=(None, img_b64),
-                        daemon=True
-                    ).start()
-                    email_sent_for_current_danger = True
-                    print("✅ EMAIL SENT (LOCKED)")
-                except Exception as e:
-                    print("❌ EMAIL FAILED:", e)
-
-                history_collection.insert_one({
-                    "event": "Human detected inside danger zone",
-                    "status": "DANGER",
-                    "timestamp": datetime.now(IST),
-                    "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
-                    "photo_base64": img_b64
-                })
-                print("🧾 DB LOGGED: DANGER")
-
-            # 🔌 RELAY DEBOUNCE
-            if esp and last_relay_state != "DANGER":
-                esp.write(b"DANGER\n")
-                last_relay_state = "DANGER"
-                print("📡 ESP32 -> DANGER")
-
-            last_logged_state = "DANGER"
+        last_logged_state = "DANGER"
 
     # ===============================
     # 🟢 SAFE (RESET)
@@ -240,29 +213,22 @@ def status():
         danger_start_time = None
 
         if last_logged_state == "DANGER":
-
             if esp and last_relay_state != "SAFE":
                 esp.write(b"SAFE\n")
                 last_relay_state = "SAFE"
                 print("📡 ESP32 -> SAFE")
 
-            history_collection.insert_one({
-                "event": "Area clear",
-                "status": "SAFE",
-                "timestamp": datetime.now(IST),
-                "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
-            })
-            print("🧾 DB LOGGED: SAFE")
-
         email_sent_for_current_danger = False
         last_logged_state = "SAFE"
 
-    return jsonify({
-        "safety": last_logged_state,
-        "danger": last_logged_state == "DANGER",
-        "action": "STOP" if last_logged_state == "DANGER" else "RUN",
-        "confidence": get_current_confidence()
-    })
+    # Return synchronized state with backward compatibility fields
+    status_copy["safety"] = last_logged_state
+    status_copy["danger"] = last_logged_state == "DANGER"
+    status_copy["action"] = "STOP" if last_logged_state == "DANGER" else "RUN"
+    status_copy["confidence"] = status_copy["ai_confidence"]
+    status_copy["camera"] = True # Satisfies dashboard check
+
+    return jsonify(status_copy)
 
 # ===============================
 # 🕒 LAST DETECTION

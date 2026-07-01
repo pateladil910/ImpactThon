@@ -17,6 +17,22 @@ model = YOLO("yolov8n.pt")
 # ==========================================
 MACHINE_ZONE = (360, 100, 620, 420)
 
+# ==========================================
+# 📊 CENTRALIZED SYNCHRONIZED STATE
+# ==========================================
+system_status = {
+    "human_count": 0,
+    "ai_confidence": 0,
+    "machine_state": "RUN",
+    "danger_state": "SAFE",
+    "fps": 0.0,
+    "latency": 0.0,
+    "last_detection_time": "--",
+    "last_snapshot": "",
+    "camera_status": "Offline"
+}
+system_status_lock = threading.Lock()
+
 ENTER_THRESHOLD = 1
 EXIT_THRESHOLD = 8
 FRAME_SKIP = 3  # Run YOLO inference every 3rd frame
@@ -171,6 +187,7 @@ class ThreadedCamera:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
             
             # YOLO detect humans only (Class 0)
+            t_inf_start = time.time()
             if frame_count % FRAME_SKIP == 0:
                 results = model(frame, conf=0.25, classes=[0], verbose=False)
                 last_results = results
@@ -184,46 +201,52 @@ class ThreadedCamera:
                     print(f"[DEBUG] [YOLO_INFERENCE] Model: yolov8n.pt | Conf Thresh: 0.25 | Resolution: {w}x{h} | Detected Classes: {cls_ids} | Scores: {[round(s, 2) for s in scores]} | Person Present: {has_person}")
             else:
                 results = last_results
+            t_inf_end = time.time()
+            latency_ms = (t_inf_end - t_inf_start) * 1000.0
                 
-            mz_cx = (MACHINE_ZONE[0] + MACHINE_ZONE[2]) // 2
-            mz_cy = (MACHINE_ZONE[1] + MACHINE_ZONE[3]) // 2
-            max_conf_frame = 0
-            
+            person_boxes = []
+            person_scores = []
             for r in results:
                 for box in r.boxes:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    human_box = (x1, y1, x2, y2)
-                    
-                    h_cx = (x1 + x2) // 2
-                    h_cy = (y1 + y2) // 2
-                    dist = np.sqrt((h_cx - mz_cx)**2 + (h_cy - mz_cy)**2)
-                    calculated_conf = max(0, min(100, int(100 - (dist / 6))))
-                    
-                    yolo_conf = float(box.conf[0].item())
-                    yolo_conf_pct = int(yolo_conf * 100)
-                    
-                    if box_overlap(human_box, MACHINE_ZONE):
-                        danger_in_frame = True
-                        calculated_conf = 100
-                        color = (0, 0, 255)
-                        label = f"DANGER (PERSON {yolo_conf_pct}%)"
-                    else:
-                        color = (0, 255, 0)
-                        label = f"PERSON {yolo_conf_pct}% (SAFE {calculated_conf}%)"
-                        
-                    if calculated_conf > max_conf_frame:
-                        max_conf_frame = calculated_conf
-                        
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
-                    cv2.putText(frame, label, (x1, y1 - 8),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-                                
-            self.current_confidence = max_conf_frame
-            frame_count += 1
-            if frame_count > 1_000_000:
-                frame_count = 0
+                    person_boxes.append(box)
+                    person_scores.append(float(box.conf[0].item()))
+            
+            human_count = len(person_boxes)
+            ai_confidence = int(max(person_scores) * 100) if human_count > 0 else 0
+            
+            danger_in_frame = False
+            
+            for box in person_boxes:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                foot_x = (x1 + x2) // 2
+                foot_y = y2
                 
-            # Proximity State Machine
+                # Check if bottom-center lies inside MACHINE_ZONE
+                in_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (MACHINE_ZONE[1] <= foot_y <= MACHINE_ZONE[3])
+                
+                yolo_conf = float(box.conf[0].item())
+                yolo_conf_pct = int(yolo_conf * 100)
+                
+                # Compute distance-based confidence for UI HUD
+                mz_cx = (MACHINE_ZONE[0] + MACHINE_ZONE[2]) // 2
+                mz_cy = (MACHINE_ZONE[1] + MACHINE_ZONE[3]) // 2
+                dist = np.sqrt((foot_x - mz_cx)**2 + (foot_y - mz_cy)**2)
+                calculated_conf = max(0, min(100, int(100 - (dist / 6))))
+                
+                if in_zone:
+                    danger_in_frame = True
+                    calculated_conf = 100
+                    color = (0, 0, 255)
+                    label = f"DANGER (PERSON {yolo_conf_pct}%)"
+                else:
+                    color = (0, 255, 0)
+                    label = f"PERSON {yolo_conf_pct}% (SAFE {calculated_conf}%)"
+                    
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
+                cv2.putText(frame, label, (x1, y1 - 8),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+                                
+            # Debounce state machine
             if danger_in_frame:
                 self.danger_counter += 1
                 self.safe_counter = 0
@@ -232,10 +255,92 @@ class ThreadedCamera:
                 self.danger_counter = 0
                 
             if self.danger_counter >= ENTER_THRESHOLD:
-                self.safety_state = "DANGER"
-            if self.safe_counter >= EXIT_THRESHOLD:
-                self.safety_state = "SAFE"
+                new_state = "DANGER"
+            elif self.safe_counter >= EXIT_THRESHOLD:
+                new_state = "SAFE"
+            else:
+                new_state = self.safety_state
                 
+            state_changed = (new_state != self.safety_state)
+            self.safety_state = new_state
+            self.current_confidence = ai_confidence
+            
+            # Estimate rolling FPS
+            if not hasattr(self, '_fps_start_time'):
+                self._fps_start_time = time.time()
+                self._fps_frames = 0
+            self._fps_frames += 1
+            elapsed = time.time() - self._fps_start_time
+            if elapsed >= 2.0:
+                self._current_fps = self._fps_frames / elapsed
+                self._fps_start_time = time.time()
+                self._fps_frames = 0
+            elif not hasattr(self, '_current_fps'):
+                self._current_fps = 20.0
+                
+            # Log event if state changes or periodically (every 5 seconds) when person is present
+            should_log = state_changed
+            now_time = time.time()
+            if human_count > 0:
+                if not hasattr(self, '_last_event_log_time'):
+                    self._last_event_log_time = 0
+                if now_time - self._last_event_log_time >= 5.0:
+                    should_log = True
+                    self._last_event_log_time = now_time
+                    
+            if should_log:
+                event_name = "Human detected inside danger zone" if self.safety_state == "DANGER" else ("Human detected" if human_count > 0 else "Area clear")
+                
+                img_b64 = ""
+                try:
+                    _, buffer = cv2.imencode(".jpg", frame)
+                    import base64
+                    img_b64 = base64.b64encode(buffer).decode("utf-8")
+                except Exception as e:
+                    print(f"Error encoding snapshot: {e}")
+                
+                from datetime import datetime
+                import pytz
+                IST = pytz.timezone("Asia/Kolkata")
+                
+                try:
+                    from db import history_collection
+                    history_collection.insert_one({
+                        "event": event_name,
+                        "status": self.safety_state,
+                        "timestamp": datetime.utcnow(),
+                        "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
+                        "photo_base64": img_b64,
+                        "confidence": ai_confidence,
+                        "human_count": human_count,
+                        "camera_id": str(self.source)
+                    })
+                    print(f"[EVENT] event stored: {event_name} | Status: {self.safety_state} | Count: {human_count}")
+                except Exception as db_err:
+                    print(f"Error inserting event into MongoDB: {db_err}")
+                    
+            # Update global synchronized status object
+            from datetime import datetime
+            import pytz
+            IST = pytz.timezone("Asia/Kolkata")
+            
+            with system_status_lock:
+                system_status["human_count"] = human_count
+                system_status["ai_confidence"] = ai_confidence
+                system_status["danger_state"] = self.safety_state
+                system_status["machine_state"] = "STOP" if self.safety_state == "DANGER" else "RUN"
+                system_status["fps"] = round(self._current_fps, 1)
+                system_status["latency"] = round(latency_ms, 1)
+                system_status["camera_status"] = "Online" if self.grabbed else "Offline"
+                if human_count > 0:
+                    system_status["last_detection_time"] = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+                if self.safety_state == "DANGER":
+                    system_status["last_snapshot"] = "Snapshot Active"
+                
+                # Print debug status log
+                if frame_count % 10 == 0:
+                    print(f"[STATUS] human_count={system_status['human_count']} | confidence={system_status['ai_confidence']}% | danger_state={system_status['danger_state']}")
+            
             # Overlay status banner
             banner_color = (0, 0, 255) if self.safety_state == "DANGER" else (0, 255, 0)
             banner_text = "SYSTEM STOPPED" if self.safety_state == "DANGER" else "SYSTEM RUNNING"
@@ -245,11 +350,9 @@ class ThreadedCamera:
             with self.read_lock:
                 self.processed_frame = frame
                 
-            if not hasattr(self, '_inference_count'):
-                self._inference_count = 0
-            self._inference_count += 1
-            if self._inference_count <= 50 or self._inference_count % 100 == 0:
-                print(f"[DEBUG] [INFERENCE_THREAD] id={id(self)} | update_inference() processed #{self._inference_count} frames")
+            frame_count += 1
+            if frame_count > 1_000_000:
+                frame_count = 0
                 
             # Throttle loop to ~20 FPS (50ms sleep)
             time.sleep(0.05)

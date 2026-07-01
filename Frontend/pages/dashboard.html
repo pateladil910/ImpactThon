@@ -1473,13 +1473,17 @@
         }
 
         if (document.getElementById("hud-human-count")) {
-          document.getElementById("hud-human-count").innerText = data.safety === "DANGER" ? "1" : "0";
+          document.getElementById("hud-human-count").innerText = data.human_count !== undefined ? data.human_count : (data.safety === "DANGER" ? "1" : "0");
         }
         if (document.getElementById("hud-fps")) {
-          document.getElementById("hud-fps").innerText = data.camera ? (56 + Math.random() * 3).toFixed(1) : "0.0";
+          document.getElementById("hud-fps").innerText = data.fps !== undefined ? Number(data.fps).toFixed(1) : "0.0";
         }
         if (document.getElementById("hud-latency")) {
-          document.getElementById("hud-latency").innerText = data.camera ? (6 + Math.random() * 4).toFixed(0) + "ms" : "0ms";
+          document.getElementById("hud-latency").innerText = data.latency !== undefined ? Math.round(data.latency) + "ms" : "0ms";
+        }
+        if (document.getElementById("shift-watchdog-status") && data.last_detection_time) {
+          document.getElementById("shift-watchdog-status").innerText = "Last Intrusion: " + data.last_detection_time;
+          document.getElementById("shift-watchdog-status").style.color = "var(--primary-neon)";
         }
 
         if (data.safety !== lastSafety) {
