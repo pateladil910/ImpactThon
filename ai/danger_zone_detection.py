@@ -129,7 +129,7 @@ class ThreadedCamera:
                 if not hasattr(self, '_capture_count'):
                     self._capture_count = 0
                 self._capture_count += 1
-                if self._capture_count % 100 == 0:
+                if self._capture_count <= 50 or self._capture_count % 100 == 0:
                     print(f"[DEBUG] [CAM_THREAD] id={id(self)} | update_capture() read #{self._capture_count} frames | shape={frame.shape}")
             else:
                 print(f"[CAM_WATCHDOG] Frame read failed for {self.source}. Reconnecting...")
@@ -237,7 +237,7 @@ class ThreadedCamera:
             if not hasattr(self, '_inference_count'):
                 self._inference_count = 0
             self._inference_count += 1
-            if self._inference_count % 100 == 0:
+            if self._inference_count <= 50 or self._inference_count % 100 == 0:
                 print(f"[DEBUG] [INFERENCE_THREAD] id={id(self)} | update_inference() processed #{self._inference_count} frames")
                 
             # Throttle loop to ~20 FPS (50ms sleep)
@@ -252,7 +252,7 @@ class ThreadedCamera:
             if not hasattr(self, '_read_count'):
                 self._read_count = 0
             self._read_count += 1
-            if self._read_count % 100 == 0:
+            if self._read_count <= 50 or self._read_count % 100 == 0:
                 print(f"[DEBUG] [CAM_READ] id={id(self)} | read() #{self._read_count} | grabbed={self.grabbed} | raw_none={raw_none} | proc_none={proc_none}")
             
             if not proc_none:
@@ -338,8 +338,8 @@ def generate_frames(source=0):
             
             # Offline/Broken stream watchdog fallback
             if not grabbed or frame is None:
-                if frame_count % 30 == 0:
-                    print(f"[DEBUG] [GENERATOR] Stream '{source}' offline or frame is None. grabbed={grabbed}, frame_is_none={frame is None}")
+                if frame_count <= 50 or frame_count % 30 == 0:
+                    print(f"[DEBUG] [GENERATOR] Stream '{source}' offline or frame is None. frame_count={frame_count}, grabbed={grabbed}, frame_is_none={frame is None}")
                     print(f"[WARNING] Stream '{source}' offline/connecting. Rendering offline screen.")
                 
                 error_frame = np.zeros((480, 640, 3), dtype=np.uint8)
