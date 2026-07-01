@@ -14,10 +14,12 @@ const DetectionSchema = new mongoose.Schema(
     },
     event: String,
     timestamp_ist: String,
+    photo_base64: String,
+    email_status: String,
     userId: {
       type: mongoose.Schema.Types.ObjectId, // Connects to the actual ID
       ref: 'User',                          // Refers to your User collection
-      required: true
+      required: false
     }
   },
   { collection: 'history' }

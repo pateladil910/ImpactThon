@@ -2,6 +2,45 @@ const express = require("express");
 const router = express.Router();
 const Detection = require("../models/Detection");
 const authMiddleware = require("../middleware/authMiddleware");
+// GET / (maps to /api/history when registered in server.js)
+router.get("/", async (req, res) => {
+    try {
+        const records = await Detection.find().sort({ timestamp: -1 }).lean();
+        
+        // Map the fields for history.html
+        const formatted = records.map(doc => {
+            const timestamp = doc.timestamp;
+            if (!timestamp) return null;
+            
+            // Format to IST (GMT+5:30)
+            const istDate = new Date(timestamp.getTime() + (5.5 * 60 * 60 * 1000));
+            
+            // Format date to DD-MM-YYYY
+            const day = String(istDate.getUTCDate()).padStart(2, '0');
+            const month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
+            const year = istDate.getUTCFullYear();
+            
+            // Format time to HH:MM:SS
+            const hours = String(istDate.getUTCHours()).padStart(2, '0');
+            const minutes = String(istDate.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(istDate.getUTCSeconds()).padStart(2, '0');
+            
+            return {
+                Event: doc.event || "Machine proximity breach",
+                Status: doc.status || "DANGER",
+                Date: `${day}-${month}-${year}`,
+                Time: `${hours}:${minutes}:${seconds}`,
+                Photo: doc.photo_base64 || "",
+                EmailStatus: doc.email_status || "not_triggered"
+            };
+        }).filter(Boolean);
+        
+        return res.status(200).json(formatted);
+    } catch (err) {
+        console.error("Fetch History Error:", err);
+        return res.status(500).json({ success: false, message: "Failed to fetch history" });
+    }
+});
 
 // GET /api/analytics/data?type=day|month&date=YYYY-MM-DD|jan|feb...
 router.get("/data", async (req, res) => {
@@ -245,6 +284,18 @@ router.post("/digest", authMiddleware, async (req, res) => {
     } catch(err) {
         console.error("Digest compilation error:", err);
         res.status(500).json({ success: false, message: "Digest compilation error: " + err.message });
+    }
+});
+
+// POST /clear_history (clears all safety violation logs)
+router.post("/clear_history", async (req, res) => {
+    try {
+        await Detection.deleteMany({});
+        console.log("💾 History cleared successfully from database");
+        return res.status(200).json({ success: true, message: "History cleared successfully" });
+    } catch (err) {
+        console.error("Clear History Error:", err);
+        return res.status(500).json({ success: false, message: "Failed to clear history" });
     }
 });
 

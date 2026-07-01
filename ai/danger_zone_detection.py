@@ -284,7 +284,7 @@ class ThreadedCamera:
             elif not hasattr(self, '_current_fps'):
                 self._current_fps = 20.0
                 
-            # Check email trigger conditions
+            # Check alert and database logging trigger conditions (DANGER state only)
             trigger_email = False
             if self.safety_state == "DANGER":
                 if self._last_safety_state == "SAFE":
@@ -292,18 +292,10 @@ class ThreadedCamera:
                 elif now_time - self._last_email_sent_time >= EMAIL_ALERT_INTERVAL:
                     trigger_email = True
 
-            # Log event if state changes or periodically (every 5 seconds) when person is present
-            should_log = state_changed
-            now_time = time.time()
-            if human_count > 0:
-                if not hasattr(self, '_last_event_log_time'):
-                    self._last_event_log_time = 0
-                if now_time - self._last_event_log_time >= 5.0:
-                    should_log = True
-                    self._last_event_log_time = now_time
-                    
+            should_log = trigger_email
+            
             if should_log:
-                event_name = "Human detected inside danger zone" if self.safety_state == "DANGER" else ("Human detected" if human_count > 0 else "Area clear")
+                event_name = "Human detected inside danger zone"
                 
                 img_b64 = ""
                 try:
@@ -317,7 +309,7 @@ class ThreadedCamera:
                 import pytz
                 IST = pytz.timezone("Asia/Kolkata")
                 
-                email_db_status = "pending" if trigger_email else "not_triggered"
+                email_db_status = "pending"
                 
                 from bson import ObjectId
                 event_id = ObjectId()
@@ -346,6 +338,17 @@ class ThreadedCamera:
                     camera_display_name = f"Optical Node {self.source}"
                     timestamp_str = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
                     attachment_name = datetime.now(IST).strftime("incident_%Y%m%d_%H%M%S.jpg")
+                    
+                    # Save snapshot to disk
+                    import os
+                    try:
+                        snapshots_dir = os.path.join(os.path.dirname(__file__), "snapshots")
+                        os.makedirs(snapshots_dir, exist_ok=True)
+                        snapshot_path = os.path.join(snapshots_dir, attachment_name)
+                        cv2.imwrite(snapshot_path, frame)
+                        print(f"[SNAPSHOT] Saved to disk: {snapshot_path}")
+                    except Exception as write_err:
+                        print(f"Error saving snapshot to disk: {write_err}")
                     
                     html_body = f"""
                     <html>
@@ -624,35 +627,70 @@ def get_latest_frame(source=None):
     return None
 
 def get_live_status():
-    source = camera_pool.last_active_source
-    if source is None:
-        active_cameras = list(camera_pool.cameras.keys())
-        if active_cameras:
-            source = active_cameras[0]
+    active_cameras = list(camera_pool.cameras.values())
+    if not active_cameras:
+        return {
+            "human_count": 0,
+            "ai_confidence": 0,
+            "machine_state": "RUN",
+            "danger_state": "SAFE",
+            "fps": 0.0,
+            "latency": 0.0,
+            "last_detection_time": "--",
+            "last_snapshot": "",
+            "camera_status": "Offline"
+        }
+
+    # Aggregate status across all cameras
+    human_count = 0
+    max_confidence = 0
+    any_danger = False
+    max_fps = 0.0
+    max_latency = 0.0
+    latest_detection_time = "--"
+    any_online = False
+    
+    for cam in active_cameras:
+        # Accumulate human count
+        human_count += getattr(cam, 'human_count', 0)
+        
+        # Max confidence
+        conf = getattr(cam, 'current_confidence', 0)
+        if conf > max_confidence:
+            max_confidence = conf
             
-    if source is not None:
-        resolved_source = int(source) if str(source).isdigit() else source
-        cam = camera_pool.cameras.get(resolved_source)
-        if cam:
-            return {
-                "human_count": getattr(cam, 'human_count', 0),
-                "ai_confidence": getattr(cam, 'current_confidence', 0),
-                "danger_state": getattr(cam, 'safety_state', 'SAFE'),
-                "machine_state": "STOP" if getattr(cam, 'safety_state', 'SAFE') == "DANGER" else "RUN",
-                "fps": getattr(cam, '_current_fps', 20.0),
-                "latency": getattr(cam, 'latency_ms', 8.0),
-                "last_detection_time": getattr(cam, 'last_detection_time', "--"),
-                "last_snapshot": "Snapshot Active" if getattr(cam, 'safety_state', 'SAFE') == "DANGER" else "",
-                "camera_status": "Online" if getattr(cam, 'grabbed', False) else "Offline"
-            }
+        # Danger state
+        if getattr(cam, 'safety_state', 'SAFE') == "DANGER":
+            any_danger = True
+            
+        # FPS
+        fps = getattr(cam, '_current_fps', 0.0)
+        if fps > max_fps:
+            max_fps = fps
+            
+        # Latency
+        lat = getattr(cam, 'latency_ms', 0.0)
+        if lat > max_latency:
+            max_latency = lat
+            
+        # Latest detection time
+        det_time = getattr(cam, 'last_detection_time', "--")
+        if det_time != "--":
+            if latest_detection_time == "--" or det_time > latest_detection_time:
+                latest_detection_time = det_time
+                
+        # Camera status
+        if getattr(cam, 'grabbed', False):
+            any_online = True
+
     return {
-        "human_count": 0,
-        "ai_confidence": 0,
-        "machine_state": "RUN",
-        "danger_state": "SAFE",
-        "fps": 0.0,
-        "latency": 0.0,
-        "last_detection_time": "--",
-        "last_snapshot": "",
-        "camera_status": "Offline"
+        "human_count": human_count,
+        "ai_confidence": max_confidence,
+        "danger_state": "DANGER" if any_danger else "SAFE",
+        "machine_state": "STOP" if any_danger else "RUN",
+        "fps": round(max_fps, 1) if max_fps > 0 else 20.0,
+        "latency": round(max_latency, 1) if max_latency > 0 else 8.0,
+        "last_detection_time": latest_detection_time,
+        "last_snapshot": "Snapshot Active" if any_danger else "",
+        "camera_status": "Online" if any_online else "Offline"
     }
