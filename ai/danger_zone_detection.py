@@ -172,8 +172,16 @@ class ThreadedCamera:
             
             # YOLO detect humans only (Class 0)
             if frame_count % FRAME_SKIP == 0:
-                results = model(frame, conf=0.5, classes=[0], verbose=False)
+                results = model(frame, conf=0.25, classes=[0], verbose=False)
                 last_results = results
+                
+                # Diagnostics Logging
+                for r in results:
+                    cls_ids = [int(box.cls[0].item()) for box in r.boxes]
+                    scores = [float(box.conf[0].item()) for box in r.boxes]
+                    has_person = 0 in cls_ids
+                    h, w = frame.shape[:2]
+                    print(f"[DEBUG] [YOLO_INFERENCE] Model: yolov8n.pt | Conf Thresh: 0.25 | Resolution: {w}x{h} | Detected Classes: {cls_ids} | Scores: {[round(s, 2) for s in scores]} | Person Present: {has_person}")
             else:
                 results = last_results
                 
@@ -191,14 +199,17 @@ class ThreadedCamera:
                     dist = np.sqrt((h_cx - mz_cx)**2 + (h_cy - mz_cy)**2)
                     calculated_conf = max(0, min(100, int(100 - (dist / 6))))
                     
+                    yolo_conf = float(box.conf[0].item())
+                    yolo_conf_pct = int(yolo_conf * 100)
+                    
                     if box_overlap(human_box, MACHINE_ZONE):
                         danger_in_frame = True
                         calculated_conf = 100
                         color = (0, 0, 255)
-                        label = "DANGER"
+                        label = f"DANGER (PERSON {yolo_conf_pct}%)"
                     else:
                         color = (0, 255, 0)
-                        label = f"SAFE ({calculated_conf}%)"
+                        label = f"PERSON {yolo_conf_pct}% (SAFE {calculated_conf}%)"
                         
                     if calculated_conf > max_conf_frame:
                         max_conf_frame = calculated_conf
