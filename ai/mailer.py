@@ -12,42 +12,32 @@ APP_PASSWORD = "fpdkyriibohtspan"   # 16-digit app password
 RECEIVER_EMAIL = "adilp4534@gmail.com"
 
 
-def send_alert_email(custom_message=None, image_base64=None):
+def send_alert_email(custom_message=None, image_base64=None, filename="detection.jpg", html_body=None):
     if custom_message:
-        subject = "ALERT: System Periodic Stop"
+        subject = "🚨 ALERT: Safety Incident Report"
     else:
-        subject = "ALERT: Human Detected in Danger Zone"
+        subject = "🚨 ALERT: Human Detected in Danger Zone"
     
-    if custom_message:
-        body = f"""
-SYSTEM NOTICE
-
-{custom_message}
-
-- AI Safety System
-"""
-    else:
-        body = """
-WARNING!
-
-A human has been detected inside the machine danger zone.
-
-Immediate action required.
-
-- AI Safety System
-"""
-
-    msg = MIMEMultipart()
+    # "related" subtype is crucial for embedding inline images in HTML bodies
+    msg = MIMEMultipart("related")
     msg["From"] = SENDER_EMAIL
     msg["To"] = RECEIVER_EMAIL
     msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+
+    # Attach Body
+    if html_body:
+        msg.attach(MIMEText(html_body, "html"))
+    else:
+        body = custom_message or "A human has been detected inside the machine danger zone.\n\nImmediate action required.\n\n- AI Safety System"
+        msg.attach(MIMEText(body, "plain"))
 
     # Attachment logic
     if image_base64:
         try:
             image_data = base64.b64decode(image_base64)
-            img_part = MIMEImage(image_data, name="detection.jpg")
+            img_part = MIMEImage(image_data)
+            img_part.add_header('Content-ID', '<incident_snapshot>')
+            img_part.add_header('Content-Disposition', 'attachment', filename=filename)
             msg.attach(img_part)
         except Exception as e:
             print(f"Attachment Error: {e}")
@@ -55,7 +45,7 @@ Immediate action required.
     print(f"Attempting to send email to {RECEIVER_EMAIL}...")
     try:
         server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.set_debuglevel(1) 
+        server.set_debuglevel(0) # Keep logs concise and prevent excessive stdout spam
         server.starttls()
         server.login(SENDER_EMAIL, APP_PASSWORD)
         server.send_message(msg)

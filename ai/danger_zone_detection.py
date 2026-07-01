@@ -36,6 +36,7 @@ system_status_lock = threading.Lock()
 ENTER_THRESHOLD = 1
 EXIT_THRESHOLD = 8
 FRAME_SKIP = 3  # Run YOLO inference every 3rd frame
+EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 60.0))
 
 # ==========================================
 # 📐 BOX OVERLAP CHECK
@@ -68,6 +69,8 @@ class ThreadedCamera:
         self.current_confidence = 0
         self.danger_counter = 0
         self.safe_counter = 0
+        self._last_email_sent_time = 0.0
+        self._last_safety_state = "SAFE"
         
         self.capture_thread = None
         self.inference_thread = None
@@ -278,6 +281,14 @@ class ThreadedCamera:
             elif not hasattr(self, '_current_fps'):
                 self._current_fps = 20.0
                 
+            # Check email trigger conditions
+            trigger_email = False
+            if self.safety_state == "DANGER":
+                if self._last_safety_state == "SAFE":
+                    trigger_email = True
+                elif now_time - self._last_email_sent_time >= EMAIL_ALERT_INTERVAL:
+                    trigger_email = True
+
             # Log event if state changes or periodically (every 5 seconds) when person is present
             should_log = state_changed
             now_time = time.time()
@@ -303,9 +314,15 @@ class ThreadedCamera:
                 import pytz
                 IST = pytz.timezone("Asia/Kolkata")
                 
+                email_db_status = "pending" if trigger_email else "not_triggered"
+                
+                from bson import ObjectId
+                event_id = ObjectId()
+                
                 try:
                     from db import history_collection
                     history_collection.insert_one({
+                        "_id": event_id,
                         "event": event_name,
                         "status": self.safety_state,
                         "timestamp": datetime.utcnow(),
@@ -313,11 +330,90 @@ class ThreadedCamera:
                         "photo_base64": img_b64,
                         "confidence": ai_confidence,
                         "human_count": human_count,
-                        "camera_id": str(self.source)
+                        "camera_id": str(self.source),
+                        "email_status": email_db_status
                     })
-                    print(f"[EVENT] event stored: {event_name} | Status: {self.safety_state} | Count: {human_count}")
+                    print(f"[EVENT] event stored: {event_name} | Status: {self.safety_state} | Count: {human_count} | Email Status: {email_db_status}")
                 except Exception as db_err:
                     print(f"Error inserting event into MongoDB: {db_err}")
+                
+                if trigger_email:
+                    self._last_email_sent_time = now_time
+                    
+                    camera_display_name = f"Optical Node {self.source}"
+                    timestamp_str = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+                    attachment_name = datetime.now(IST).strftime("incident_%Y%m%d_%H%M%S.jpg")
+                    
+                    html_body = f"""
+                    <html>
+                    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 20px;">
+                      <div style="max-width: 600px; margin: 0 auto; background: rgba(30, 41, 59, 0.75); border: 1px solid #ef4444; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                        <div style="background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 20px; text-align: center; border-bottom: 2px solid #ef4444;">
+                          <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: bold;">⚠️ Safety Intrusion Alert ⚠️</h1>
+                        </div>
+                        <div style="padding: 24px; background-color: #0f172a;">
+                          <p style="font-size: 15px; margin: 0 0 20px 0; color: #cbd5e1; line-height: 1.6;">
+                            An operator safety boundary breach has been detected inside the machine zone. The interlock matrix has triggered a <strong>PLC EMERGENCY TRIP</strong>.
+                          </p>
+                          
+                          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; color: #cbd5e1;">
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Sensor Location:</td>
+                              <td style="padding: 10px 0; color: #f1f5f9;">{camera_display_name}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Timestamp (IST):</td>
+                              <td style="padding: 10px 0; color: #f1f5f9;">{timestamp_str}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Active Workers:</td>
+                              <td style="padding: 10px 0; color: #f1f5f9;">{human_count}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">AI Proximity Confidence:</td>
+                              <td style="padding: 10px 0; color: #10b981; font-weight: bold;">{ai_confidence}%</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Safety Status:</td>
+                              <td style="padding: 10px 0; color: #ef4444; font-weight: bold;">{self.safety_state}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                              <td style="padding: 10px 0; font-weight: bold; color: #06b6d4;">Machine Zone Limits:</td>
+                              <td style="padding: 10px 0; font-family: monospace; color: #f1f5f9;">{MACHINE_ZONE}</td>
+                            </tr>
+                          </table>
+                          
+                          <div style="border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 8px; overflow: hidden; background: #020617; text-align: center; padding: 12px; margin-bottom: 20px;">
+                            <div style="font-size: 11px; font-weight: bold; color: #06b6d4; margin-bottom: 8px; text-transform: uppercase;">📸 Incident Telemetry Snapshot</div>
+                            <img src="cid:incident_snapshot" alt="Incident Snapshot" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" />
+                          </div>
+                          
+                          <p style="font-size: 11px; color: #64748b; text-align: center; margin: 20px 0 0 0; line-height: 1.4;">
+                            Secure Shield Core Integration Matrix &bull; IEC 61508 SIL 3 Certified
+                          </p>
+                        </div>
+                      </div>
+                    </body>
+                    </html>
+                    """
+                    
+                    def send_async(eid, msg_body, img, fname):
+                        from mailer import send_alert_email
+                        try:
+                            print(f"[EMAIL_ALERT] Dispatching incident email asynchronously...")
+                            send_alert_email(custom_message="SAFETY BREACH ALERT", image_base64=img, filename=fname, html_body=msg_body)
+                            print(f"[EMAIL_ALERT] Success! Updating database status to 'sent' for event {eid}")
+                            history_collection.update_one({"_id": eid}, {"$set": {"email_status": "sent"}})
+                        except Exception as ex:
+                            print(f"[EMAIL_ALERT] Failure: {ex}. Updating database status to 'failed' for event {eid}")
+                            try:
+                                history_collection.update_one({"_id": eid}, {"$set": {"email_status": "failed"}})
+                            except Exception as db_ex:
+                                print(f"Error updating email status: {db_ex}")
+
+                    threading.Thread(target=send_async, args=(event_id, html_body, img_b64, attachment_name), daemon=True).start()
+
+            self._last_safety_state = self.safety_state
                     
             # Update global synchronized status object
             from datetime import datetime

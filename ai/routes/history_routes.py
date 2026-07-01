@@ -25,7 +25,8 @@ def get_history():
             "Status": doc["status"],
             "Date": doc["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST).strftime("%d-%m-%Y"),
             "Time": doc["timestamp"].replace(tzinfo=pytz.utc).astimezone(IST).strftime("%H:%M:%S"),
-            "Photo": doc.get("photo_base64")
+            "Photo": doc.get("photo_base64"),
+            "EmailStatus": doc.get("email_status", "")
         })
 
     return jsonify(records)

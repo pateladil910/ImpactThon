@@ -563,6 +563,11 @@
                   <span class="status-dot" style="background-color: currentColor; box-shadow: 0 0 6px currentColor;"></span>
                   ${item.Status}
                 </span>
+                ${(item.EmailStatus && item.EmailStatus !== 'not_triggered') ? `
+                  <div style="font-size: 9px; margin-top: 5px; color: ${item.EmailStatus === 'sent' ? 'var(--safe-green)' : (item.EmailStatus === 'failed' ? 'var(--danger-red)' : 'var(--warning-yellow)')}; opacity: 0.8; font-family: 'Fira Code', monospace; font-weight: bold; letter-spacing: 0.5px;">
+                    📬 ${item.EmailStatus.toUpperCase()}
+                  </div>
+                ` : ''}
               </td>
               <td>${item.Date}</td>
               <td>${item.Time}</td>
