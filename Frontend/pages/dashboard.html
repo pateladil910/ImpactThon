@@ -863,6 +863,43 @@
         cameras = [];
       }
 
+      // Sanitization mapping to prevent missing-property exceptions
+      cameras = cameras.map((cam, i) => {
+        const defaults = {
+          cameraId: `cam_${Date.now() + i}`,
+          cameraName: "Camera Node",
+          cameraType: "IP_CAMERA",
+          cameraUrl: "",
+          username: "",
+          password: "",
+          location: "Operational Field",
+          description: "",
+          status: "Offline",
+          aiStatus: "Ready",
+          fps: 60.0,
+          latency: 8.0,
+          brand: "Generic",
+          channelId: i + 1,
+          active: false
+        };
+
+        const sanitized = { ...cam };
+        const missingKeys = [];
+
+        Object.keys(defaults).forEach(key => {
+          if (sanitized[key] === undefined || sanitized[key] === null) {
+            sanitized[key] = defaults[key];
+            missingKeys.push(key);
+          }
+        });
+
+        if (missingKeys.length > 0) {
+          console.warn(`[DEBUG] [CAMERA_SANITIZATION] Camera id=${cam.cameraId || 'unknown'} was missing properties: [${missingKeys.join(', ')}]. Applied default values.`);
+        }
+
+        return sanitized;
+      });
+
       activeCamera = cameras.find(c => c.active === true);
       if (!activeCamera && cameras.length > 0) {
         activeCamera = cameras[0];
@@ -1088,9 +1125,9 @@
                 <span class="feed-hud-rec" style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--safe-green); display: flex; align-items: center; gap: 4px;">
                   <span class="feed-rec-dot" style="width: 5px; height: 5px; border-radius: 50%; background: var(--safe-green); display: inline-block;"></span> LIVE
                 </span>
-                <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--primary-neon);">${cam.brand.toUpperCase()} CH${cam.channelId}</span>
+                <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--primary-neon);">${(cam.brand || 'Generic').toUpperCase()} CH${cam.channelId || (i + 1)}</span>
               </div>
-              <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: #fff; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cam.cameraName.toUpperCase()}</span>
+              <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: #fff; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${(cam.cameraName || 'Camera Node').toUpperCase()}</span>
             </div>
             
             <div style="position: absolute; bottom: 8px; right: 8px; z-index: 10; display: flex; gap: 4px;">
@@ -1220,7 +1257,7 @@
         let y = 97;
         cameras.forEach((cam, i) => {
           doc.setFontSize(8.5);
-          doc.text(`${i+1}. ${cam.cameraName.toUpperCase()} [${cam.brand}] (${cam.location}) - Status: ${cam.status.toUpperCase()}`, 15, y);
+          doc.text(`${i+1}. ${(cam.cameraName || 'Camera Node').toUpperCase()} [${cam.brand || 'Generic'}] (${cam.location || 'Operational Field'}) - Status: ${(cam.status || 'Offline').toUpperCase()}`, 15, y);
           doc.setFontSize(7.5);
           doc.setTextColor(100, 116, 139);
           doc.text(`   URL: ${cam.cameraUrl}`, 15, y + 4);
