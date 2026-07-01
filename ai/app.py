@@ -186,6 +186,7 @@ def status():
     from danger_zone_detection import get_live_status
     live_status = get_live_status()
     state = live_status["danger_state"]
+    print(f"[TELEMETRY_POLL] Active Node Safety: {state} | Human Count: {live_status['human_count']} | Confidence: {live_status['ai_confidence']}%")
     now = time.time()
 
     # ===============================
