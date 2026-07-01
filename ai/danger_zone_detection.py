@@ -71,6 +71,9 @@ class ThreadedCamera:
         self.safe_counter = 0
         self._last_email_sent_time = 0.0
         self._last_safety_state = "SAFE"
+        self.human_count = 0
+        self.latency_ms = 0.0
+        self.last_detection_time = "--"
         
         self.capture_thread = None
         self.inference_thread = None
@@ -415,23 +418,26 @@ class ThreadedCamera:
 
             self._last_safety_state = self.safety_state
                     
-            # Update global synchronized status object
-            from datetime import datetime
-            import pytz
-            IST = pytz.timezone("Asia/Kolkata")
+            # Update ThreadedCamera instance variables (single source of truth)
+            self.human_count = human_count
+            self.latency_ms = latency_ms
+            if human_count > 0:
+                self.last_detection_time = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
             
+            # Update global synchronized status object
             with system_status_lock:
-                system_status["human_count"] = human_count
-                system_status["ai_confidence"] = ai_confidence
+                system_status["human_count"] = self.human_count
+                system_status["ai_confidence"] = self.current_confidence
                 system_status["danger_state"] = self.safety_state
                 system_status["machine_state"] = "STOP" if self.safety_state == "DANGER" else "RUN"
                 system_status["fps"] = round(self._current_fps, 1)
-                system_status["latency"] = round(latency_ms, 1)
+                system_status["latency"] = round(self.latency_ms, 1)
                 system_status["camera_status"] = "Online" if self.grabbed else "Offline"
-                if human_count > 0:
-                    system_status["last_detection_time"] = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+                system_status["last_detection_time"] = self.last_detection_time
                 if self.safety_state == "DANGER":
                     system_status["last_snapshot"] = "Snapshot Active"
+                else:
+                    system_status["last_snapshot"] = ""
                 
                 # Print debug status log
                 if frame_count % 10 == 0:
@@ -616,3 +622,37 @@ def get_latest_frame(source=None):
             elif cam.raw_frame is not None and cam.grabbed:
                 return cam.raw_frame.copy()
     return None
+
+def get_live_status():
+    source = camera_pool.last_active_source
+    if source is None:
+        active_cameras = list(camera_pool.cameras.keys())
+        if active_cameras:
+            source = active_cameras[0]
+            
+    if source is not None:
+        resolved_source = int(source) if str(source).isdigit() else source
+        cam = camera_pool.cameras.get(resolved_source)
+        if cam:
+            return {
+                "human_count": getattr(cam, 'human_count', 0),
+                "ai_confidence": getattr(cam, 'current_confidence', 0),
+                "danger_state": getattr(cam, 'safety_state', 'SAFE'),
+                "machine_state": "STOP" if getattr(cam, 'safety_state', 'SAFE') == "DANGER" else "RUN",
+                "fps": getattr(cam, '_current_fps', 20.0),
+                "latency": getattr(cam, 'latency_ms', 8.0),
+                "last_detection_time": getattr(cam, 'last_detection_time', "--"),
+                "last_snapshot": "Snapshot Active" if getattr(cam, 'safety_state', 'SAFE') == "DANGER" else "",
+                "camera_status": "Online" if getattr(cam, 'grabbed', False) else "Offline"
+            }
+    return {
+        "human_count": 0,
+        "ai_confidence": 0,
+        "machine_state": "RUN",
+        "danger_state": "SAFE",
+        "fps": 0.0,
+        "latency": 0.0,
+        "last_detection_time": "--",
+        "last_snapshot": "",
+        "camera_status": "Offline"
+    }

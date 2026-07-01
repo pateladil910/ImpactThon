@@ -183,12 +183,9 @@ def status():
             "message": "TIMER EXPIRED - FORCE STOP"
         })
 
-    # Read centralized synchronized system status
-    from danger_zone_detection import system_status, system_status_lock
-    with system_status_lock:
-        status_copy = system_status.copy()
-
-    state = status_copy["danger_state"]
+    from danger_zone_detection import get_live_status
+    live_status = get_live_status()
+    state = live_status["danger_state"]
     now = time.time()
 
     # ===============================
@@ -222,13 +219,13 @@ def status():
         last_logged_state = "SAFE"
 
     # Return synchronized state with backward compatibility fields
-    status_copy["safety"] = last_logged_state
-    status_copy["danger"] = last_logged_state == "DANGER"
-    status_copy["action"] = "STOP" if last_logged_state == "DANGER" else "RUN"
-    status_copy["confidence"] = status_copy["ai_confidence"]
-    status_copy["camera"] = True # Satisfies dashboard check
+    live_status["safety"] = last_logged_state
+    live_status["danger"] = last_logged_state == "DANGER"
+    live_status["action"] = "STOP" if last_logged_state == "DANGER" else "RUN"
+    live_status["confidence"] = live_status["ai_confidence"]
+    live_status["camera"] = True # Satisfies dashboard check
 
-    return jsonify(status_copy)
+    return jsonify(live_status)
 
 # ===============================
 # 🕒 LAST DETECTION
