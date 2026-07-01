@@ -1,5 +1,10 @@
 const { Resend } = require("resend");
-const resend = new Resend('re_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr');
+
+const apiKey = process.env.RESEND_API_KEY || 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr';
+if (apiKey === 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr') {
+  console.warn("⚠️ Warning: Using the default hardcoded Resend API key which has been revoked by GitHub Secret Scanner. Please configure the RESEND_API_KEY environment variable with a new key.");
+}
+const resend = new Resend(apiKey);
 
 const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null, recipientEmail = null) => {
   console.log(`📧 sendAlertEmail triggering for: ${userName}`);
