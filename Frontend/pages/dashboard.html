@@ -1090,7 +1090,6 @@
       if (!container) return;
       
       container.className = `camera-grid-${currentGridSize}`;
-      container.innerHTML = "";
       
       if (cameras.length === 0) {
         container.innerHTML = `
@@ -1104,94 +1103,121 @@
         `;
         return;
       }
+
+      // Clean up container if grid size changes
+      const existingSlots = container.querySelectorAll(".grid-slot");
+      if (existingSlots.length !== currentGridSize) {
+        container.innerHTML = "";
+      }
       
       for (let i = 0; i < currentGridSize; i++) {
-        const slot = document.createElement("div");
-        slot.className = "grid-slot";
-        slot.setAttribute("draggable", "true");
-        slot.setAttribute("data-index", i);
+        let slot = document.getElementById(`grid-slot-${i}`);
+        let isNew = false;
+        if (!slot) {
+          slot = document.createElement("div");
+          slot.id = `grid-slot-${i}`;
+          slot.className = "grid-slot";
+          slot.setAttribute("draggable", "true");
+          slot.setAttribute("data-index", i);
+          isNew = true;
+        }
         
         const camUrl = gridMapping[i];
         const cam = cameras.find(c => c.cameraUrl === camUrl);
+        const currentMappedUrl = slot.getAttribute("data-camera-url");
         
         if (cam) {
           const isLocal = isPrivateIP(cam.cameraUrl);
           const testUrl = isLocal ? getResolvedEdgeUrl() : AI_SERVICE_URL;
-          const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cam.cameraUrl)}&username=${encodeURIComponent(cam.username)}&password=${encodeURIComponent(cam.password)}&t=${Date.now()}`;
+          const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cam.cameraUrl)}&username=${encodeURIComponent(cam.username)}&password=${encodeURIComponent(cam.password)}`;
+          const currentStreamUrl = slot.getAttribute("data-stream-url");
           
-          slot.innerHTML = `
-            <div class="camera-feed-hud" style="position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10; display: flex; flex-direction: column; gap: 4px; pointer-events: none;">
-              <div style="display: flex; justify-content: space-between; width: 100%;">
-                <span class="feed-hud-rec" style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--safe-green); display: flex; align-items: center; gap: 4px;">
-                  <span class="feed-rec-dot" style="width: 5px; height: 5px; border-radius: 50%; background: var(--safe-green); display: inline-block;"></span> LIVE
-                </span>
-                <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--primary-neon);">${(cam.brand || 'Generic').toUpperCase()} CH${cam.channelId || (i + 1)}</span>
+          if (currentMappedUrl !== cam.cameraUrl || currentStreamUrl !== streamUrl) {
+            slot.setAttribute("data-camera-url", cam.cameraUrl);
+            slot.setAttribute("data-stream-url", streamUrl);
+            slot.innerHTML = `
+              <div class="camera-feed-hud" style="position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10; display: flex; flex-direction: column; gap: 4px; pointer-events: none;">
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                  <span class="feed-hud-rec" style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--safe-green); display: flex; align-items: center; gap: 4px;">
+                    <span class="feed-rec-dot" style="width: 5px; height: 5px; border-radius: 50%; background: var(--safe-green); display: inline-block;"></span> LIVE
+                  </span>
+                  <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: var(--primary-neon);">${(cam.brand || 'Generic').toUpperCase()} CH${cam.channelId || (i + 1)}</span>
+                </div>
+                <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: #fff; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${(cam.cameraName || 'Camera Node').toUpperCase()}</span>
               </div>
-              <span style="background: rgba(2, 6, 23, 0.75); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; color: #fff; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${(cam.cameraName || 'Camera Node').toUpperCase()}</span>
-            </div>
-            
-            <div style="position: absolute; bottom: 8px; right: 8px; z-index: 10; display: flex; gap: 4px;">
-              <button onclick="event.stopPropagation(); window.togglePinSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: var(--primary-neon); font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">PIN</button>
-              <button onclick="event.stopPropagation(); window.maximizeSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: #fff; font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">FULL</button>
-            </div>
-            
-            <img src="${streamUrl}" alt="${cam.cameraName}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='../images/offline_placeholder.jpg'; this.style.display='none'; this.nextElementSibling.style.display='block';" />
-            <div style="display: none; text-align: center; color: var(--text-muted); pointer-events: none;">
-              <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; color: var(--danger-red);">VIDEO RECOVERY QUEUE</div>
-              <div style="font-size: 8px; margin-top: 4px; font-family: 'Fira Code', monospace; opacity: 0.6;">RECONNECTING SENSOR FEED...</div>
-            </div>
-          `;
+              
+              <div style="position: absolute; bottom: 8px; right: 8px; z-index: 10; display: flex; gap: 4px;">
+                <button onclick="event.stopPropagation(); window.togglePinSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: var(--primary-neon); font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">PIN</button>
+                <button onclick="event.stopPropagation(); window.maximizeSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: #fff; font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">FULL</button>
+              </div>
+              
+              <img src="${streamUrl}" alt="${cam.cameraName}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='../images/offline_placeholder.jpg'; this.style.display='none'; this.nextElementSibling.style.display='block';" />
+              <div style="display: none; text-align: center; color: var(--text-muted); pointer-events: none;">
+                <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; color: var(--danger-red);">VIDEO RECOVERY QUEUE</div>
+                <div style="font-size: 8px; margin-top: 4px; font-family: 'Fira Code', monospace; opacity: 0.6;">RECONNECTING SENSOR FEED...</div>
+              </div>
+            `;
+          }
           
           if (cam.pinned) {
             slot.classList.add("active-pin");
+          } else {
+            slot.classList.remove("active-pin");
           }
         } else {
-          slot.innerHTML = `
-            <div style="text-align: center; color: var(--text-muted); pointer-events: none;">
-              <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; opacity: 0.4;">NO SIGNAL</div>
-              <div style="font-size: 8px; margin-top: 4px; letter-spacing: 1px; font-family: 'Fira Code', monospace; opacity: 0.4;">CH ${i + 1} &bull; STANDBY</div>
-            </div>
-          `;
-        }
-
-        // Drag events
-        slot.addEventListener("dragstart", (e) => {
-          dragSourceIndex = i;
-          e.dataTransfer.effectAllowed = "move";
-        });
-        
-        slot.addEventListener("dragover", (e) => {
-          e.preventDefault();
-        });
-        
-        slot.addEventListener("dragenter", (e) => {
-          slot.classList.add("drag-over");
-        });
-        
-        slot.addEventListener("dragleave", (e) => {
-          slot.classList.remove("drag-over");
-        });
-        
-        slot.addEventListener("drop", (e) => {
-          e.preventDefault();
-          slot.classList.remove("drag-over");
-          
-          const sourceIdx = dragSourceIndex;
-          const targetIdx = i;
-          
-          if (sourceIdx !== null && sourceIdx !== targetIdx) {
-            const temp = gridMapping[sourceIdx];
-            gridMapping[sourceIdx] = gridMapping[targetIdx];
-            gridMapping[targetIdx] = temp;
-            renderGrid();
+          if (currentMappedUrl !== "none") {
+            slot.setAttribute("data-camera-url", "none");
+            slot.removeAttribute("data-stream-url");
+            slot.innerHTML = `
+              <div style="text-align: center; color: var(--text-muted); pointer-events: none;">
+                <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; opacity: 0.4;">NO SIGNAL</div>
+                <div style="font-size: 8px; margin-top: 4px; letter-spacing: 1px; font-family: 'Fira Code', monospace; opacity: 0.4;">CH ${i + 1} &bull; STANDBY</div>
+              </div>
+            `;
+            slot.classList.remove("active-pin");
           }
-        });
+        }
         
-        slot.addEventListener("dblclick", () => {
-          slot.classList.toggle("fullscreen");
-        });
-        
-        container.appendChild(slot);
+        if (isNew) {
+          // Drag events
+          slot.addEventListener("dragstart", (e) => {
+            dragSourceIndex = i;
+            e.dataTransfer.effectAllowed = "move";
+          });
+          
+          slot.addEventListener("dragover", (e) => {
+            e.preventDefault();
+          });
+          
+          slot.addEventListener("dragenter", (e) => {
+            slot.classList.add("drag-over");
+          });
+          
+          slot.addEventListener("dragleave", (e) => {
+            slot.classList.remove("drag-over");
+          });
+          
+          slot.addEventListener("drop", (e) => {
+            e.preventDefault();
+            slot.classList.remove("drag-over");
+            
+            const sourceIdx = dragSourceIndex;
+            const targetIdx = i;
+            
+            if (sourceIdx !== null && sourceIdx !== targetIdx) {
+              const temp = gridMapping[sourceIdx];
+              gridMapping[sourceIdx] = gridMapping[targetIdx];
+              gridMapping[targetIdx] = temp;
+              renderGrid();
+            }
+          });
+          
+          slot.addEventListener("dblclick", () => {
+            slot.classList.toggle("fullscreen");
+          });
+          
+          container.appendChild(slot);
+        }
       }
     }
 

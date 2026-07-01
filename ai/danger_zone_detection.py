@@ -366,7 +366,7 @@ def generate_frames(source=0):
                 frame_count = 0
                 
     except GeneratorExit:
-        pass
+        print(f"[DEBUG] [GENERATOR] Client disconnected: {source}")
 
 # ==========================================
 # 📊 RETRO COMPATIBILITY GETTERS
