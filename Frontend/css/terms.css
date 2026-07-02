@@ -1,0 +1,312 @@
+/* ==========================================================================
+   TERMS & CONDITIONS - CLEAN LIGHT WHITE THEME (COURSERA STYLE)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+:root {
+    --bg-light: #ffffff;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --border-color: #e5e7eb;
+    --primary-blue: #2563eb;
+    --primary-blue-hover: #1d4ed8;
+    --footer-bg: #f9fafb;
+    --font-cyber: 'Space Grotesk', sans-serif;
+    --font-main: 'Outfit', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-light);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Print / PDF Float Button - Clean and modern */
+.terms-top-bar {
+    max-width: 900px;
+    margin: 30px auto 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-print {
+    background-color: #ffffff;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-print:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.btn-print svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Core terms content wrapper */
+.terms-content-container {
+    max-width: 900px;
+    margin: 20px auto 80px auto;
+    padding: 0 20px;
+}
+
+.terms-header-section {
+    text-align: center;
+    margin-bottom: 50px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 30px;
+}
+
+.terms-header-section h1 {
+    font-family: var(--font-cyber);
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    color: #111827;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.terms-header-section .effective-date {
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Typography styles for content */
+.terms-body {
+    color: var(--text-primary);
+}
+
+.terms-body h2 {
+    font-size: 1.5rem;
+    color: #111827;
+    margin: 35px 0 15px 0;
+    font-weight: 600;
+}
+
+.terms-body p {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.7;
+}
+
+.terms-body ul {
+    margin-left: 24px;
+    margin-bottom: 25px;
+}
+
+.terms-body li {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.terms-body strong {
+    color: #111827;
+}
+
+.terms-callout {
+    background-color: #f9fafb;
+    border-left: 4px solid var(--primary-blue);
+    padding: 20px;
+    margin: 30px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.terms-callout.warning {
+    border-left-color: #d97706;
+    background-color: #fffbef;
+}
+
+.terms-callout.danger {
+    border-left-color: #dc2626;
+    background-color: #fdf2f2;
+}
+
+.terms-callout h4 {
+    font-size: 1.05rem;
+    color: #111827;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.terms-callout p {
+    font-size: 0.95rem;
+    margin-bottom: 0;
+    color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   COURSERA-STYLE CLEAN LIGHT FOOTER
+   ========================================================================== */
+
+.coursera-footer {
+    background-color: var(--footer-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 60px 20px 40px 20px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.footer-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 40px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.footer-column h4 {
+    color: #111827;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-transform: capitalize;
+}
+
+.footer-column ul {
+    list-style: none;
+}
+
+.footer-column li {
+    margin-bottom: 12px;
+}
+
+.footer-column a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.footer-column a:hover {
+    color: var(--primary-blue);
+    text-decoration: underline;
+}
+
+.footer-bottom {
+    max-width: 1100px;
+    margin: 30px auto 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.footer-bottom-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-left: 20px;
+}
+
+.footer-bottom-links a:hover {
+    color: var(--primary-blue);
+    text-decoration: underline;
+}
+
+/* Responsive Overrides */
+@media (max-width: 768px) {
+    .terms-header-section {
+        margin-bottom: 30px;
+    }
+    .footer-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+    .footer-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .footer-bottom-links a {
+        margin-left: 0;
+        margin-right: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-container {
+        grid-template-columns: 1fr;
+    }
+    .terms-top-bar {
+        justify-content: center;
+    }
+    .btn-print {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ==========================================================================
+   PRINT STYLING SHEET FOR A4 PDF EXPORTS
+   ========================================================================== */
+
+@media print {
+    @page {
+        size: A4;
+        margin: 20mm;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .terms-top-bar, .coursera-footer {
+        display: none !important;
+    }
+
+    .terms-content-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .terms-header-section {
+        border-bottom: 2px solid #000000 !important;
+        margin-bottom: 30px !important;
+        padding-bottom: 20px !important;
+        text-align: left !important;
+    }
+
+    .terms-header-section h1 {
+        font-size: 2.2rem !important;
+    }
+
+    .terms-body h2 {
+        page-break-after: avoid;
+    }
+
+    .terms-callout {
+        background-color: #f3f4f6 !important;
+        border-left: 4px solid #000000 !important;
+        page-break-inside: avoid;
+    }
+}
