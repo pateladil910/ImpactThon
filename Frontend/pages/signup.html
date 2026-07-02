@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <title>Create Account | AI Safety System</title> -->
     <title>Create Operator Account | AI Safety Shield</title>
     <link rel="stylesheet" href="../css/auth.css">
     <!-- Google Identity Services (GIS) SDK -->
@@ -176,7 +175,7 @@
 
         <!-- Terms and conditions checkbox -->
         <label class="terms-group">
-            <input type="checkbox" required>
+            <input type="checkbox" id="terms-checkbox">
             <span class="custom-checkbox"></span>
             <!-- <span>I accept the <a href="#">Terms & Conditions</a> and authorize industrial surveillance data collection.</span> -->
             <span>I accept the <a href="terms.html">Terms & Conditions</a>  and authorize the AI Safety Shield platform to securely process monitoring and account information for industrial safety operations.</span>
@@ -408,6 +407,28 @@
             if (password !== confirm) {
                 e.preventDefault();
                 alert("Passwords do not match!");
+                return;
+            }
+
+            // Validate password strength
+            let score = 0;
+            if (password.length >= 8) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+
+            if (score <= 2) {
+                e.preventDefault();
+                alert("Please enter a strong password.");
+                return;
+            }
+
+            // Check terms checkbox
+            const termsCheckbox = document.getElementById('terms-checkbox');
+            if (termsCheckbox && !termsCheckbox.checked) {
+                e.preventDefault();
+                alert("Please accept the terms and conditions first.");
                 return;
             }
             
