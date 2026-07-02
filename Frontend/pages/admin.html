@@ -20,13 +20,13 @@
   
   <style>
     /* FORCE COLLAPSED DRAWER MENU ON ALL RESOLUTIONS EXCLUSIVELY FOR ADMIN PAGE */
-    .navbar .menu-toggle {
+    .navbar #adminMenuToggle {
         display: flex !important;
         position: relative !important;
         z-index: 110 !important;
     }
 
-    .navbar .nav-menu {
+    .navbar #adminNavLinks {
         position: fixed !important;
         top: 0 !important;
         right: 0 !important;
@@ -52,7 +52,7 @@
         opacity: 1 !important;
     }
 
-    .navbar .nav-menu.active {
+    .navbar #adminNavLinks.active {
         transform: translateX(0) !important;
     }
 
@@ -112,6 +112,28 @@
     }
   </style>
   <script src="../js/auth.js"></script>
+  <script>
+    // Robust, isolated click toggle logic for Admin portal drawer
+    document.addEventListener("DOMContentLoaded", () => {
+        const toggle = document.getElementById("adminMenuToggle");
+        const menu = document.getElementById("adminNavLinks");
+        
+        if (toggle && menu) {
+            toggle.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggle.classList.toggle("active");
+                menu.classList.toggle("active");
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+                    toggle.classList.remove("active");
+                    menu.classList.remove("active");
+                }
+            });
+        }
+    });
+  </script>
 </head>
 
 <body>
@@ -160,7 +182,7 @@
       </a>
 
       <!-- Unified Menu Container -->
-      <div class="nav-menu" id="navLinks">
+      <div class="nav-menu" id="adminNavLinks">
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="dashboard.html">Dashboard</a></li>
@@ -187,7 +209,7 @@
         </div>
       </div>
 
-      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+      <button class="menu-toggle" id="adminMenuToggle" aria-label="Toggle navigation Menu">
         <span></span>
         <span></span>
         <span></span>
