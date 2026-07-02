@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Conditions | AI Smart Safety Shield</title>
+    
+    <!-- STYLESHEETS -->
+    <link rel="stylesheet" href="../css/index_new.css">
+    <link rel="stylesheet" href="../css/navbar_responsive.css">
+    <link rel="stylesheet" href="../css/terms.css">
+    
+    <!-- AUTHENTICATION HELPERS -->
+    <script src="../js/auth.js"></script>
+</head>
+<body>
+
+<!-- DYNAMIC CYBERNETIC BACKDROP -->
+<canvas id="particle-canvas"></canvas>
+<div class="laser-scan-line"></div>
+
+<!-- CYBER HUD OVERLAYS -->
+<div class="cyber-hud-layer">
+    <div class="hud-tag" style="top: 100px; left: 30px;">SEC_RULE_SET: v2.86</div>
+    <div class="hud-tag" style="top: 100px; right: 30px;">LOC: CLOUD-MATRIX</div>
+    <div class="hud-tag" style="bottom: 100px; left: 30px;">SYS_STATUS: RUNNING</div>
+    <div class="hud-tag" style="bottom: 100px; right: 30px;">LOCKOUT: ENABLED</div>
+</div>
+
+<!-- NAVIGATION SYSTEM -->
+<nav class="navbar">
+    <a href="index.html" class="logo">
+        <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
+        </svg>
+        <span>AI Safety Shield</span>
+    </a>
+
+    <!-- Unified Menu Container -->
+    <div class="nav-menu" id="navLinks">
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="plant_map.html">Plant Map</a></li>
+            <li><a href="chart.html">Danger Analytics</a></li>
+            <li><a href="history.html">Detection Logs</a></li>
+            <li><a href="camera_setup.html">Camera Setup</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="learn-more.html">How It Works</a></li>
+            <li class="admin-only-nav"><a href="diagnostics.html">Diagnostics</a></li>
+            <li class="admin-only-nav"><a href="notifications.html">Alerts</a></li>
+            <li class="admin-only-nav"><a href="incident_log.html">Incident Logs</a></li>
+            <li class="admin-only-nav"><a href="admin.html">Admin</a></li>
+        </ul>
+
+        <div class="auth-buttons" id="auth-buttons">
+            <a href="login.html">Log In</a>
+            <a href="signup.html">Sign Up</a>
+        </div>
+
+        <div id="profile-section" style="display:none;" class="profile-box">
+            <span id="profile-name" class="profile-name">User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</nav>
+
+<!-- TERMS VIEWPORT -->
+<div class="terms-viewport">
+    <!-- Header Section -->
+    <header class="terms-header-section">
+        <h1>Terms &amp; Conditions</h1>
+        <p>Industrial AI Safety Shield Proximity Interlock &amp; Compliance Protocol</p>
+    </header>
+
+    <!-- Main Container -->
+    <main class="terms-container">
+        
+        <!-- Left Column: Sticky Summary Cards -->
+        <aside class="tldr-column">
+            <div class="tldr-header">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.01.388-1.01.94z"/>
+                </svg>
+                Plain English Summary
+            </div>
+            <div class="tldr-cards-grid">
+                <div class="summary-card safety">
+                    <h4>🛡️ Co-Safety Shield</h4>
+                    <p>The AI Shield is an extra safety layer. Never bypass physical safety walls or override standard OSHA machine guards.</p>
+                </div>
+                <div class="summary-card">
+                    <h4>🔑 Clearance Tier Duties</h4>
+                    <p>Access level defines what you control: Viewers monitor, Operators configure cameras, and Admins hold override responsibility.</p>
+                </div>
+                <div class="summary-card warning">
+                    <h4>⚡ Connection &amp; FPS Uptime</h4>
+                    <p>Requires high-speed video feeds (30+ FPS). Lag, dropped video packets, or disconnected relays trigger automatic machine halts.</p>
+                </div>
+                <div class="summary-card danger">
+                    <h4>📸 Breach Video Snapshots</h4>
+                    <p>When a machine zone is breached, the AI logs a photo and logs your name to send security alerts to supervisors.</p>
+                </div>
+                <div class="summary-card safety">
+                    <h4>⚖️ Industrial Liability</h4>
+                    <p>AI detection is probabilistic. We do not assume liability for accidents caused by network issues or hardware bypasses.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Column: Full Details -->
+        <section class="details-column">
+            
+            <!-- Floating Actions Bar -->
+            <div class="terms-actions-bar">
+                <div class="last-updated">PROTOCOL REVISION: 2026.07.02 // LATENCY NOMINAL</div>
+                <button class="btn-print" onclick="window.print()">
+                    <svg fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                        <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                    </svg>
+                    Print / Save PDF
+                </button>
+            </div>
+
+            <!-- Card 1 -->
+            <article class="terms-card">
+                <h3><span class="num">01.</span> Scope &amp; Safety-First Mandate</h3>
+                <p>The <strong>AI Smart Safety Shield</strong> is an advanced, computer-vision gated proximity lockout system. It is designed to act as a secondary, hybrid millisecond-level lockout guard for industrial machinery. By accessing or deploying the Shield, all parties agree to the following terms:</p>
+                <ul>
+                    <li><strong>No Substitution:</strong> This system is a safety assistance aid and must not be used as a replacement for standard physical barriers, optical light curtains, or mechanical interlocks required by OSHA or local industrial regulations.</li>
+                    <li><strong>No Bypass:</strong> Operators and administrative personnel are strictly prohibited from bypassing physical shields or disabling mechanical kill-switches under the assumption that the AI Shield will capture the intrusion.</li>
+                    <li><strong>Visual Verification:</strong> Operators must always follow standard hand-on-lock physical lockout tagout (LOTO) protocols before placing limbs or body parts into hazardous machine zones.</li>
+                </ul>
+                <div class="terms-callout danger">
+                    <h5 class="danger">🚨 Critical Industrial Directive</h5>
+                    <p>Never rely solely on software-based detection for protection against life-threatening hazards. The AI Smart Safety Shield operates alongside physical barriers, never in place of them.</p>
+                </div>
+            </article>
+
+            <!-- Card 2 -->
+            <article class="terms-card">
+                <h3><span class="num">02.</span> Role Clearance &amp; System Override Authority</h3>
+                <p>The system segregates user access based on role tiers handled securely by Google Firebase Authentication. You agree to respect the limits of your assigned role tier:</p>
+                <ul>
+                    <li><strong>Viewer clearance:</strong> Read-only access to home dashboards and telemetry analytics charts. Viewers have zero authorization to alter settings, stream configs, or input diagnostic override flags.</li>
+                    <li><strong>Operator clearance:</strong> Granted access to deploy camera nodes, configure warning zones, and stream active feeds. Operators are responsible for verifying camera angles and zone calibration accuracy.</li>
+                    <li><strong>Admin clearance:</strong> Granted full administrative permissions, including system overrides, hardware release lockouts, and calibration parameters. Admins hold full responsibility for any software override commands issued to active relay circuits.</li>
+                </ul>
+                <div class="terms-callout warning">
+                    <h5 class="warning">⚠️ Administrative Liability Notice</h5>
+                    <p>Issuing an override release command bypasses the active AI lockout trigger. Admins must inspect the physical plant floor visually before issuing overrides.</p>
+                </div>
+            </article>
+
+            <!-- Card 3 -->
+            <article class="terms-card">
+                <h3><span class="num">03.</span> Telemetry Stream &amp; Hardware Network Duty</h3>
+                <p>Real-time machine lockout triggers require high-fidelity streams and fail-safe relay operation. Compliance with the following technical boundaries is mandatory:</p>
+                <ul>
+                    <li><strong>Frame Rate &amp; Resolution:</strong> Streams must be maintained at a minimum resolution of 640x480 pixels and an active rate of 30 frames per second (FPS). Reduced framerates directly delay zone violation reaction times.</li>
+                    <li><strong>Network Latency:</strong> Local network latency between the Edge Camera setups, backend Node.js APIs, and Flask AI microservice must not exceed 100ms. If packet drop rates exceed 5%, the system will automatically assume danger state.</li>
+                    <li><strong>Relay Fail-Safe States:</strong> The ESP32 relay shield must be wired in a fail-safe configuration where power loss or serial disconnect defaults the contactors to an open (de-energized) machine stop state.</li>
+                </ul>
+            </article>
+
+            <!-- Card 4 -->
+            <article class="terms-card">
+                <h3><span class="num">04.</span> Data Acquisition, Logs &amp; Alert Broadcasts</h3>
+                <p>To audit incidents and secure hazardous zones, the safety shield gathers telemetry and transmits incident alerts:</p>
+                <ul>
+                    <li><strong>Violation Snapshots:</strong> Upon detecting zone violations (Danger state), the Flask AI service automatically packages the violating frame as an encrypted base64 payload to log in the database.</li>
+                    <li><strong>SMTP Alert Gateways:</strong> Safe zone breaches dispatch high-priority email alerts including frame snapshots directly to operator control centers via Mailcloud SMTP relays.</li>
+                    <li><strong>Security Verification:</strong> Telemetry data including machine metadata, zone coordinate parameters, operator identities, and hardware serial codes are stored securely using AES-256-CBC encryption algorithms.</li>
+                </ul>
+            </article>
+
+            <!-- Card 5 -->
+            <article class="terms-card">
+                <h3><span class="num">05.</span> Limitation of Liability</h3>
+                <p>The AI models (YOLOv8) utilize probabilistic algorithms to track human coordinates. Environmental factors (dust, lens smudges, smoke, poor lighting, safety clothing patterns) may affect classification accuracy. Code Vortex Technologies Inc. provides this system under the following liability releases:</p>
+                <ul>
+                    <li><strong>Probabilistic Nature:</strong> Under no circumstances does Code Vortex warrant that the system will detect 100% of hazard conditions under all circumstances.</li>
+                    <li><strong>Force Majeure / Network Failure:</strong> Code Vortex is not liable for accidents resulting from network interruptions, cloud hosting warmup latencies (such as Render spin-downs), or electrical surges affecting ESP32 chips.</li>
+                    <li><strong>Damages Caps:</strong> In no event shall Code Vortex Technologies Inc. be liable for any direct, indirect, incidental, or consequential damages resulting from industrial accidents, mechanical halts, or equipment delays.</li>
+                </ul>
+            </article>
+
+        </section>
+
+    </main>
+</div>
+
+<!-- SECTION 8: CODE VORTEX PRODUCTION FOOTER -->
+<footer class="codevortex-footer">
+  <div class="cv-footer-container">
+    <div class="cv-footer-brand">
+      <a href="index.html" class="cv-footer-logo">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"/>
+        </svg>
+        <span class="company">CODE VORTEX</span>
+        <span class="tag">AI SAFETY SHIELD</span>
+      </a>
+      <p class="cv-footer-desc">
+        Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing.
+      </p>
+      <div class="cv-status-pill">
+        <span class="cv-status-dot"></span>
+        <span>Code Vortex Security Cloud: Operational</span>
+      </div>
+    </div>
+
+    <div class="cv-footer-col">
+      <h4>Platform</h4>
+      <ul>
+        <li><a href="dashboard.html">Live Operator Dashboard</a></li>
+        <li><a href="plant_map.html">Factory Plant Map</a></li>
+        <li><a href="chart.html">Danger Analytics</a></li>
+        <li><a href="history.html">Detection Event Logs</a></li>
+      </ul>
+    </div>
+
+    <div class="cv-footer-col">
+      <h4>Hardware</h4>
+      <ul>
+        <li><a href="camera_setup.html">AI Camera Setup</a></li>
+        <li><a href="diagnostics.html">Diagnostic Matrix</a></li>
+        <li><a href="notifications.html">System Alerts</a></li>
+        <li><a href="admin.html">Admin Console</a></li>
+      </ul>
+    </div>
+
+    <div class="cv-footer-col">
+      <h4>Resources</h4>
+      <ul>
+        <li><a href="learn-more.html">How It Works</a></li>
+        <li><a href="contact.html">Contact Engineering</a></li>
+        <li><a href="solution.html">Solution Matrix</a></li>
+        <li><a href="login.html">Operator Gateway</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cv-footer-bottom">
+    <div>&copy; 2026 Code Vortex Technologies Inc. All rights reserved.</div>
+    <div>
+      <a href="javascript:void(0)">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="javascript:void(0)">IEC 61508 / ISO 27001 Ready</a>
+    </div>
+  </div>
+</footer>
+
+<!-- DYNAMIC LAYOUT & BACKDROP INITIALIZATION -->
+<script>
+    // Particle Backdrop Generator
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    const particles = [];
+    const count = 35;
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            r: Math.random() * 2 + 1
+        });
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(6, 182, 212, 0.25)';
+        for (let i = 0; i < count; i++) {
+            const p = particles[i];
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        }
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // INTERACTIVE GUEST OR REGISTERED CLEARANCE SIMULATOR
+    window.addEventListener('DOMContentLoaded', () => {
+        const username = localStorage.getItem('username');
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const profileSection = document.getElementById('profile-section');
+        const authButtons = document.getElementById('auth-buttons');
+        const profileName = document.getElementById('profile-name');
+
+        if (isLoggedIn && username) {
+            if (profileSection) profileSection.style.display = 'flex';
+            if (authButtons) authButtons.style.display = 'none';
+            if (profileName) profileName.textContent = username;
+        } else {
+            if (profileSection) profileSection.style.display = 'none';
+            if (authButtons) authButtons.style.display = 'flex';
+        }
+    });
+
+    // RESPONSIVE MENU MOBILE TOGGLE
+    const menuToggle = document.getElementById('menuToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (menuToggle && navLinks) {
+        menuToggle.addEventListener('click', () => {
+            menuToggle.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
+    }
+</script>
+
+</body>
+</html>
