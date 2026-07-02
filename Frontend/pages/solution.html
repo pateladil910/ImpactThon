@@ -1376,13 +1376,14 @@
 <!-- HERO CONSOLE -->
 <section class="hero">
     <div class="hero-text">
-        <h1>Autonomous Industrial Safety Shield</h1>
+        <h1>Industrial AI Safety Shield</h1>
         <p>
-            Deploy next-generation 3D security mapping. By wrapping heavy machinery in adaptive neural barriers, our YOLOv8-powered vision edge engine tracks coordinates in real-time, executing PLC emergency overrides instantly to create an absolute hazard exclusion zone.
+          Our AI-powered Industrial Safety Shield continuously monitors factory environments using Computer Vision and real-time human detection. The system identifies workers entering hazardous machine zones, analyzes potential risks within milliseconds, and automatically activates emergency safety mechanisms to prevent accidents. Built for modern industries, it enhances workplace safety, protects valuable equipment, and saves lives through intelligent automation.
+            <!-- Deploy next-generation 3D security mapping. By wrapping heavy machinery in adaptive neural barriers, our YOLOv8-powered vision edge engine tracks coordinates in real-time, executing PLC emergency overrides instantly to create an absolute hazard exclusion zone. -->
         </p>
         <div class="hero-actions">
-            <a href="#sandbox" class="btn-primary">Launch Proximity Sandbox</a>
-            <a href="#console" class="btn-outline">Open Diagnostic Video</a>
+            <a href="#sandbox" class="btn-primary">Explore AI Detection</a>
+            <a href="#console" class="btn-outline">Open Demo Video</a>
         </div>
     </div>
 
@@ -1390,7 +1391,7 @@
     <div class="hero-card-wrapper">
         <div class="hero-card">
             <h3>
-                <span>NEURAL ENGINE STATE</span>
+                <span>AI SYSTEM STATUS</span>
                 <span class="live-indicator">
                     <span class="live-dot"></span> SCANNING
                 </span>
@@ -1399,31 +1400,31 @@
             <div class="status-list">
                 <div class="progress-bar-wrapper">
                     <div class="status-item">
-                        <span>AI Inference Speed</span>
+                        <span>Detection Speed</span>
                         <b class="glow-cyan" id="core-temp">6.2ms</b>
                     </div>
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" id="core-bar" style="width: 88%;"></div>
+                        <div class="progress-bar-fill" id="core-bar" style="width: 88%;">LOW RISK</div>
                     </div>
                 </div>
 
                 <div class="status-item">
-                    <span>Active Threat Index</span>
+                    <span>Current Risk Level</span>
                     <b class="glow-emerald" id="threat-index">0.02%</b>
                 </div>
 
                 <div class="status-item">
-                    <span>YOLOv8 Vision Model</span>
-                    <b class="glow-cyan">EDGE_V8_FPS_60</b>
+                    <span>AI Detection Engine</span>
+                    <b class="glow-cyan">YOLOv8 + OpenCV</b>
                 </div>
 
                 <div class="status-item">
-                    <span>Virtual Boundaries</span>
+                    <span>Safety Zone Status</span>
                     <b class="glow-emerald" id="boundary-status">SECURE [STABLE]</b>
                 </div>
 
                 <div class="status-item">
-                    <span>Hardware Relays</span>
+                    <span>MachinesControl</span>
                     <b class="glow-emerald" id="relay-status">ONLINE [ENGAGED]</b>
                 </div>
             </div>
@@ -1814,9 +1815,11 @@
             coreBar.style.width = '35%';
             threatIndex.textContent = (82.1 + Math.random() * 8).toFixed(2) + '%';
             threatIndex.className = 'glow-red';
-            boundaryStatus.textContent = 'WARNING ZONE BREACHED';
+            // boundaryStatus.textContent = 'WARNING ZONE BREACHED';
+            boundaryStatus.textContent = 'SAFE ZONE MONITORED';
             boundaryStatus.className = 'glow-warning';
-            relayStatus.textContent = 'PLC_HALTED [SLOW]';
+            // relayStatus.textContent = 'PLC_HALTED [SLOW]';
+            relayStatus.textContent = 'READY';
             relayStatus.className = 'glow-warning';
         } else {
             coreTemp.textContent = (5.8 + Math.random() * 0.9).toFixed(1) + 'ms';
