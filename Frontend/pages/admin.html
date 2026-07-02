@@ -20,13 +20,13 @@
   
   <style>
     /* FORCE COLLAPSED DRAWER MENU ON ALL RESOLUTIONS EXCLUSIVELY FOR ADMIN PAGE */
-    .menu-toggle {
+    .navbar .menu-toggle {
         display: flex !important;
         position: relative !important;
         z-index: 110 !important;
     }
 
-    .nav-menu {
+    .navbar .nav-menu {
         position: fixed !important;
         top: 0 !important;
         right: 0 !important;
@@ -52,11 +52,15 @@
         opacity: 1 !important;
     }
 
-    .nav-menu.active {
+    .navbar .nav-menu.active {
         transform: translateX(0) !important;
     }
 
-    .nav-links {
+    .navbar .nav-links {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        transform: none !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -65,15 +69,17 @@
         width: 100% !important;
         visibility: visible !important;
         opacity: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    .nav-links li {
+    .navbar .nav-links li {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
     }
 
-    .nav-links a {
+    .navbar .nav-links a {
         font-size: 16px !important;
         width: 100% !important;
         display: block !important;
@@ -85,17 +91,17 @@
         border-left: none !important;
     }
     
-    .nav-links a::after {
+    .navbar .nav-links a::after {
         display: none !important;
     }
 
-    .nav-links a.active {
+    .navbar .nav-links a.active {
         color: var(--primary-neon) !important;
         border-left: 3px solid var(--primary-neon) !important;
         padding-left: 10px !important;
     }
 
-    .auth-buttons, .profile-box {
+    .navbar .auth-buttons, .navbar .profile-box {
         display: flex !important;
         flex-direction: column !important;
         gap: 12px !important;
