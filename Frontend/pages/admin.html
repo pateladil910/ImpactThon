@@ -17,6 +17,94 @@
   <link rel="stylesheet" href="../css/index_new.css">
   <link rel="stylesheet" href="../css/admin.css?v=3">
   <link rel="stylesheet" href="../css/navbar_responsive.css">
+  
+  <style>
+    /* FORCE COLLAPSED DRAWER MENU ON ALL RESOLUTIONS EXCLUSIVELY FOR ADMIN PAGE */
+    .menu-toggle {
+        display: flex !important;
+        position: relative !important;
+        z-index: 110 !important;
+    }
+
+    .nav-menu {
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        width: 290px !important;
+        height: 100vh !important;
+        background: rgba(4, 8, 16, 0.98) !important;
+        backdrop-filter: blur(25px) !important;
+        -webkit-backdrop-filter: blur(25px) !important;
+        border-left: 1px solid rgba(6, 182, 212, 0.2) !important;
+        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.85) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        padding: 100px 30px 40px 30px !important;
+        margin-left: 0 !important;
+        transform: translateX(100%) !important;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        z-index: 105 !important;
+        overflow-y: auto !important;
+        max-height: 100vh !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .nav-menu.active {
+        transform: translateX(0) !important;
+    }
+
+    .nav-links {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 20px !important;
+        width: 100% !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .nav-links li {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .nav-links a {
+        font-size: 16px !important;
+        width: 100% !important;
+        display: block !important;
+        color: var(--text-muted) !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        padding: 6px 0 !important;
+        border-left: none !important;
+    }
+    
+    .nav-links a::after {
+        display: none !important;
+    }
+
+    .nav-links a.active {
+        color: var(--primary-neon) !important;
+        border-left: 3px solid var(--primary-neon) !important;
+        padding-left: 10px !important;
+    }
+
+    .auth-buttons, .profile-box {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-top: auto !important;
+        padding-top: 25px !important;
+        border-top: 1px solid rgba(6, 182, 212, 0.15) !important;
+    }
+  </style>
   <script src="../js/auth.js"></script>
 </head>
 
