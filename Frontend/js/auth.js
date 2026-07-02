@@ -297,12 +297,16 @@ async function login(event) {
     } else {
 
       alert(data.msg || "Login failed");
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) submitBtn.classList.remove('loading');
     }
 
   } catch (error) {
 
     console.error(error);
     alert("Connection error");
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.classList.remove('loading');
   }
 }
 
@@ -341,12 +345,16 @@ async function signup(event) {
     } else {
 
       alert(data.message || "Signup failed");
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) submitBtn.classList.remove('loading');
     }
 
   } catch (error) {
 
     console.error(error);
     alert("Connection error");
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.classList.remove('loading');
   }
 }
 
