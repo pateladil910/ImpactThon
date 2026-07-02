@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Safety Gateway | Real-time Machine Surveillance</title>
+    <title>Industrial Safety Shield | Real-time Machine Surveillance</title>
     <link rel="stylesheet" href="../css/auth.css">
 </head>
 <body>
@@ -26,8 +26,8 @@
 <div class="cyber-hud-layer">
     <!-- Top Left Information System -->
     <div class="hud-tag hud-top-left">
-        <span>GATEWAY_SYS_VER: v8.4.2</span>
-        <span>SURVEILLANCE: ONGOING</span>
+        <span>SYSTEM VERSION : v8.4.2</span>
+        <span>MONITORING: ACTIVE</span>
         <span class="status-badge" style="margin-top: 10px;">
             <span class="status-dot"></span> SYSTEM ACTIVE
         </span>
@@ -35,9 +35,9 @@
     
     <!-- Top Right Telemetry Details -->
     <div class="hud-tag hud-top-right">
-        <span>CAM_02_HAZARD_LINE</span>
-        <span>1920x1080 @ 30.0fps</span>
-        <span id="system-latency">LATENCY: 12ms</span>
+        <span>FACTORY CAMERA 02</span>
+        <span>1920x1080 • LIVE AI </span>
+        <span id="system-latency">RESPONSE: 12ms</span>
         <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">UTC TIME: --:--:--</span>
     </div>
 
@@ -48,11 +48,12 @@
 
     <!-- Active CCTV bounding boxes floating around card -->
     <div class="hud-bounding-box float-hud-1" style="top: 15%; left: 8%; width: 150px; height: 230px; border-color: var(--safe-green);">
-        <span class="hud-box-label" style="background: var(--safe-green);">Worker-04 (99.2%)</span>
+        <span class="hud-box-label" style="background: var(--safe-green);">Worker-Detected (99.2%)</span>
     </div>
 
     <div class="hud-bounding-box float-hud-2" style="bottom: 12%; right: 10%; width: 220px; height: 160px; border-color: var(--danger-red);">
-        <span class="hud-box-label" style="background: var(--danger-red);">ROBOT-ARM [DANGER]</span>
+        <!-- <span class="hud-box-label" style="background: var(--danger-red);">ROBOT-ARM [DANGER]</span> -->
+        <span class="hud-box-label" style="background: var(--danger-red);">Hazard Zone Detected</span>
     </div>
 </div>
 
@@ -64,7 +65,7 @@
         </svg>
     </div>
 
-    <h2>AI Safety System</h2>
+    <h2>Industrial Safety System</h2>
     <p class="subtitle">Real-time worker and machine safety monitoring</p>
     
     <form id="loginForm">
@@ -75,7 +76,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                 </svg>
                 <input id="username" type="text" placeholder=" " required>
-                <label for="username" class="field-label">Email or Username</label>
+                <label for="username" class="field-label">Email Address or Username</label>
             </div>
         </div>
         
@@ -111,7 +112,7 @@
     </p>
 
     <div class="footer-note">
-        SECURE GATEWAY &bull; MULTI-FACTOR MACHINE CONTROL ACTIVE
+        SECURE GATEWAY &bull; SECURE INDUSTRIAL MACHINE CONTROL ACTIVE
     </div>
 </div>
 
