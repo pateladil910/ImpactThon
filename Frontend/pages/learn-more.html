@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Safety Shield | Technical Deep Dive</title>
+    <title>Industrial AI Safety Shield | How It Works </title>
     
     <!-- GOOGLE FONTS -->
     <link rel="stylesheet" href="../css/index_new.css">
@@ -1137,9 +1137,9 @@
             <li><a href="index.html">Home</a></li>
             <li><a href="dashboard.html">Dashboard</a></li>
             <li><a href="plant_map.html">Plant Map</a></li>
-            <li><a href="chart.html">Danger Analytics</a></li>
-            <li><a href="history.html">Detection Logs</a></li>
-            <li><a href="camera_setup.html">Camera Setup</a></li>
+            <li><a href="chart.html">Safety Analytics</a></li>
+            <li><a href="history.html">Detection history</a></li>
+            <li><a href="camera_setup.html">Camera Configuration</a></li>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="learn-more.html" class="active">How It Works</a></li>
             <li class="admin-only-nav"><a href="diagnostics.html">Diagnostics</a></li>
@@ -1213,11 +1213,11 @@
             <span class="telemetry-value">60.1 fps</span>
         </div>
         <div class="telemetry-card">
-            <span class="telemetry-label">OVERRIDE DELAY</span>
+            <span class="telemetry-label">Emergency Stop Time</span>
             <span class="telemetry-value">&lt; 0.28s</span>
         </div>
         <div class="telemetry-card">
-            <span class="telemetry-label">DETECTION METRIC</span>
+            <span class="telemetry-label">DETECTION Model</span>
             <span class="telemetry-value">YOLOv8-Pose</span>
         </div>
     </div>
@@ -1226,15 +1226,15 @@
 <!-- THE PROBLEM SECTION (Vulnerabilities of Old Guard) -->
 <section class="learn-section">
     <div class="section-header">
-        <h2>🎯 The Critical Safety Void</h2>
-        <p>Why traditional physical barricades and mechanical light curtains are failing in modern industries.</p>
+        <h2>⚠️ Challenges in Industrial Safety</h2>
+        <p>Common limitations of traditional industrial safety systems and why AI-based monitoring is becoming essential.</p>
     </div>
 
     <div class="problem-grid">
         <!-- Problem Card 1 -->
         <div class="problem-card">
             <span class="problem-icon">❌</span>
-            <h3>Static Bypassing</h3>
+            <h3>Manual Safety Bypass</h3>
             <p>
                 Operators frequently override physical microswitches or lean across optical safety curtains to align materials, causing catastrophic accidents when mechanical overrides fail or stay bypassed.
             </p>
@@ -1252,9 +1252,9 @@
         <!-- Problem Card 3 -->
         <div class="problem-card">
             <span class="problem-icon">🧍</span>
-            <h3>No Operator Context</h3>
+            <h3>Limited Human Detection</h3>
             <p>
-                Legacy setups are blind. They cannot tell if a worker has tripped and is falling dangerously into a press, or if they are simply passing by safely. Human posture context is completely absent.
+                Conventional systems cannot recognize worker movements, posture, or dangerous behavior, making intelligent accident prevention impossible.
             </p>
         </div>
     </div>
@@ -1285,10 +1285,11 @@
         <!-- Warning Zone -->
         <div class="zone-card zone-warning">
             <span class="zone-badge badge-warning">🟡 ZONE 2: WARNING</span>
-            <h3>Proximity Buffer</h3>
+            <h3>Warning Zone</h3>
             <span class="zone-range">Distance: 1.5m - 3.2m</span>
             <p>
-                Worker approaches the active perimeter. Edge processor generates a Modbus/TCP speed-reduction command, reducing machine frequency by 30% and engaging warning strobes.
+               A worker approaches the hazardous area. The system immediately sends alerts and can reduce machine speed to improve workplace safety.
+                <!-- Worker approaches the active perimeter. Edge processor generates a Modbus/TCP speed-reduction command, reducing machine frequency by 30% and engaging warning strobes. -->
             </p>
             <div class="zone-meta">
                 <span>Threat Level: <b>45.5% [Caution]</b></span>
@@ -1299,10 +1300,11 @@
         <!-- Danger Zone -->
         <div class="zone-card zone-danger">
             <span class="zone-badge badge-danger">🔴 ZONE 3: CRITICAL</span>
-            <h3>Exclusion Breached</h3>
+            <h3>Danger Zone</h3>
             <span class="zone-range">Distance: &lt; 1.5m</span>
             <p>
-                Critical intrusion detected! Local edge device triggers high-speed safety digital relays. Machinery cuts core motor power instantly in less than 280 milliseconds.
+              A worker enters the critical danger area. The AI system instantly activates emergency machine shutdown to prevent accidents and protect human lives.
+                <!-- Critical intrusion detected! Local edge device triggers high-speed safety digital relays. Machinery cuts core motor power instantly in less than 280 milliseconds. -->
             </p>
             <div class="zone-meta">
                 <span>Threat Level: <b>98.8% [Breach]</b></span>
@@ -1335,7 +1337,7 @@
         <div class="pipeline-step">
             <div class="step-index">02</div>
             <div class="step-content">
-                <h3>Optimized Neural Pose Inference</h3>
+                <h3>AI Human Detected</h3>
                 <p>
                     Local neural processor (Nvidia Jetson / Raspberry Pi Edge Core) runs an optimized YOLOv8-pose model, tracking 17 skeletal joint coordinates of multiple operators in real-time.
                 </p>
@@ -1346,7 +1348,8 @@
         <div class="pipeline-step">
             <div class="step-index">03</div>
             <div class="step-content">
-                <h3>Euclidean Distance Triangulation</h3>
+                <!-- <h3>Euclidean Distance Triangulation</h3> -->
+                <h3>Emergency Decision</h3>
                 <p>
                     Safety software algorithms calculate the absolute spatial distance between the defined machine coordinates and the operator's nearest tracking nodes 60 times a second.
                 </p>
@@ -1368,7 +1371,7 @@
         <div class="pipeline-step">
             <div class="step-index">05</div>
             <div class="step-content">
-                <h3>Magnetic Safety Relays Tripped</h3>
+                <h3>Automatic Machine Protection</h3>
                 <p>
                     Heavy-duty electric contactors snap open under the command of safety digital outputs, instantly exhausting mechanical kinetic energy and bringing the robot arm to a complete halt before impact occurs.
                 </p>
@@ -1390,7 +1393,7 @@
                 <tr>
                     <th>Feature Requirement</th>
                     <th>AI Safety Shield (Next-Gen)</th>
-                    <th>Traditional Systems (Legacy)</th>
+                    <th>Traditional Safety Systems (Legacy)</th>
                 </tr>
             </thead>
             <tbody>
@@ -1445,7 +1448,7 @@
             </div>
             <div class="news-content">
                 <span class="news-date">Telemetry CAM_01</span>
-                <h3>AI Neural Joint Pose Tracking</h3>
+                <h3>AI Human Detection</h3>
                 <p>
                     Our optimized YOLOv8 neural network tracks 17 core human skeletal joints at 60fps under harsh factory lighting, delivering 99.4% detection confidence.
                 </p>
@@ -1460,7 +1463,8 @@
             </div>
             <div class="news-content">
                 <span class="news-date">Volumetric Grid</span>
-                <h3>Classified Dynamic Spatial Zones</h3>
+                <!-- <h3>Classified Dynamic Spatial Zones</h3> -->
+                <h3>intelligent safety Zones</h3>
                 <p>
                     Volumetric mapping defines concentric green operational zones, yellow caution buffers, and red shutdown bounds directly relative to robotic coordinates.
                 </p>
@@ -1475,7 +1479,7 @@
             </div>
             <div class="news-content">
                 <span class="news-date">Hardware PLC</span>
-                <h3>Pneumatic Auto Stop Integration</h3>
+                <h3>Automatic Emergency Stop</h3>
                 <p>
                     Double-contact magnetic relays cut motor supply in less than 280ms when the 1.5m hazard perimeter is breached, avoiding flywheel collision.
                 </p>
@@ -1522,18 +1526,18 @@
         <div class="cv-footer-col">
           <h4>Platform</h4>
           <ul>
-            <li><a href="dashboard.html">Live Operator Dashboard</a></li>
-            <li><a href="plant_map.html">Factory Plant Map</a></li>
-            <li><a href="chart.html">Danger Analytics</a></li>
-            <li><a href="history.html">Detection Event Logs</a></li>
+            <li><a href="dashboard.html">Safety Dashboard</a></li>
+            <li><a href="plant_map.html">Factory Monitoring Map</a></li>
+            <li><a href="chart.html">Safety Analytics</a></li>
+            <li><a href="history.html">Detection History</a></li>
           </ul>
         </div>
 
         <div class="cv-footer-col">
           <h4>Hardware</h4>
           <ul>
-            <li><a href="camera_setup.html">AI Camera Setup</a></li>
-            <li><a href="diagnostics.html">Diagnostic Matrix</a></li>
+            <li><a href="camera_setup.html">Camera Configuration</a></li>
+            <li><a href="diagnostics.html">System Diagnostic </a></li>
             <li><a href="notifications.html">System Alerts</a></li>
             <li><a href="admin.html">Admin Console</a></li>
           </ul>
@@ -1543,9 +1547,9 @@
           <h4>Resources</h4>
           <ul>
             <li><a href="learn-more.html">How It Works</a></li>
-            <li><a href="contact.html">Contact Engineering</a></li>
-            <li><a href="solution.html">Solution Matrix</a></li>
-            <li><a href="login.html">Operator Gateway</a></li>
+            <li><a href="contact.html">Contact Support</a></li>
+            <li><a href="solution.html">Solution Overview</a></li>
+            <li><a href="login.html">Operator login</a></li>
           </ul>
         </div>
       </div>
