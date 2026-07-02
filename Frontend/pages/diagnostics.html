@@ -422,18 +422,50 @@
     let currentRAM = 64;
     let currentTemp = 58;
 
-    function updateResources() {
-        // Random walking values
-        currentCPU += (Math.random() - 0.5) * 8;
-        currentCPU = Math.max(25, Math.min(88, currentCPU));
+    async function updateResources() {
+        try {
+            const startTime = performance.now();
+            const res = await fetch(`${API_BASE_URL}/api/admin/diagnostics`, {
+                credentials: "include"
+            });
+            const rtt = Math.round(performance.now() - startTime);
+
+            // Display actual client-to-server RTT as latency in the HUD
+            const latencyEl = document.getElementById('system-latency');
+            if (latencyEl) {
+                latencyEl.textContent = `LATENCY: ${rtt}ms`;
+            }
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success) {
+                    currentCPU = data.cpu;
+                    currentRAM = data.ram;
+                    currentTemp = data.temp;
+
+                    // Dynamically display the server's actual CPU processor model
+                    const cpuFooter = document.querySelector('.resources-grid .resource-card:nth-child(1) .resource-footer');
+                    if (cpuFooter && data.systemInfo && data.systemInfo.cpuModel) {
+                        cpuFooter.textContent = data.systemInfo.cpuModel;
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn("Failed to fetch server diagnostics, falling back to simulated values:", err);
+            // Fallback random walk if server is offline or fails
+            currentCPU += (Math.random() - 0.5) * 8;
+            currentCPU = Math.max(25, Math.min(88, currentCPU));
+
+            currentRAM += (Math.random() - 0.5) * 2;
+            currentRAM = Math.max(58, Math.min(72, currentRAM));
+
+            currentTemp += (Math.random() - 0.5) * 3;
+            currentTemp = Math.max(45, Math.min(78, currentTemp));
+        }
+
+        // Apply progress values
         setGaugeProgress(cpuRing, document.getElementById('cpu-percent'), currentCPU);
-
-        currentRAM += (Math.random() - 0.5) * 2;
-        currentRAM = Math.max(58, Math.min(72, currentRAM));
         setGaugeProgress(ramRing, document.getElementById('ram-percent'), currentRAM);
-
-        currentTemp += (Math.random() - 0.5) * 3;
-        currentTemp = Math.max(45, Math.min(78, currentTemp));
         setGaugeProgress(tempRing, document.getElementById('temp-value'), currentTemp, 100, '°C');
 
         // Fluctuate Inference Performance
@@ -457,7 +489,7 @@
         }
     }
 
-    setInterval(updateResources, 1800);
+    setInterval(updateResources, 2000);
     updateResources();
 
     // ================= TERMINAL COMMAND INJECTOR =================

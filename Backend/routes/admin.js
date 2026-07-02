@@ -137,4 +137,66 @@ router.delete("/users/:id", async (req, res) => {
   }
 });
 
+const os = require("os");
+
+// CPU Sampler for real-time diagnostics
+function getCPUUsage() {
+  const cpus = os.cpus();
+  if (!cpus || cpus.length === 0) return { idle: 0, total: 0 };
+  let totalIdle = 0;
+  let totalTick = 0;
+  cpus.forEach(cpu => {
+    for (const type in cpu.times) {
+      totalTick += cpu.times[type];
+    }
+    totalIdle += cpu.times.idle;
+  });
+  return { idle: totalIdle / cpus.length, total: totalTick / cpus.length };
+}
+
+let lastCpuStats = getCPUUsage();
+let currentCpuUsage = 15;
+
+setInterval(() => {
+  const start = lastCpuStats;
+  const end = getCPUUsage();
+  const idleDiff = end.idle - start.idle;
+  const totalDiff = end.total - start.total;
+  if (totalDiff > 0) {
+    currentCpuUsage = Math.round(100 - (100 * idleDiff / totalDiff));
+  }
+  lastCpuStats = end;
+}, 2000);
+
+// Get real-time system diagnostics telemetry
+router.get("/diagnostics", async (req, res) => {
+  try {
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const ramUsagePercent = Math.round((usedMem / totalMem) * 100);
+
+    const cpus = os.cpus();
+    const cpuModel = cpus && cpus.length > 0 ? cpus[0].model : "Standard Core Sentinel";
+
+    // Proportional temperature simulation based on real CPU usage
+    const temp = Math.max(38, Math.min(85, 42 + Math.round(currentCpuUsage * 0.35) + Math.floor(Math.random() * 4)));
+
+    res.json({
+      success: true,
+      cpu: currentCpuUsage,
+      ram: ramUsagePercent,
+      temp: temp,
+      systemInfo: {
+        platform: os.platform(),
+        cpuModel: cpuModel,
+        uptime: os.uptime()
+      }
+    });
+  } catch (error) {
+    console.error("Admin diagnostics error:", error);
+    res.status(500).json({ msg: "Server error retrieving diagnostics" });
+  }
+});
+
 module.exports = router;
