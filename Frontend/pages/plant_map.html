@@ -10,7 +10,7 @@
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Factory Plant Layout Map | Live Control Console</title>
+  <title>Industrial Plant Layout Map | Live Control Console</title>
   <script src="../js/auth.js"></script>
 
   <!-- CSS -->
@@ -304,8 +304,8 @@
   <div class="cyber-hud-layer">
     <!-- Top Left Information System -->
     <div class="hud-tag hud-top-left">
-      <span>SYSTEM_CONTROL: RUNNING</span>
-      <span>PLANT_MAPPING: ENABLED</span>
+      <span>SYSTEM_CONTROL: ACTIVE</span>
+      <span>FACTORY_MAPPING: ENABLED</span>
       <span class="status-badge" style="margin-top: 10px;">
         <span class="status-dot"></span> SCADA ACTIVE
       </span>
@@ -313,7 +313,7 @@
 
     <!-- Top Right Telemetry Details -->
     <div class="hud-tag hud-top-right">
-      <span>GRID_MAP_RESOLVER</span>
+      <span>FACTORY LAYOUT MAP</span>
       <span>MULTI-FACTORY VECTORS</span>
       <span id="system-latency" style="color: var(--primary-neon);">LATENCY: 8ms</span>
       <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
@@ -321,7 +321,7 @@
 
     <!-- Bottom Left System Log -->
     <div class="hud-tag hud-bottom-left">
-      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+      <span>AI SAFETY SHIELD • FACTORY PROTECTION</span>
     </div>
   </div>
 
@@ -342,13 +342,13 @@
             <li><a href="index.html">Home</a></li>
             <li><a href="dashboard.html">Dashboard</a></li>
             <li><a href="plant_map.html" class="active">Plant Map</a></li>
-            <li><a href="chart.html">Danger Analytics</a></li>
-            <li><a href="history.html">Detection Logs</a></li>
+            <li><a href="chart.html">Safety Analytics</a></li>
+            <li><a href="history.html">Detection history</a></li>
             <li><a href="camera_setup.html">Camera Setup</a></li>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="learn-more.html">How It Works</a></li>
-            <li class="admin-only-nav"><a href="diagnostics.html">Diagnostics</a></li>
-            <li class="admin-only-nav"><a href="notifications.html">Alerts</a></li>
+            <li class="admin-only-nav"><a href="diagnostics.html">System Diagnostics </a></li>
+            <li class="admin-only-nav"><a href="notifications.html">Safety Alerts</a></li>
             <li class="admin-only-nav"><a href="incident_log.html">Incident Logs</a></li>
             <li class="admin-only-nav"><a href="admin.html">Admin</a></li>
         </ul>
@@ -381,9 +381,9 @@
 
       <!-- FACTORY TAB SHELF -->
       <div class="factory-tabs" id="factoryTabs">
-        <button class="factory-tab active" onclick="switchFactory('Factory A')">Factory A</button>
-        <button class="factory-tab" onclick="switchFactory('Factory B')">Factory B</button>
-        <button class="factory-tab" onclick="switchFactory('Factory C')">Factory C</button>
+        <button class="factory-tab active" onclick="switchFactory('Factory A')">Production Line A</button>
+        <button class="factory-tab" onclick="switchFactory('Factory B')">Production Line  B</button>
+        <button class="factory-tab" onclick="switchFactory('Factory C')">Production Line  C</button>
       </div>
 
       <!-- ================= SCADA MAP & INSPECTOR GRID ================= -->
@@ -400,7 +400,7 @@
           <div id="pinsContainer"></div>
 
           <!-- Double Click Info Tag -->
-          <div class="double-click-hint">💡 Double-click layout map coordinate to place/onboard a camera pin here</div>
+          <div class="double-click-hint">💡💡 Double-click anywhere on the factory layout to add or reposition an AI camera.</div>
         </div>
 
         <!-- 🖥️ NODE INSPECTOR PANEL -->
@@ -424,7 +424,7 @@
           <!-- Attributes Grid -->
           <div style="display: flex; flex-direction: column; gap: 12px; font-family: 'Space Grotesk', sans-serif;">
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
-              <span style="color: var(--text-muted); font-size: 11px;">Node Name</span>
+              <span style="color: var(--text-muted); font-size: 11px;">Camera Name</span>
               <span id="inspectName" style="color: #fff; font-weight: 700; font-size: 12px;">--</span>
             </div>
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
@@ -444,7 +444,7 @@
               <span id="inspectLatency" style="color: #fff; font-weight: 700; font-size: 12px;">--</span>
             </div>
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
-              <span style="color: var(--text-muted); font-size: 11px;">Description / Details</span>
+              <span style="color: var(--text-muted); font-size: 11px;">Description / Camera-Details</span>
               <span id="inspectDesc" style="color: var(--text-muted); font-size: 11px; text-align: right; max-width: 60%; word-break: break-all;">--</span>
             </div>
           </div>
