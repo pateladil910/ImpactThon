@@ -475,6 +475,21 @@ body {
     text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
 }
 
+/* Warning State Styles */
+#safety-box.warning {
+    border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(245, 158, 11, 0.06);
+}
+
+#safety-box.warning::before {
+    background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.6), transparent);
+}
+
+#safety-box.warning .box-value {
+    color: #f59e0b;
+    text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
 /* Danger State Styles & Flash */
 #safety-box.danger, #action-box.danger {
     border-color: rgba(239, 68, 68, 0.6);

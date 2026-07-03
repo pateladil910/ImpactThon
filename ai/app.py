@@ -205,16 +205,29 @@ def status():
         last_logged_state = "DANGER"
 
     # ===============================
+    # 🟡 WARNING (RESET DANGER BUT SET WARNING)
+    # ===============================
+    elif state == "WARNING":
+        danger_start_time = None
+
+        if esp and last_relay_state != "SAFE":
+            esp.write(b"SAFE\n")
+            last_relay_state = "SAFE"
+            print("📡 ESP32 -> SAFE (WARNING Zone)")
+
+        email_sent_for_current_danger = False
+        last_logged_state = "WARNING"
+
+    # ===============================
     # 🟢 SAFE (RESET)
     # ===============================
     else:
         danger_start_time = None
 
-        if last_logged_state == "DANGER":
-            if esp and last_relay_state != "SAFE":
-                esp.write(b"SAFE\n")
-                last_relay_state = "SAFE"
-                print("📡 ESP32 -> SAFE")
+        if esp and last_relay_state != "SAFE":
+            esp.write(b"SAFE\n")
+            last_relay_state = "SAFE"
+            print("📡 ESP32 -> SAFE")
 
         email_sent_for_current_danger = False
         last_logged_state = "SAFE"
