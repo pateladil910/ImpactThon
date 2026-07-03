@@ -116,8 +116,8 @@ class ThreadedCamera:
             
             print(f"[DEBUG] [CAM_THREAD] VideoCapture initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
             
-            # Read first frame
             if self.cap and self.cap.isOpened():
+                print(f"[CAPTURE] Camera opened successfully for source: {self.source}")
                 t_read_start = time.time()
                 grabbed, frame = self.cap.read()
                 t_read_end = time.time()
@@ -143,28 +143,20 @@ class ThreadedCamera:
                     self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
                     self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
                 print(f"[DEBUG] [CAM_THREAD] VideoCapture re-initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
+                if self.cap and self.cap.isOpened():
+                    print(f"[CAPTURE] Camera opened successfully for source: {self.source}")
                 continue
-            # Clear all buffered frames to eliminate latency build-up (real-time stream)
-            grabbed = False
-            while True:
-                ok = self.cap.grab()
-                if not ok:
-                    break
-                grabbed = True
-                
+            
+            grabbed, frame = self.cap.read()
             if grabbed:
-                ret, frame = self.cap.retrieve()
-                if ret:
-                    with self.read_lock:
-                        self.grabbed = True
-                        self.raw_frame = frame
-                    if not hasattr(self, '_capture_count'):
-                        self._capture_count = 0
-                    self._capture_count += 1
-                    if self._capture_count <= 50 or self._capture_count % 100 == 0:
-                        print(f"[DEBUG] [CAM_THREAD] id={id(self)} | update_capture() read #{self._capture_count} frames | shape={frame.shape}")
-                else:
-                    grabbed = False
+                with self.read_lock:
+                    self.grabbed = grabbed
+                    self.raw_frame = frame
+                if not hasattr(self, '_capture_count'):
+                    self._capture_count = 0
+                self._capture_count += 1
+                if self._capture_count % 100 == 0:
+                    print(f"Frame captured successfully (count: {self._capture_count})")
             
             if not grabbed:
                 print(f"[CAM_WATCHDOG] Frame read failed for {self.source}. Reconnecting...")
