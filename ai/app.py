@@ -220,9 +220,9 @@ def status():
         last_logged_state = "SAFE"
 
     # Return synchronized state with backward compatibility fields
-    live_status["safety"] = last_logged_state
-    live_status["danger"] = last_logged_state == "DANGER"
-    live_status["action"] = "STOP" if last_logged_state == "DANGER" else "RUN"
+    live_status["safety"] = live_status["danger_state"]
+    live_status["danger"] = live_status["danger_state"] == "DANGER"
+    live_status["action"] = "STOP" if live_status["danger_state"] == "DANGER" else "RUN"
     live_status["confidence"] = live_status["ai_confidence"]
     live_status["camera"] = True # Satisfies dashboard check
 
