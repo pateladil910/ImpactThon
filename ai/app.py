@@ -96,8 +96,8 @@ def construct_camera_source(url, username, password):
                 return url
             else:
                 if username or password:
-                    u_clean = quote(unquote(username)) if username else ""
-                    p_clean = quote(unquote(password)) if password else ""
+                    u_clean = unquote(username) if username else ""
+                    p_clean = unquote(password) if password else ""
                     if u_clean or p_clean:
                         return f"{schema}{u_clean}:{p_clean}@{remainder}"
             break
@@ -205,29 +205,16 @@ def status():
         last_logged_state = "DANGER"
 
     # ===============================
-    # 🟡 WARNING (RESET DANGER BUT SET WARNING)
-    # ===============================
-    elif state == "WARNING":
-        danger_start_time = None
-
-        if esp and last_relay_state != "SAFE":
-            esp.write(b"SAFE\n")
-            last_relay_state = "SAFE"
-            print("📡 ESP32 -> SAFE (WARNING Zone)")
-
-        email_sent_for_current_danger = False
-        last_logged_state = "WARNING"
-
-    # ===============================
     # 🟢 SAFE (RESET)
     # ===============================
     else:
         danger_start_time = None
 
-        if esp and last_relay_state != "SAFE":
-            esp.write(b"SAFE\n")
-            last_relay_state = "SAFE"
-            print("📡 ESP32 -> SAFE")
+        if last_logged_state == "DANGER":
+            if esp and last_relay_state != "SAFE":
+                esp.write(b"SAFE\n")
+                last_relay_state = "SAFE"
+                print("📡 ESP32 -> SAFE")
 
         email_sent_for_current_danger = False
         last_logged_state = "SAFE"
@@ -352,13 +339,10 @@ def test_camera():
         cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 4000)
 
         if not cap.isOpened():
-            print("[CAMERA]\nOpened = False")
             return jsonify({
                 "status": "error",
                 "message": "Camera stream failed to open. Verify credentials or camera channel."
             }), 200
-
-        print("[CAMERA]\nOpened = True")
 
         # Read 5 consecutive frames
         frame_count = 0
@@ -372,8 +356,6 @@ def test_camera():
                 frame_count += 1
                 if frame_count == 1:
                     height, width = frame.shape[:2]
-                    print("[CAMERA]\nFrame Read = True")
-                    print(f"Frame Size = {width}x{height}")
             time.sleep(0.04)
 
         duration = time.time() - start_time

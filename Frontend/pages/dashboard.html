@@ -1491,20 +1491,15 @@
             safetyStatus.innerText = "DANGER";
             safetyDesc.innerText = "Operator safety boundary breached!";
             safetyBox.classList.add("danger");
-            safetyBox.classList.remove("safe", "warning");
+            safetyBox.classList.remove("safe");
             
             playWarningTone();
             addIncidentLog(`Hazard breach detected in machine zone!`, "CRITICAL", activeCamera.cameraName);
-          } else if (data.safety === "WARNING") {
-            safetyStatus.innerText = "WARNING";
-            safetyDesc.innerText = "Operator approaching machine boundary!";
-            safetyBox.classList.add("warning");
-            safetyBox.classList.remove("safe", "danger");
           } else {
             safetyStatus.innerText = "SAFE";
             safetyDesc.innerText = "Operator clear of hazards";
             safetyBox.classList.add("safe");
-            safetyBox.classList.remove("danger", "warning");
+            safetyBox.classList.remove("danger");
           }
           lastSafety = data.safety;
         }
@@ -1569,7 +1564,7 @@
         });
       });
 
-      setInterval(updateStatus, 300);
+      setInterval(updateStatus, 1000);
     });
   </script>
 
