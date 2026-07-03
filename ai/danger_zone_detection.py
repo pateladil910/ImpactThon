@@ -429,6 +429,7 @@ class ThreadedCamera:
                 self.human_count = human_count
                 self.latency_ms = latency_ms
                 if human_count > 0:
+                    print("[DEBUG] Updating detection timestamp")
                     self.last_detection_time = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
                 
                 # Update global synchronized status object
