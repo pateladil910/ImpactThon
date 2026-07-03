@@ -20,7 +20,12 @@ model = YOLO("yolov8n.pt")
 # 🛡️ MACHINE DANGER ZONE (RECTANGLE)
 # ==========================================
 MACHINE_ZONE = (360, 100, 620, 420)
-WARNING_ZONE = (260, 50, 630, 450)
+WARNING_ZONE = (
+    MACHINE_ZONE[0] - 80,
+    MACHINE_ZONE[1] - 80,
+    MACHINE_ZONE[2] + 80,
+    MACHINE_ZONE[3] + 80
+)
 
 # ==========================================
 # 📊 CENTRALIZED SYNCHRONIZED STATE
@@ -225,6 +230,7 @@ class ThreadedCamera:
                     # Check if bottom-center lies inside MACHINE_ZONE or WARNING_ZONE
                     in_danger_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (MACHINE_ZONE[1] <= foot_y <= MACHINE_ZONE[3])
                     in_warning_zone = (WARNING_ZONE[0] <= foot_x <= WARNING_ZONE[2]) and (WARNING_ZONE[1] <= foot_y <= WARNING_ZONE[3])
+                    print(f"[DEBUG_ZONE] Foot Point: ({foot_x},{foot_y}) | Inside Warning Zone: {in_warning_zone} | Inside Machine Zone: {in_danger_zone}")
                     
                     yolo_conf = float(box.conf[0].item())
                     yolo_conf_pct = int(yolo_conf * 100)
@@ -306,6 +312,7 @@ class ThreadedCamera:
                 state_changed = (new_state != self.safety_state)
                 self.safety_state = new_state
                 self.current_confidence = ai_confidence
+                print(f"[DEBUG_ZONE] Current State: {self.safety_state} | Warning Zone Color: {'Orange' if (warning_in_frame or danger_in_frame) else 'Yellow'} | Machine Zone Color: {'Red' if danger_in_frame else 'Yellow'}")
                 
                 # Estimate rolling FPS
                 if not hasattr(self, '_fps_start_time'):
