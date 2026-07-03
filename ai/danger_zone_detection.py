@@ -78,6 +78,7 @@ class ThreadedCamera:
         self.human_count = 0
         self.latency_ms = 0.0
         self.last_detection_time = "--"
+        self._current_fps = 20.0
         
         self.capture_thread = None
         self.inference_thread = None
@@ -637,7 +638,14 @@ def get_latest_frame(source=None):
 
 def get_live_status():
     active_cameras = list(camera_pool.cameras.values())
+    
+    print("===== LIVE TELEMETRY =====")
+    print("Camera Pool Keys:", list(camera_pool.cameras.keys()))
+    print("Last Active Source:", camera_pool.last_active_source)
+    
     if not active_cameras:
+        print("No active cameras in pool")
+        print("==========================")
         return {
             "human_count": 0,
             "ai_confidence": 0,
@@ -649,57 +657,27 @@ def get_live_status():
             "last_snapshot": "",
             "camera_status": "Offline"
         }
-
-    # Aggregate status across all cameras
-    human_count = 0
-    max_confidence = 0
-    any_danger = False
-    max_fps = 0.0
-    max_latency = 0.0
-    latest_detection_time = "--"
-    any_online = False
-    
-    for cam in active_cameras:
-        # Accumulate human count
-        human_count += getattr(cam, 'human_count', 0)
         
-        # Max confidence
-        conf = getattr(cam, 'current_confidence', 0)
-        if conf > max_confidence:
-            max_confidence = conf
-            
-        # Danger state
-        if getattr(cam, 'safety_state', 'SAFE') == "DANGER":
+    cam = active_cameras[0]
+    print("Human Count:", getattr(cam, 'human_count', 0))
+    print("Confidence:", getattr(cam, 'current_confidence', 0))
+    print("Safety:", getattr(cam, 'safety_state', 'SAFE'))
+    print("Camera Grabbed:", getattr(cam, 'grabbed', False))
+    print("==========================")
+    
+    any_danger = False
+    for c in active_cameras:
+        if getattr(c, 'safety_state', 'SAFE') == "DANGER":
             any_danger = True
             
-        # FPS
-        fps = getattr(cam, '_current_fps', 0.0)
-        if fps > max_fps:
-            max_fps = fps
-            
-        # Latency
-        lat = getattr(cam, 'latency_ms', 0.0)
-        if lat > max_latency:
-            max_latency = lat
-            
-        # Latest detection time
-        det_time = getattr(cam, 'last_detection_time', "--")
-        if det_time != "--":
-            if latest_detection_time == "--" or det_time > latest_detection_time:
-                latest_detection_time = det_time
-                
-        # Camera status
-        if getattr(cam, 'grabbed', False):
-            any_online = True
-
     return {
-        "human_count": human_count,
-        "ai_confidence": max_confidence,
-        "danger_state": "DANGER" if any_danger else "SAFE",
+        "human_count": getattr(cam, 'human_count', 0),
+        "ai_confidence": getattr(cam, 'current_confidence', 0),
+        "danger_state": getattr(cam, 'safety_state', 'SAFE'),
         "machine_state": "STOP" if any_danger else "RUN",
-        "fps": round(max_fps, 1) if max_fps > 0 else 20.0,
-        "latency": round(max_latency, 1) if max_latency > 0 else 8.0,
-        "last_detection_time": latest_detection_time,
+        "fps": round(getattr(cam, '_current_fps', 20.0), 1),
+        "latency": round(getattr(cam, 'latency_ms', 8.0), 1),
+        "last_detection_time": getattr(cam, 'last_detection_time', "--"),
         "last_snapshot": "Snapshot Active" if any_danger else "",
-        "camera_status": "Online" if any_online else "Offline"
+        "camera_status": "Online" if getattr(cam, 'grabbed', False) else "Offline"
     }
