@@ -1414,7 +1414,13 @@
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 1500);
             
-            const response = await fetch(checkUrl, { signal: controller.signal });
+            const response = await fetch(checkUrl, { 
+              signal: controller.signal,
+              headers: {
+                'bypass-tunnel-reminder': 'true',
+                'ngrok-skip-browser-warning': 'true'
+              }
+            });
             clearTimeout(timeoutId);
 
             if (response.status === 200) {
@@ -1454,7 +1460,13 @@
       const STATUS_URL = isLocal ? `${getResolvedEdgeUrl()}/status` : `${AI_SERVICE_URL}/status`;
 
       try {
-        const res = await fetch(STATUS_URL, { cache: "no-store" });
+        const res = await fetch(STATUS_URL, { 
+          cache: "no-store",
+          headers: {
+            'bypass-tunnel-reminder': 'true',
+            'ngrok-skip-browser-warning': 'true'
+          }
+        });
         const data = await res.json();
 
         const safetyBox = document.getElementById("safety-box");
