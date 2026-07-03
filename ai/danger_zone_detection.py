@@ -20,7 +20,7 @@ model = YOLO("yolov8n.pt")
 # 🛡️ MACHINE DANGER ZONE (RECTANGLE)
 # ==========================================
 MACHINE_ZONE = (360, 100, 620, 420)
-WARNING_ZONE = (220, 100, 360, 420)
+WARNING_ZONE = (260, 50, 630, 450)
 
 # ==========================================
 # 📊 CENTRALIZED SYNCHRONIZED STATE
