@@ -19,13 +19,8 @@ model = YOLO("yolov8n.pt")
 # ==========================================
 # 🛡️ MACHINE DANGER ZONE (RECTANGLE)
 # ==========================================
-MACHINE_ZONE = (360, 100, 620, 420)
-WARNING_ZONE = (
-    MACHINE_ZONE[0] - 80,
-    MACHINE_ZONE[1] - 80,
-    MACHINE_ZONE[2] + 80,
-    MACHINE_ZONE[3] + 80
-)
+MACHINE_ZONE = (360, 100, 620, 480)
+WARNING_ZONE = (260, 50, 630, 480)
 
 # ==========================================
 # 📊 CENTRALIZED SYNCHRONIZED STATE
@@ -45,7 +40,7 @@ system_status_lock = threading.Lock()
 
 ENTER_THRESHOLD = 1
 EXIT_THRESHOLD = 8
-FRAME_SKIP = 3  # Run YOLO inference every 3rd frame
+FRAME_SKIP = 2  # Run YOLO inference every 2nd frame
 EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 60.0))
 
 # ==========================================
@@ -508,8 +503,8 @@ class ThreadedCamera:
                 print(f"[CRITICAL_ERROR] Exception in update_inference loop: {loop_ex}")
                 traceback.print_exc()
                 
-            # Throttle loop to ~20 FPS (50ms sleep)
-            time.sleep(0.05)
+            # Throttle loop to 10ms sleep
+            time.sleep(0.01)
 
     def read(self):
         with self.read_lock:
