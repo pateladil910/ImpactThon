@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Protected Route Gatekeeper: Instant Guest Firewall -->
+    <script>
+      if (localStorage.getItem("isLoggedIn") !== "true") {
+        console.warn("Unauthorized access blocked. Redirecting to login gateway...");
+        window.location.replace("login.html");
+      }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Safety Shield | Video Sensor Uplink</title>
