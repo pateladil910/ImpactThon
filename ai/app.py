@@ -183,7 +183,12 @@ def status():
             "message": "TIMER EXPIRED - FORCE STOP"
         })
 
-    from danger_zone_detection import get_live_status
+    from flask import request
+    user_email = request.args.get("user_email", "")
+    from danger_zone_detection import get_live_status, camera_pool
+    if user_email and camera_pool.last_active_source and camera_pool.last_active_source in camera_pool.cameras:
+        camera_pool.cameras[camera_pool.last_active_source].recipient_email = user_email
+
     live_status = get_live_status()
     state = live_status["danger_state"]
     print(f"[TELEMETRY_POLL] Active Node Safety: {state} | Human Count: {live_status['human_count']} | Confidence: {live_status['ai_confidence']}%")

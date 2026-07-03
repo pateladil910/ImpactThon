@@ -9,7 +9,7 @@ let mailSent = false;
 // AI / Detection API
 router.post("/", async (req, res) => {
   try {
-    const { danger, confidence, userId, image, cameraName, factory, breachType, severity } = req.body;
+    const { danger, confidence, userId, image, cameraName, factory, breachType, severity, recipient_email } = req.body;
 
     // 🔥 EMAIL & INCIDENT LOGIC
     if (danger === true) {
@@ -77,7 +77,7 @@ router.post("/", async (req, res) => {
           "system@codevortex.in",
           targetName,
           image, // Pass the optional base64 image
-          targetEmail // Send to the specific user if found
+          recipient_email || targetEmail // Send to dynamic recipient if logged in, fallback to targetEmail
         );
         mailSent = true;
         console.log(`📧 Alert email sent to ${targetEmail || "Admin"}`);

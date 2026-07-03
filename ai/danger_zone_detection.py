@@ -82,6 +82,7 @@ class ThreadedCamera:
         self.latency_ms = 0.0
         self.last_detection_time = "--"
         self._current_fps = 20.0
+        self.recipient_email = ""
         
         self.capture_thread = None
         self.inference_thread = None
@@ -383,7 +384,8 @@ class ThreadedCamera:
                         "cameraName": f"Optical Node {self.source}",
                         "factory": "Factory A",
                         "breachType": "ZONE_INTRUSION",
-                        "severity": "DANGER"
+                        "severity": "DANGER",
+                        "recipient_email": self.recipient_email
                     }
                     try:
                         print(f"[POST] Dispatching incident to cloud backend: {backend_url}/api/detection...")
@@ -487,7 +489,8 @@ class ThreadedCamera:
                         "danger": False,
                         "confidence": 0,
                         "userId": "system",
-                        "cameraName": f"Optical Node {self.source}"
+                        "cameraName": f"Optical Node {self.source}",
+                        "recipient_email": self.recipient_email
                     }
                     try:
                         print(f"[POST] Notifying cloud backend that danger state cleared...")

@@ -1450,13 +1450,17 @@
     // ==========================================
     // 🛡 AI STATUS MONITOR
     // ==========================================
+    const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:5000"
+      : "https://impactthon-wjut.onrender.com";
+
     let lastSafety = null;
     let lastAction = null;
     let totalDangerIntrusions = 0;
 
     async function loadInitialIntrusionCount() {
       try {
-        const res = await fetch('/api/history');
+        const res = await fetch(`${API_BASE_URL}/api/history`);
         if (res.status === 200) {
           const data = await res.json();
           // Filter to count only DANGER events
@@ -1479,7 +1483,12 @@
       if (!activeCamera) return;
 
       const isLocal = isPrivateIP(activeCamera.cameraUrl);
-      const STATUS_URL = isLocal ? `${getResolvedEdgeUrl()}/status` : `${AI_SERVICE_URL}/status`;
+      let STATUS_URL = isLocal ? `${getResolvedEdgeUrl()}/status` : `${AI_SERVICE_URL}/status`;
+      
+      const userEmail = localStorage.getItem("username") || "";
+      if (userEmail) {
+        STATUS_URL += (STATUS_URL.includes("?") ? "&" : "?") + "user_email=" + encodeURIComponent(userEmail);
+      }
 
       try {
         const res = await fetch(STATUS_URL, { 
