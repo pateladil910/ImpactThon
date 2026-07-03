@@ -192,8 +192,45 @@ app.get("/api/test_camera", async (req, res) => {
   }
 });
 
-app.get("/api/status", (req, res) => {
-  res.json({ danger: true, confidence: 92 });
+app.get("/status", async (req, res) => {
+  try {
+    const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:10000";
+    const response = await axios.get(`${aiServiceUrl}/status`, { timeout: 3000 });
+    return res.status(200).json(response.data);
+  } catch (err) {
+    return res.status(200).json({
+      camera_status: "Offline",
+      human_count: 0,
+      ai_confidence: 0,
+      danger_state: "SAFE",
+      machine_state: "RUN",
+      fps: 0.0,
+      latency: 0.0,
+      last_detection_time: "--"
+    });
+  }
+});
+
+app.get("/api/status", async (req, res) => {
+  try {
+    const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:10000";
+    const response = await axios.get(`${aiServiceUrl}/status`, { timeout: 3000 });
+    const data = response.data;
+    return res.status(200).json({
+      ...data,
+      danger: data.danger_state === "DANGER",
+      confidence: data.ai_confidence,
+      zone: data.danger_state,
+      action: data.machine_state
+    });
+  } catch (err) {
+    return res.status(200).json({
+      danger: false,
+      confidence: 0,
+      zone: "SAFE",
+      action: "RUN"
+    });
+  }
 });
 
 // --- START OF ADDED/MODIFIED SECTION ---
