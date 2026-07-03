@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (edgeAgentUrl) {
       testUrl = edgeAgentUrl;
     } else if (isLocal) {
-      testUrl = "http://localhost:5000";
+      testUrl = "http://127.0.0.1:10000";
       showHUDToast('EDGE AGENT URL NEEDED', 'Private IP detected. Paste the ngrok URL in the Edge Agent field below for the camera to work.', 'warning');
     } else {
       testUrl = AI_SERVICE_URL;
@@ -845,8 +845,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       showHUDToast('SCANNING SUBNET', 'Sending multicast ONVIF probes & scanning port 554...', 'success');
 
       try {
-        // Query local edge agent discovery endpoint
-        const response = await fetch('http://localhost:5000/api/discover');
+        const edgeAgentInput = document.getElementById('edgeAgentUrl');
+        const edgeAgentUrlVal = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
+        const savedEdge = localStorage.getItem('edgeAgentUrl') || 'https://confider-celery-deskbound.ngrok-free.dev';
+        const targetUrl = edgeAgentUrlVal || savedEdge || AI_SERVICE_URL;
+
+        const response = await fetch(`${targetUrl}/api/discover`);
         const data = await response.json();
 
         if (data.success && data.devices) {
