@@ -223,9 +223,10 @@ class ThreadedCamera:
                     foot_x = (x1 + x2) // 2
                     foot_y = y2
                     
-                    # Check if bottom-center lies inside MACHINE_ZONE or WARNING_ZONE
-                    in_danger_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (foot_y >= MACHINE_ZONE[1])
-                    in_warning_zone = (WARNING_ZONE[0] <= foot_x <= WARNING_ZONE[2]) and (foot_y >= WARNING_ZONE[1])
+                    # Check if bounding box overlaps MACHINE_ZONE or WARNING_ZONE
+                    person_box = (x1, y1, x2, y2)
+                    in_danger_zone = box_overlap(person_box, MACHINE_ZONE)
+                    in_warning_zone = box_overlap(person_box, WARNING_ZONE)
                     print(f"[DEBUG_ZONE] Foot Point: ({foot_x},{foot_y}) | Inside Warning Zone: {in_warning_zone} | Inside Machine Zone: {in_danger_zone}")
                     
                     yolo_conf = float(box.conf[0].item())
