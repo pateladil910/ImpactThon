@@ -506,6 +506,22 @@ body {
     }
 }
 
+/* Warning State Styles */
+#safety-box.warning {
+    border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(245, 158, 11, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(245, 158, 11, 0.05);
+}
+
+#safety-box.warning::before {
+    background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.6), transparent);
+}
+
+#safety-box.warning .box-value {
+    color: var(--warning-yellow);
+    text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
 /* ===== CONTROL BUTTON PANELS ===== */
 .history-btn-wrapper {
     width: 100%;
