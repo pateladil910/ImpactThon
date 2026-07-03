@@ -20,6 +20,7 @@ model = YOLO("yolov8n.pt")
 # 🛡️ MACHINE DANGER ZONE (RECTANGLE)
 # ==========================================
 MACHINE_ZONE = (360, 100, 620, 420)
+WARNING_ZONE = (220, 100, 360, 420)
 
 # ==========================================
 # 📊 CENTRALIZED SYNCHRONIZED STATE
@@ -72,6 +73,7 @@ class ThreadedCamera:
         self.safety_state = "SAFE"
         self.current_confidence = 0
         self.danger_counter = 0
+        self.warning_counter = 0
         self.safe_counter = 0
         self._last_email_sent_time = 0.0
         self._last_safety_state = "SAFE"
@@ -185,18 +187,7 @@ class ThreadedCamera:
                 # Process Frame Details
                 frame = cv2.resize(frame, (640, 480))
                 danger_in_frame = False
-                
-                # Draw Machine Zone
-                cv2.rectangle(
-                    frame,
-                    (MACHINE_ZONE[0], MACHINE_ZONE[1]),
-                    (MACHINE_ZONE[2], MACHINE_ZONE[3]),
-                    (0, 255, 255),
-                    3
-                )
-                cv2.putText(frame, "MACHINE ZONE",
-                            (MACHINE_ZONE[0], MACHINE_ZONE[1] - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                warning_in_frame = False
                 
                 # YOLO detect humans only (Class 0)
                 t_inf_start = time.time()
@@ -226,15 +217,14 @@ class ThreadedCamera:
                 human_count = len(person_boxes)
                 ai_confidence = int(max(person_scores) * 100) if human_count > 0 else 0
                 
-                danger_in_frame = False
-                
                 for box in person_boxes:
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     foot_x = (x1 + x2) // 2
                     foot_y = y2
                     
-                    # Check if bottom-center lies inside MACHINE_ZONE
-                    in_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (MACHINE_ZONE[1] <= foot_y <= MACHINE_ZONE[3])
+                    # Check if bottom-center lies inside MACHINE_ZONE or WARNING_ZONE
+                    in_danger_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (MACHINE_ZONE[1] <= foot_y <= MACHINE_ZONE[3])
+                    in_warning_zone = (WARNING_ZONE[0] <= foot_x <= WARNING_ZONE[2]) and (WARNING_ZONE[1] <= foot_y <= WARNING_ZONE[3])
                     
                     yolo_conf = float(box.conf[0].item())
                     yolo_conf_pct = int(yolo_conf * 100)
@@ -245,29 +235,69 @@ class ThreadedCamera:
                     dist = np.sqrt((foot_x - mz_cx)**2 + (foot_y - mz_cy)**2)
                     calculated_conf = max(0, min(100, int(100 - (dist / 6))))
                     
-                    if in_zone:
+                    if in_danger_zone:
                         danger_in_frame = True
                         calculated_conf = 100
-                        color = (0, 0, 255)
+                        color = (0, 0, 255) # Red
                         label = f"DANGER (PERSON {yolo_conf_pct}%)"
+                    elif in_warning_zone:
+                        warning_in_frame = True
+                        color = (0, 165, 255) # Orange
+                        label = f"WARNING (PERSON {yolo_conf_pct}%)"
                     else:
-                        color = (0, 255, 0)
+                        color = (0, 255, 0) # Green
                         label = f"PERSON {yolo_conf_pct}% (SAFE {calculated_conf}%)"
                         
                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
                     cv2.putText(frame, label, (x1, y1 - 8),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+                                
+                # Draw Warning Zone (Orange if occupied, Yellow if clear)
+                warning_color = (0, 165, 255) if (warning_in_frame or danger_in_frame) else (0, 255, 255)
+                warning_label = "WARNING ZONE (OCCUPIED)" if (warning_in_frame or danger_in_frame) else "WARNING ZONE"
+                cv2.rectangle(
+                    frame,
+                    (WARNING_ZONE[0], WARNING_ZONE[1]),
+                    (WARNING_ZONE[2], WARNING_ZONE[3]),
+                    warning_color,
+                    3
+                )
+                cv2.putText(frame, warning_label,
+                            (WARNING_ZONE[0], WARNING_ZONE[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, warning_color, 2)
+
+                # Draw Danger Zone / Machine Zone (Red if breached, Yellow if clear)
+                danger_color = (0, 0, 255) if danger_in_frame else (0, 255, 255)
+                danger_label = "MACHINE ZONE (DANGER BREACH)" if danger_in_frame else "MACHINE ZONE"
+                cv2.rectangle(
+                    frame,
+                    (MACHINE_ZONE[0], MACHINE_ZONE[1]),
+                    (MACHINE_ZONE[2], MACHINE_ZONE[3]),
+                    danger_color,
+                    3
+                )
+                cv2.putText(frame, danger_label,
+                            (MACHINE_ZONE[0], MACHINE_ZONE[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, danger_color, 2)
                                     
                 # Debounce state machine
                 if danger_in_frame:
                     self.danger_counter += 1
+                    self.warning_counter = 0
+                    self.safe_counter = 0
+                elif warning_in_frame:
+                    self.warning_counter += 1
+                    self.danger_counter = 0
                     self.safe_counter = 0
                 else:
                     self.safe_counter += 1
                     self.danger_counter = 0
+                    self.warning_counter = 0
                     
                 if self.danger_counter >= ENTER_THRESHOLD:
                     new_state = "DANGER"
+                elif self.warning_counter >= ENTER_THRESHOLD:
+                    new_state = "WARNING"
                 elif self.safe_counter >= EXIT_THRESHOLD:
                     new_state = "SAFE"
                 else:
@@ -296,7 +326,7 @@ class ThreadedCamera:
                 # Check alert and database logging trigger conditions (DANGER state only)
                 trigger_email = False
                 if self.safety_state == "DANGER":
-                    if self._last_safety_state == "SAFE":
+                    if self._last_safety_state in ["SAFE", "WARNING"]:
                         trigger_email = True
                     elif now_time - self._last_email_sent_time >= EMAIL_ALERT_INTERVAL:
                         trigger_email = True
@@ -666,14 +696,20 @@ def get_live_status():
     print("==========================")
     
     any_danger = False
+    any_warning = False
     for c in active_cameras:
-        if getattr(c, 'safety_state', 'SAFE') == "DANGER":
+        c_state = getattr(c, 'safety_state', 'SAFE')
+        if c_state == "DANGER":
             any_danger = True
+        elif c_state == "WARNING":
+            any_warning = True
+            
+    danger_val = "DANGER" if any_danger else ("WARNING" if any_warning else "SAFE")
             
     return {
         "human_count": getattr(cam, 'human_count', 0),
         "ai_confidence": getattr(cam, 'current_confidence', 0),
-        "danger_state": getattr(cam, 'safety_state', 'SAFE'),
+        "danger_state": danger_val,
         "machine_state": "STOP" if any_danger else "RUN",
         "fps": round(getattr(cam, '_current_fps', 20.0), 1),
         "latency": round(getattr(cam, 'latency_ms', 8.0), 1),
