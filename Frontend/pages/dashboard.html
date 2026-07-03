@@ -1452,6 +1452,28 @@
     // ==========================================
     let lastSafety = null;
     let lastAction = null;
+    let totalDangerIntrusions = 0;
+
+    async function loadInitialIntrusionCount() {
+      try {
+        const res = await fetch('/api/history');
+        if (res.status === 200) {
+          const data = await res.json();
+          // Filter to count only DANGER events
+          totalDangerIntrusions = data.filter(doc => doc.Status === "DANGER").length;
+        }
+      } catch (err) {
+        console.warn("Failed to load initial intrusion count:", err);
+      }
+      updateHumanCountUI();
+    }
+
+    function updateHumanCountUI() {
+      const countEl = document.getElementById("hud-human-count");
+      if (countEl) {
+        countEl.innerText = totalDangerIntrusions;
+      }
+    }
 
     async function updateStatus() {
       if (!activeCamera) return;
@@ -1484,9 +1506,9 @@
           if (confVal) confVal.innerText = data.confidence + "%";
         }
 
-        if (document.getElementById("hud-human-count")) {
-          document.getElementById("hud-human-count").innerText = data.human_count !== undefined ? data.human_count : (data.safety === "DANGER" ? "1" : "0");
-        }
+        // Cumulative danger intrusions counter is rendered to hud-human-count
+        updateHumanCountUI();
+
         if (document.getElementById("hud-fps")) {
           document.getElementById("hud-fps").innerText = data.fps !== undefined ? Number(data.fps).toFixed(1) : "0.0";
         }
@@ -1500,6 +1522,9 @@
 
         if (data.safety !== lastSafety) {
           if (data.safety === "DANGER") {
+            totalDangerIntrusions++;
+            updateHumanCountUI();
+
             safetyStatus.innerText = "DANGER";
             safetyDesc.innerText = "Operator safety boundary breached!";
             safetyBox.classList.add("danger");
@@ -1572,6 +1597,7 @@
       loadCameras();
       initShiftWatchdog();
       startHealthDaemon();
+      loadInitialIntrusionCount();
 
       const tabs = document.querySelectorAll(".btn-grid-tab");
       tabs.forEach(tab => {
