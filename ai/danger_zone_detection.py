@@ -76,6 +76,7 @@ class ThreadedCamera:
         
         # State tracking isolated per camera stream instance
         self.safety_state = "SAFE"
+        self.machine_state = "RUN"
         self.current_confidence = 0
         self.danger_counter = 0
         self.warning_counter = 0
@@ -311,6 +312,7 @@ class ThreadedCamera:
                     
                 state_changed = (new_state != self.safety_state)
                 self.safety_state = new_state
+                self.machine_state = "STOP" if new_state == "DANGER" else "RUN"
                 self.current_confidence = ai_confidence
                 print(f"[DEBUG_ZONE] Current State: {self.safety_state} | Warning Zone Color: {'Orange' if (warning_in_frame or danger_in_frame) else 'Yellow'} | Machine Zone Color: {'Red' if danger_in_frame else 'Yellow'}")
                 
@@ -717,7 +719,7 @@ def get_live_status():
         "human_count": getattr(cam, 'human_count', 0),
         "ai_confidence": getattr(cam, 'current_confidence', 0),
         "danger_state": danger_val,
-        "machine_state": "STOP" if any_danger else "RUN",
+        "machine_state": getattr(cam, 'machine_state', 'RUN'),
         "fps": round(getattr(cam, '_current_fps', 20.0), 1),
         "latency": round(getattr(cam, 'latency_ms', 8.0), 1),
         "last_detection_time": getattr(cam, 'last_detection_time', "--"),
