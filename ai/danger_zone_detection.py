@@ -151,11 +151,20 @@ class ThreadedCamera:
                 print(f"[DEBUG] [CAM_THREAD] VideoCapture re-initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
                 continue
             
-            grabbed, frame = self.cap.read()
+            # Clear all buffered frames to eliminate latency build-up (real-time stream)
+            grabbed = False
+            while True:
+                ok = self.cap.grab()
+                if not ok:
+                    break
+                grabbed = True
+                
             if grabbed:
-                with self.read_lock:
-                    self.grabbed = grabbed
-                    self.raw_frame = frame
+                ok, frame = self.cap.retrieve()
+                if ok:
+                    with self.read_lock:
+                        self.grabbed = True
+                        self.raw_frame = frame
                 if not hasattr(self, '_capture_count'):
                     self._capture_count = 0
                 self._capture_count += 1
