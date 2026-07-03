@@ -23,7 +23,7 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
       // Resend free tier requires the From address to be onboarding@resend.dev
       from: 'AI Safety System <notifications@codevortex.in>',
       replyTo: userEmail,
-      to: recipientEmail || process.env.ADMIN_EMAIL || "codevortex131594@gmail.com",
+      to: recipientEmail || process.env.ADMIN_EMAIL || "adilp4534@gmail.com",
       subject: "🚨 Danger Alert Detected",
       html: `
         <div style="font-family: sans-serif; padding: 20px; background: #f4f4f4; border-radius: 8px; max-width: 600px; margin: auto;">
