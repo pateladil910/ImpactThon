@@ -19,8 +19,8 @@ model = YOLO("yolov8n.pt")
 # ==========================================
 # 🛡️ MACHINE DANGER ZONE (RECTANGLE)
 # ==========================================
-MACHINE_ZONE = (360, 100, 620, 480)
-WARNING_ZONE = (260, 50, 630, 480)
+MACHINE_ZONE = (360, 100, 600, 450)
+WARNING_ZONE = (240, 50, 620, 460)
 
 # ==========================================
 # 📊 CENTRALIZED SYNCHRONIZED STATE
@@ -151,20 +151,11 @@ class ThreadedCamera:
                 print(f"[DEBUG] [CAM_THREAD] VideoCapture re-initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
                 continue
             
-            # Clear all buffered frames to eliminate latency build-up (real-time stream)
-            grabbed = False
-            while True:
-                ok = self.cap.grab()
-                if not ok:
-                    break
-                grabbed = True
-                
+            grabbed, frame = self.cap.read()
             if grabbed:
-                ok, frame = self.cap.retrieve()
-                if ok:
-                    with self.read_lock:
-                        self.grabbed = True
-                        self.raw_frame = frame
+                with self.read_lock:
+                    self.grabbed = grabbed
+                    self.raw_frame = frame
                 if not hasattr(self, '_capture_count'):
                     self._capture_count = 0
                 self._capture_count += 1
