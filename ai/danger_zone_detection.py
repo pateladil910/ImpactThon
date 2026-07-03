@@ -411,7 +411,6 @@ class ThreadedCamera:
                         attachment_name = datetime.now(IST).strftime("incident_%Y%m%d_%H%M%S.jpg")
                         
                         # Save snapshot to disk
-                        import os
                         try:
                             snapshots_dir = os.path.join(os.path.dirname(__file__), "snapshots")
                             os.makedirs(snapshots_dir, exist_ok=True)
