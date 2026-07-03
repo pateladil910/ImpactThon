@@ -371,6 +371,26 @@ class ThreadedCamera:
                         print(f"[EVENT] event stored: {event_name} | Status: {self.safety_state} | Count: {human_count} | Email Status: {email_db_status}")
                     except Exception as db_err:
                         print(f"Error inserting event into MongoDB: {db_err}")
+
+                    # 🌐 POST event directly to Node.js backend to log in cloud DB and send cloud email alert
+                    import requests
+                    backend_url = os.environ.get("BACKEND_URL", "https://codevortex.in")
+                    payload = {
+                        "danger": True,
+                        "confidence": int(ai_confidence),
+                        "userId": "system",
+                        "image": img_b64,
+                        "cameraName": f"Optical Node {self.source}",
+                        "factory": "Factory A",
+                        "breachType": "ZONE_INTRUSION",
+                        "severity": "DANGER"
+                    }
+                    try:
+                        print(f"[POST] Dispatching incident to cloud backend: {backend_url}/api/detection...")
+                        res = requests.post(f"{backend_url}/api/detection", json=payload, timeout=5)
+                        print(f"[POST] Cloud backend response: {res.status_code} | {res.text}")
+                    except Exception as post_err:
+                        print(f"[POST] Failed to dispatch incident to cloud backend: {post_err}")
                     
                     if trigger_email:
                         self._last_email_sent_time = now_time
@@ -458,6 +478,22 @@ class ThreadedCamera:
                                     print(f"Error updating email status: {db_ex}")
 
                         threading.Thread(target=send_async, args=(event_id, html_body, img_b64, attachment_name), daemon=True).start()
+
+                if self._last_safety_state == "DANGER" and self.safety_state != "DANGER":
+                    # State transitioned OUT of danger! Send danger: False POST request
+                    import requests
+                    backend_url = os.environ.get("BACKEND_URL", "https://codevortex.in")
+                    payload = {
+                        "danger": False,
+                        "confidence": 0,
+                        "userId": "system",
+                        "cameraName": f"Optical Node {self.source}"
+                    }
+                    try:
+                        print(f"[POST] Notifying cloud backend that danger state cleared...")
+                        requests.post(f"{backend_url}/api/detection", json=payload, timeout=3)
+                    except Exception as clear_err:
+                        print(f"[POST] Failed to notify backend that danger cleared: {clear_err}")
 
                 self._last_safety_state = self.safety_state
                         

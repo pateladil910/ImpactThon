@@ -15,14 +15,18 @@ router.post("/", async (req, res) => {
     if (danger === true) {
       // 1. Save to Detection History
       try {
+        const mongoose = require("mongoose");
         await Detection.create({
           status: "DANGER",
           message: breachType === "NO_HELMET" ? "Helmet Violation detected" :
                    breachType === "NO_VEST" ? "Safety Vest Violation detected" :
                    "Human proximity breach",
+          event: "Human detected inside danger zone",
           timestamp: new Date(),
           timestamp_ist: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
-          userId: userId || "system" // Track which user made detection
+          photo_base64: image || "",
+          email_status: "sent",
+          userId: mongoose.Types.ObjectId.isValid(userId) ? userId : null
         });
         console.log("💾 Danger stored to Detection History");
       } catch (dbError) {
