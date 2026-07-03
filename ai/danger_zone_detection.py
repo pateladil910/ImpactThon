@@ -224,8 +224,8 @@ class ThreadedCamera:
                     foot_y = y2
                     
                     # Check if bottom-center lies inside MACHINE_ZONE or WARNING_ZONE
-                    in_danger_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (MACHINE_ZONE[1] <= foot_y <= MACHINE_ZONE[3])
-                    in_warning_zone = (WARNING_ZONE[0] <= foot_x <= WARNING_ZONE[2]) and (WARNING_ZONE[1] <= foot_y <= WARNING_ZONE[3])
+                    in_danger_zone = (MACHINE_ZONE[0] <= foot_x <= MACHINE_ZONE[2]) and (foot_y >= MACHINE_ZONE[1])
+                    in_warning_zone = (WARNING_ZONE[0] <= foot_x <= WARNING_ZONE[2]) and (foot_y >= WARNING_ZONE[1])
                     print(f"[DEBUG_ZONE] Foot Point: ({foot_x},{foot_y}) | Inside Warning Zone: {in_warning_zone} | Inside Machine Zone: {in_danger_zone}")
                     
                     yolo_conf = float(box.conf[0].item())
@@ -623,7 +623,7 @@ def generate_frames(source=0):
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
             
-            time.sleep(0.05) # Throttle output stream
+            time.sleep(0.01) # Throttle output stream
             frame_count += 1
             if frame_count > 1_000_000:
                 frame_count = 0
