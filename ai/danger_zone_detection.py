@@ -7,6 +7,10 @@ from ultralytics import YOLO
 import threading
 import time
 
+from datetime import datetime
+import pytz
+
+IST = pytz.timezone("Asia/Kolkata")
 # ==========================================
 # 🧠 LOAD YOLO MODEL
 # ==========================================
@@ -308,10 +312,6 @@ class ThreadedCamera:
                         img_b64 = base64.b64encode(buffer).decode("utf-8")
                     except Exception as e:
                         print(f"Error encoding snapshot: {e}")
-                    
-                    from datetime import datetime
-                    import pytz
-                    IST = pytz.timezone("Asia/Kolkata")
                     
                     email_db_status = "pending"
                     
