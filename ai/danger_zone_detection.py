@@ -374,7 +374,8 @@ class ThreadedCamera:
                         print(f"Error inserting event into MongoDB: {db_err}")
 
                     # 🌐 POST event directly to Node.js backend to log in cloud DB and send cloud email alert
-                    import requests
+                    import urllib.request
+                    import json
                     backend_url = os.environ.get("BACKEND_URL", "https://codevortex.in")
                     payload = {
                         "danger": True,
@@ -389,8 +390,16 @@ class ThreadedCamera:
                     }
                     try:
                         print(f"[POST] Dispatching incident to cloud backend: {backend_url}/api/detection...")
-                        res = requests.post(f"{backend_url}/api/detection", json=payload, timeout=5)
-                        print(f"[POST] Cloud backend response: {res.status_code} | {res.text}")
+                        data_bytes = json.dumps(payload).encode('utf-8')
+                        req = urllib.request.Request(
+                            f"{backend_url}/api/detection",
+                            data=data_bytes,
+                            headers={'Content-Type': 'application/json'},
+                            method='POST'
+                        )
+                        with urllib.request.urlopen(req, timeout=5) as response:
+                            resp_text = response.read().decode('utf-8')
+                            print(f"[POST] Cloud backend response: {response.status} | {resp_text}")
                     except Exception as post_err:
                         print(f"[POST] Failed to dispatch incident to cloud backend: {post_err}")
                     
@@ -483,7 +492,8 @@ class ThreadedCamera:
 
                 if self._last_safety_state == "DANGER" and self.safety_state != "DANGER":
                     # State transitioned OUT of danger! Send danger: False POST request
-                    import requests
+                    import urllib.request
+                    import json
                     backend_url = os.environ.get("BACKEND_URL", "https://codevortex.in")
                     payload = {
                         "danger": False,
@@ -494,7 +504,15 @@ class ThreadedCamera:
                     }
                     try:
                         print(f"[POST] Notifying cloud backend that danger state cleared...")
-                        requests.post(f"{backend_url}/api/detection", json=payload, timeout=3)
+                        data_bytes = json.dumps(payload).encode('utf-8')
+                        req = urllib.request.Request(
+                            f"{backend_url}/api/detection",
+                            data=data_bytes,
+                            headers={'Content-Type': 'application/json'},
+                            method='POST'
+                        )
+                        with urllib.request.urlopen(req, timeout=3) as response:
+                            pass
                     except Exception as clear_err:
                         print(f"[POST] Failed to notify backend that danger cleared: {clear_err}")
 
