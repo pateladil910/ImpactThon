@@ -103,8 +103,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // 1. Update safety status card
+        const humanVal = data.human_count !== undefined ? data.human_count : (data.safety !== "SAFE" ? "1" : "0");
+        if (hudHumanCount) hudHumanCount.textContent = humanVal;
+
         if (data.safety === "DANGER") {
-          if (hudHumanCount) hudHumanCount.textContent = "1";
           if (hudZoneStatus) {
             hudZoneStatus.textContent = 'DANGER';
             hudZoneStatus.style.color = 'var(--danger-red)';
@@ -115,8 +117,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             hudZoneStatusCard.style.boxShadow = 'inset 0 0 10px rgba(239, 68, 68, 0.2)';
           }
           triggerAlert();
+        } else if (data.safety === "WARNING") {
+          if (hudZoneStatus) {
+            hudZoneStatus.textContent = 'WARNING';
+            hudZoneStatus.style.color = 'var(--warning-yellow)';
+            hudZoneStatus.style.textShadow = '0 0 10px var(--warning-yellow)';
+          }
+          if (hudZoneStatusCard) {
+            hudZoneStatusCard.style.borderColor = 'var(--warning-yellow)';
+            hudZoneStatusCard.style.boxShadow = 'inset 0 0 10px rgba(234, 179, 8, 0.2)';
+          }
         } else {
-          if (hudHumanCount) hudHumanCount.textContent = '0';
           if (hudZoneStatus) {
             hudZoneStatus.textContent = 'SAFE';
             hudZoneStatus.style.color = 'var(--safe-green)';
