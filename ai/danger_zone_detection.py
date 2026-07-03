@@ -118,12 +118,16 @@ class ThreadedCamera:
             
             if self.cap and self.cap.isOpened():
                 print(f"[CAPTURE] Camera opened successfully for source: {self.source}")
+                print("[CAMERA]\nOpened = True")
                 t_read_start = time.time()
                 grabbed, frame = self.cap.read()
                 t_read_end = time.time()
                 print(f"[DEBUG] [CAM_THREAD] First frame read in {t_read_end - t_read_start:.3f}s. Success: {grabbed}")
                 
                 if grabbed:
+                    height, width = frame.shape[:2]
+                    print("[CAMERA]\nFrame Read = True")
+                    print(f"Frame Size = {width}x{height}")
                     with self.read_lock:
                         self.grabbed = grabbed
                         self.raw_frame = frame
@@ -145,6 +149,7 @@ class ThreadedCamera:
                 print(f"[DEBUG] [CAM_THREAD] VideoCapture re-initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
                 if self.cap and self.cap.isOpened():
                     print(f"[CAPTURE] Camera opened successfully for source: {self.source}")
+                    print("[CAMERA]\nOpened = True")
                 continue
             
             grabbed, frame = self.cap.read()
@@ -155,6 +160,10 @@ class ThreadedCamera:
                 if not hasattr(self, '_capture_count'):
                     self._capture_count = 0
                 self._capture_count += 1
+                if self._capture_count == 1:
+                    height, width = frame.shape[:2]
+                    print("[CAMERA]\nFrame Read = True")
+                    print(f"Frame Size = {width}x{height}")
                 if self._capture_count % 100 == 0:
                     print(f"Frame captured successfully (count: {self._capture_count})")
             

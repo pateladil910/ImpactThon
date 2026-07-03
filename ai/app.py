@@ -96,8 +96,8 @@ def construct_camera_source(url, username, password):
                 return url
             else:
                 if username or password:
-                    u_clean = unquote(username) if username else ""
-                    p_clean = unquote(password) if password else ""
+                    u_clean = quote(unquote(username)) if username else ""
+                    p_clean = quote(unquote(password)) if password else ""
                     if u_clean or p_clean:
                         return f"{schema}{u_clean}:{p_clean}@{remainder}"
             break
@@ -352,10 +352,13 @@ def test_camera():
         cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 4000)
 
         if not cap.isOpened():
+            print("[CAMERA]\nOpened = False")
             return jsonify({
                 "status": "error",
                 "message": "Camera stream failed to open. Verify credentials or camera channel."
             }), 200
+
+        print("[CAMERA]\nOpened = True")
 
         # Read 5 consecutive frames
         frame_count = 0
@@ -369,6 +372,8 @@ def test_camera():
                 frame_count += 1
                 if frame_count == 1:
                     height, width = frame.shape[:2]
+                    print("[CAMERA]\nFrame Read = True")
+                    print(f"Frame Size = {width}x{height}")
             time.sleep(0.04)
 
         duration = time.time() - start_time
