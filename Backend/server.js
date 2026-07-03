@@ -91,7 +91,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || origin === "null" || allowedOrigins.indexOf(origin) !== -1 || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+    const isCodevortex = origin && (origin.endsWith("codevortex.in") || origin.endsWith("codevortex.in/"));
+    if (!origin || origin === "null" || isCodevortex || allowedOrigins.indexOf(origin) !== -1 || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'), false);
