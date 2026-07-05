@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detection History | AI Safety Shield</title>
-  
+  <!-- <title>Detection History | AI Safety Shield</title> -->
+  <title>Industrial AI Safety Shield | Detection History</title>
   <!-- CSS -->
   <link rel="stylesheet" href="../css/index_new.css">
   <link rel="stylesheet" href="../css/dashboard.css" />
@@ -259,23 +259,23 @@
   <div class="cyber-hud-layer">
     <!-- Top Left Information System -->
     <div class="hud-tag hud-top-left">
-      <span>LOG_MONITORING: ONLINE</span>
+      <span>DETECTION HISTORY : ACTIVE</span>
       <span>SECURE_SHELL: CONNECTED</span>
       <span class="status-badge" style="margin-top: 10px;">
-        <span class="status-dot"></span> SECURE STORAGE
+        <span class="status-dot"></span> SYSTEM ONLINE
       </span>
     </div>
 
     <!-- Top Right Telemetry Details -->
     <div class="hud-tag hud-top-right">
-      <span>TELEMETRY_LOG_PIPELINE</span>
-      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: 8ms</span>
+      <span>EVENT DATABASE</span>
+      <span id="system-latency" style="color: var(--primary-neon);">RESPONSE: 8ms</span>
       <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
     </div>
 
     <!-- Bottom Left System Log -->
     <div class="hud-tag hud-bottom-left">
-      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+      <span>AI SAFETY SHIELD • DETECTION HISTORY</span>
     </div>
   </div>
 
@@ -287,7 +287,7 @@
         <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
         </svg>
-        <span>AI Safety Shield</span>
+        <span>Industrial AI Safety Shield</span>
       </a>
 
       <!-- Unified Menu Container -->
@@ -296,9 +296,9 @@
             <li><a href="index.html">Home</a></li>
             <li><a href="dashboard.html">Dashboard</a></li>
             <li><a href="plant_map.html">Plant Map</a></li>
-            <li><a href="chart.html">Danger Analytics</a></li>
-            <li><a href="history.html" class="active">Detection Logs</a></li>
-            <li><a href="camera_setup.html">Camera Setup</a></li>
+            <li><a href="chart.html">Safety Analytics</a></li>
+            <li><a href="history.html" class="active">Detection History</a></li>
+            <li><a href="camera_setup.html">Camera Configuration</a></li>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="learn-more.html">How It Works</a></li>
             <li class="admin-only-nav"><a href="diagnostics.html">Diagnostics</a></li>
@@ -331,14 +331,14 @@
       <div class="history-container">
 
         <div class="history-header">
-          <h2>📜 Operator Detection Logs</h2>
+          <h2>📜 Operator Detection History</h2>
 
           <div class="header-actions">
             <a href="chart.html" class="action-btn">
-              📊 View Danger Analytics
+              📊 View Safety Analytics
             </a>
             <button class="download-btn" onclick="downloadExcel()">
-              ⬇ Download Excel Database
+              ⬇ Download Excel Report
             </button>
           </div>
         </div>
@@ -348,8 +348,8 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Event</th>
-                <th>Status</th>
+                <th>Detection Event</th>
+                <th>Safety Status</th>
                 <th>Date</th>
                 <th>Time</th>
                 <th>Photos</th>
@@ -364,7 +364,7 @@
 
       <div class="back-btn-container">
         <a href="dashboard.html" class="back-clean">
-          ⬅ Return to Console
+          ⬅ Back to Dashboard
         </a>
       </div>
 
@@ -382,7 +382,8 @@
             <span class="tag">AI SAFETY SHIELD</span>
           </a>
           <p class="cv-footer-desc">
-            Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing.
+            An AI-powered industrial safety platform that combines Computer Vision, intelligent monitoring, and automated emergency response to protect workers and prevent workplace accidents.
+            <!-- Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing. -->
           </p>
           <div class="cv-status-pill">
             <span class="cv-status-dot"></span>
@@ -393,19 +394,19 @@
         <div class="cv-footer-col">
           <h4>Platform</h4>
           <ul>
-            <li><a href="dashboard.html">Live Operator Dashboard</a></li>
-            <li><a href="plant_map.html">Factory Plant Map</a></li>
-            <li><a href="chart.html">Danger Analytics</a></li>
-            <li><a href="history.html">Detection Event Logs</a></li>
+            <li><a href="dashboard.html">Safety Dashboard</a></li>
+            <li><a href="plant_map.html">Factory Monitoring Map</a></li>
+            <li><a href="chart.html">Safety Analytics</a></li>
+            <li><a href="history.html">Detection Event History</a></li>
           </ul>
         </div>
 
         <div class="cv-footer-col">
           <h4>Hardware</h4>
           <ul>
-            <li><a href="camera_setup.html">AI Camera Setup</a></li>
-            <li><a href="diagnostics.html">Diagnostic Matrix</a></li>
-            <li><a href="notifications.html">System Alerts</a></li>
+            <li><a href="camera_setup.html">Camera Configuration</a></li>
+            <li><a href="diagnostics.html">System Diagnostic</a></li>
+            <li><a href="notifications.html">System Center</a></li>
             <li><a href="admin.html">Admin Console</a></li>
           </ul>
         </div>
@@ -414,9 +415,9 @@
           <h4>Resources</h4>
           <ul>
             <li><a href="learn-more.html">How It Works</a></li>
-            <li><a href="contact.html">Contact Engineering</a></li>
-            <li><a href="solution.html">Solution Matrix</a></li>
-            <li><a href="login.html">Operator Gateway</a></li>
+            <li><a href="contact.html">Contact Support</a></li>
+            <li><a href="solution.html">Solution Overview</a></li>
+            <li><a href="login.html">Operator login</a></li>
           </ul>
         </div>
       </div>
@@ -582,7 +583,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="6" style="text-align:center; opacity:0.6; padding: 30px;">
-              History service temporarily offline
+              Detection history service is temporarily unavailable.
             </td>
           </tr>
         `;
