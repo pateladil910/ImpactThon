@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Smart Safety System | Edge AI Diagnostics & Node Health</title>
-  
+  <!-- <title>AI Smart Safety System | Edge AI Diagnostics & Node Health</title> -->
+  <title>Industrial AI Safety Shield | System Diagnostics</title>
   <!-- Access Guard Rail -->
   <script>
     if (localStorage.getItem("isLoggedIn") !== "true" || localStorage.getItem("userRole") !== "admin") {
@@ -32,24 +32,24 @@
   <div class="cyber-hud-layer">
     <!-- Top Left Information System -->
     <div class="hud-tag hud-top-left">
-      <span>DIAGNOSTICS_ENGINE: ACTIVE</span>
-      <span>NODE_MONITOR: RUNNING</span>
+      <span>SYSTEM DIAGNOSTICS : ACTIVE</span>
+      <span>AI MONITOR: RUNNING</span>
       <span class="status-badge" style="margin-top: 10px;">
-        <span class="status-dot"></span> hardware uplink synced
+        <span class="status-dot"></span> ALL SYSTEM ONLINE
       </span>
     </div>
 
     <!-- Top Right Telemetry Details -->
     <div class="hud-tag hud-top-right">
-      <span>SYS_ANALYSIS_CHANNEL</span>
-      <span>SECURE CORE PROT</span>
-      <span id="system-latency" style="color: var(--primary-neon);">LATENCY: --ms</span>
+      <span>AI SYSTEM MONITOR</span>
+      <span>SECURE PROTECTION</span>
+      <span id="system-latency" style="color: var(--primary-neon);">RESPONSE: --ms</span>
       <span id="system-clock" style="color: var(--primary-neon); margin-top: 4px;">SYSTEM TIME: --:--:-- UTC</span>
     </div>
 
     <!-- Bottom Left System Log -->
     <div class="hud-tag hud-bottom-left">
-      <span>SECURE SHIELD CORE &bull; PROT_LVL_9</span>
+      <span>AI SAFETY SHIELD • SYSTEM DIAGNOSTICS</span>
     </div>
   </div>
 
@@ -61,7 +61,7 @@
         <svg class="logo-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"></path>
         </svg>
-        <span>AI Safety Shield</span>
+        <span>Industrial AI Safety Shield</span>
       </a>
 
       <!-- Unified Menu Container -->
@@ -70,13 +70,13 @@
             <li><a href="index.html">Home</a></li>
             <li><a href="dashboard.html">Dashboard</a></li>
             <li><a href="plant_map.html">Plant Map</a></li>
-            <li><a href="chart.html">Danger Analytics</a></li>
-            <li><a href="history.html">Detection Logs</a></li>
-            <li><a href="camera_setup.html">Camera Setup</a></li>
+            <li><a href="chart.html">Safety Analytics</a></li>
+            <li><a href="history.html">Detection History</a></li>
+            <li><a href="camera_setup.html">Camera Configuration</a></li>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="learn-more.html">How It Works</a></li>
-            <li class="admin-only-nav"><a href="diagnostics.html" class="active">Diagnostics</a></li>
-            <li class="admin-only-nav"><a href="notifications.html">Alerts</a></li>
+            <li class="admin-only-nav"><a href="diagnostics.html" class="active">System Diagnostics</a></li>
+            <li class="admin-only-nav"><a href="notifications.html">Alerts Center</a></li>
             <li class="admin-only-nav"><a href="incident_log.html">Incident Logs</a></li>
             <li class="admin-only-nav"><a href="admin.html">Admin</a></li>
         </ul>
@@ -103,8 +103,8 @@
     <main class="main diagnostics-container">
 
       <div class="diagnostics-header">
-        <h1>Edge AI Diagnostics & Node Health</h1>
-        <p class="subtitle">Real-time telemetry of compute nodes, hardware loads, IP gateway jitters, and deep learning inference metrics.</p>
+        <h1>Industrial AI System Diagnostics</h1>
+        <p class="subtitle">Monitor the real-time health, performance, and operational status of the AI Safety Shield, industrial controllers, and connected monitoring devices.</p>
       </div>
 
       <!-- HARDWARE LOAD METRICS GRIDS -->
@@ -112,7 +112,7 @@
         
         <!-- CPU Load Circle -->
         <div class="resource-card">
-          <h3>Compute Load (CPU)</h3>
+          <h3>CPU Utilization</h3>
           <div class="gauge-wrapper">
             <svg class="progress-ring" width="160" height="160">
               <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.03)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
@@ -120,12 +120,12 @@
             </svg>
             <div id="cpu-percent" class="gauge-value">--%</div>
           </div>
-          <div class="resource-footer">Intel Xeon Edge Controller</div>
+          <div class="resource-footer">Industrial Control Processor</div>
         </div>
 
         <!-- RAM Allocation Circle -->
         <div class="resource-card">
-          <h3>Memory Usage (RAM)</h3>
+          <h3>Memory Utilization</h3>
           <div class="gauge-wrapper">
             <svg class="progress-ring" width="160" height="160">
               <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.03)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
@@ -133,12 +133,12 @@
             </svg>
             <div id="ram-percent" class="gauge-value">--%</div>
           </div>
-          <div class="resource-footer">Shared Edge Buffer Allocation</div>
+          <div class="resource-footer">System Memory Allocation</div>
         </div>
 
         <!-- GPU Core Temperature Circle -->
         <div class="resource-card">
-          <h3>Edge Accelerator Temp</h3>
+          <h3>AI Processor Temperature</h3>
           <div class="gauge-wrapper">
             <svg class="progress-ring" width="160" height="160">
               <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.03)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
@@ -146,7 +146,7 @@
             </svg>
             <div id="temp-value" class="gauge-value">--°C</div>
           </div>
-          <div class="resource-footer">NVIDIA Jetson Core Sentinel</div>
+          <div class="resource-footer">AI Processing Unit</div>
         </div>
 
       </div>
@@ -156,20 +156,20 @@
 
         <!-- Inference Velocity Speedometer -->
         <div class="diagnostics-card performance-panel">
-          <h2>🧠 Neural Engine Inference Telemetry</h2>
-          <span class="section-desc">Active benchmarking of deep-learning proximity calculations.</span>
+          <h2>🧠 AI Detection Performance</h2>
+          <span class="section-desc">Real-time monitoring of AI detection speed and system performance.</span>
           
           <div class="metrics-shelf">
             <div class="metric-block">
-              <span class="metric-label">YOLO Inference Time</span>
+              <span class="metric-label">AI Detection Time</span>
               <span id="inference-time" class="metric-number-highlight">18.4 ms</span>
               <span class="metric-sublabel">Geometric coordinate parse</span>
             </div>
             
             <div class="metric-block">
-              <span class="metric-label">Execution Velocity</span>
+              <span class="metric-label">Processing Speed</span>
               <span id="neural-fps" class="metric-number-highlight text-cyan">58.2 FPS</span>
-              <span class="metric-sublabel">Frames processed/second</span>
+              <span class="metric-sublabel">Camera frames per second</span>
             </div>
           </div>
 
@@ -183,7 +183,7 @@
               <span class="text-cyan">128 / 128 (100% capacity)</span>
             </div>
             <div class="spec-row">
-              <span>Floating Intercept Relay Delay</span>
+              <span>Emergency Response Delay</span>
               <span class="text-green">0.45 ms (contactor limit)</span>
             </div>
           </div>
@@ -191,14 +191,14 @@
 
         <!-- Camera Network Gateway Health -->
         <div class="diagnostics-card camera-health-panel">
-          <h2>🔌 Camera Gateway Network Jitters</h2>
-          <span class="section-desc">Gateway logs, pings, and frame buffer health of active surveillance streams.</span>
+          <h2>📹 Camera Network Status</h2>
+          <span class="section-desc">Monitor the operational status, network response, and connectivity of all AI surveillance cameras.</span>
           
           <div class="camera-nodes-list">
             
             <div class="camera-node-row">
               <div class="node-info">
-                <span class="node-name">📹 Camera Node 1 (Operator Sector A)</span>
+                <span class="node-name">📹 Camera 01 – Production Area A</span>
                 <span class="node-ip">192.168.10.45 &bull; <span class="text-green">ONLINE</span></span>
               </div>
               <div class="node-ping-graph">
@@ -215,7 +215,7 @@
 
             <div class="camera-node-row">
               <div class="node-info">
-                <span class="node-name">📹 Camera Node 2 (Relay Contactor B)</span>
+                <span class="node-name">📹 Camera 02 – Machine Area B</span>
                 <span class="node-ip">192.168.10.46 &bull; <span class="text-green">ONLINE</span></span>
               </div>
               <div class="node-ping-graph">
@@ -232,7 +232,7 @@
 
             <div class="camera-node-row">
               <div class="node-info">
-                <span class="node-name">📹 USB Test Input / Core Webcam</span>
+                <span class="node-name">📹 USB Test Input / Core Camera</span>
                 <span class="node-ip">DEV_UVC_USB001 &bull; <span class="text-green">ACTIVE</span></span>
               </div>
               <div class="node-ping-graph">
@@ -261,15 +261,15 @@
             <span class="dot-green"></span>
           </div>
           <div class="terminal-title">LIVE SYSTEM UPLINK DIAGNOSTICS &bull; terminal_io</div>
-          <span class="status-badge-inline">stream active</span>
+          <span class="status-badge-inline">stream active/ live</span>
         </div>
         
         <div id="terminal-body" class="terminal-body">
-          <div class="terminal-line"><span class="line-time">[23:10:01]</span> <span class="line-status status-ok">[OK]</span> SECURE_PLC_CONTROLLER_SYNC: Connection verified at 115200 baud.</div>
-          <div class="terminal-line"><span class="line-time">[23:10:02]</span> <span class="line-status status-ok">[OK]</span> NEURAL_ENGINE_CALIBRATED: Acceleration model successfully pinned to GPU core.</div>
-          <div class="terminal-line"><span class="line-time">[23:10:04]</span> <span class="line-status status-ok">[OK]</span> ESTABLISHED_CAM_STREAM: Ingest core listening on 192.168.10.45.</div>
-          <div class="terminal-line"><span class="line-time">[23:10:05]</span> <span class="line-status status-warn">[WARN]</span> FRAME_BUFFER_JITTER: Latency deviation spikes up to 12ms. Restructuring buffer queues.</div>
-          <div class="terminal-line"><span class="line-time">[23:10:07]</span> <span class="line-status status-ok">[OK]</span> RESOLVED_QUEUE_OVERLAY: Buffer queues aligned. Real-time stream synced.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:01]</span> <span class="line-status status-ok">[OK]</span> Machine Controller Connected: Connection verified at 115200 baud.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:02]</span> <span class="line-status status-ok">[OK]</span> AI Detection Engine Ready: Acceleration model successfully pinned to GPU core.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:04]</span> <span class="line-status status-ok">[OK]</span> Camera Connected Successfully: Ingest core listening on 192.168.10.45.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:05]</span> <span class="line-status status-warn">[WARN]</span> Temporary Camera Delay: Latency deviation spikes up to 12ms. Restructuring buffer queues.</div>
+          <div class="terminal-line"><span class="line-time">[23:10:07]</span> <span class="line-status status-ok">[OK]</span> Camera Stream Restored: Buffer queues aligned. Real-time stream synced.</div>
         </div>
       </div>
 
@@ -289,7 +289,8 @@
             <span class="tag">AI SAFETY SHIELD</span>
           </a>
           <p class="cv-footer-desc">
-            Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing.
+           An AI-powered industrial safety platform that combines Computer Vision, real-time monitoring, and intelligent emergency response to prevent workplace accidents and protect workers.
+            <!-- Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing. -->
           </p>
           <div class="cv-status-pill">
             <span class="cv-status-dot"></span>
@@ -300,10 +301,10 @@
         <div class="cv-footer-col">
           <h4>Platform</h4>
           <ul>
-            <li><a href="dashboard.html">Live Operator Dashboard</a></li>
-            <li><a href="plant_map.html">Factory Plant Map</a></li>
-            <li><a href="chart.html">Danger Analytics</a></li>
-            <li><a href="history.html">Detection Event Logs</a></li>
+            <li><a href="dashboard.html">Safety Dashboard</a></li>
+            <li><a href="plant_map.html">Factory Monitoring Map</a></li>
+            <li><a href="chart.html">System Analytics</a></li>
+            <li><a href="history.html">Detection Event History</a></li>
           </ul>
         </div>
 
@@ -321,9 +322,9 @@
           <h4>Resources</h4>
           <ul>
             <li><a href="learn-more.html">How It Works</a></li>
-            <li><a href="contact.html">Contact Engineering</a></li>
-            <li><a href="solution.html">Solution Matrix</a></li>
-            <li><a href="login.html">Operator Gateway</a></li>
+            <li><a href="contact.html">Contact Support</a></li>
+            <li><a href="solution.html">Solution Overview</a></li>
+            <li><a href="login.html">Operator Login</a></li>
           </ul>
         </div>
       </div>
