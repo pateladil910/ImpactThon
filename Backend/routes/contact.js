@@ -3,8 +3,14 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 const Contact = require("../models/Contact");
 
-const { Resend } = require("resend");
-const resend = new Resend('re_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr');
+// Reuse working Gmail credentials
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'adilp4534@gmail.com',
+    pass: 'fpdkyriibohtspan'
+  }
+});
 
 router.post("/", async (req, res) => {
   try {
@@ -14,17 +20,17 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ success: false, msg: "Please fill all fields" });
     }
 
-    // 1. Save to Database for Admin Panel (Unchanged)
+    // 1. Save to Database for Admin Panel
     const newContact = await Contact.create({
       name,
       email,
       message
     });
 
-    // 2. Send Email via Resend API
+    // 2. Send Email via Gmail SMTP
     try {
-      const { data, error } = await resend.emails.send({
-        from: 'CodeVortex System <notifications@codevortex.in>', // Using Verified Domain
+      const mailOptions = {
+        from: `"CodeVortex System" <adilp4534@gmail.com>`,
         replyTo: email,
         to: "codevortex131594@gmail.com",
         subject: `New Contact Message from ${name}`,
@@ -38,13 +44,9 @@ router.post("/", async (req, res) => {
             <p style="background: white; padding: 15px; border-radius: 5px;">${message}</p>
           </div>
         `
-      });
+      };
 
-      if (error) {
-        console.error("❌ RESEND API ERROR:", error);
-        throw new Error(error.message);
-      }
-
+      await transporter.sendMail(mailOptions);
       console.log("✅ Contact email sent successfully");
 
       return res.status(200).json({

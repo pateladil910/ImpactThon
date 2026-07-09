@@ -1,27 +1,29 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const apiKey = process.env.RESEND_API_KEY || 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr';
-if (apiKey === 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr') {
-  console.warn("⚠️ Warning: Using the default hardcoded Resend API key which has been revoked by GitHub Secret Scanner. Please configure the RESEND_API_KEY environment variable with a new key.");
-}
-const resend = new Resend(apiKey);
+// Reuse the working Gmail App Password from mailer.py
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'adilp4534@gmail.com',
+    pass: 'fpdkyriibohtspan'
+  }
+});
 
 const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null, recipientEmail = null) => {
   console.log(`📧 sendAlertEmail triggering for: ${userName}`);
 
-  // Create image HTML if an image was provided (UNTOUCHED)
+  // Create image HTML if an image was provided
   const imageHtml = imageBase64
     ? `<div style="margin-top: 20px; text-align: center;">
          <img src="${imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`}" 
-              alt="Detection Snapshot" 
-              style="max-width: 100%; border-radius: 5px; border: 2px solid #d9534f;" />
+               alt="Detection Snapshot" 
+               style="max-width: 100%; border-radius: 5px; border: 2px solid #d9534f;" />
        </div>`
     : '';
 
   try {
-    const { data, error } = await resend.emails.send({
-      // Resend free tier requires the From address to be onboarding@resend.dev
-      from: 'AI Safety System <notifications@codevortex.in>',
+    const mailOptions = {
+      from: `"AI Safety System" <adilp4534@gmail.com>`,
       replyTo: userEmail,
       to: recipientEmail || process.env.ADMIN_EMAIL || "adilp4534@gmail.com",
       subject: "🚨 Danger Alert Detected",
@@ -33,14 +35,19 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
           <p style="background: white; padding: 15px; border-left: 4px solid #d9534f; font-size: 16px;">${message}</p>
           ${imageHtml}
         </div>`
-    });
+    };
 
-    if (error) {
-      console.error("❌ RESEND API ERROR:", error);
-      throw new Error(error.message);
+    if (imageBase64) {
+      const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      mailOptions.attachments = [{
+        filename: 'incident_snapshot.jpg',
+        content: Buffer.from(cleanBase64, 'base64'),
+        cid: 'incident_snapshot'
+      }];
     }
 
-    console.log("✅ Mail response ID:", data.id);
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Mail response ID:", info.messageId);
     return true;
   } catch (error) {
     console.error("❌ GMAIL ALERT ERROR:", error.message);
@@ -51,8 +58,8 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
 const sendResetPasswordEmail = async (recipientEmail, code) => {
   console.log(`📧 Sending Reset Password Email to: ${recipientEmail}`);
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'AI Safety System <notifications@codevortex.in>',
+    const mailOptions = {
+      from: `"AI Safety System" <adilp4534@gmail.com>`,
       to: recipientEmail,
       subject: "🔒 Password Reset Verification Code",
       html: `
@@ -64,14 +71,10 @@ const sendResetPasswordEmail = async (recipientEmail, code) => {
           </div>
           <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 0;">This code is valid for 15 minutes. If you did not request this reset, please ignore this email.</p>
         </div>`
-    });
+    };
 
-    if (error) {
-      console.error("❌ RESEND API RESET ERROR:", error);
-      throw new Error(error.message);
-    }
-
-    console.log("✅ Reset Mail sent response ID:", data.id);
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Reset Mail sent response ID:", info.messageId);
     return true;
   } catch (error) {
     console.error("❌ RESET MAIL ERROR:", error.message);
