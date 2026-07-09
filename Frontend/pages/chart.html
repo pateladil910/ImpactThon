@@ -663,9 +663,7 @@ s
       if (!dateValue) return;
 
       try {
-        const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
-          ? "http://localhost:5000"
-          : "https://impactthon-wjut.onrender.com";
+        const API_BASE_URL = window.API_BASE_URL || ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") ? "http://localhost:5000" : "https://impactthon-wjut.onrender.com");
 
         const response = await fetch(`${API_BASE_URL}/api/analytics/data?type=${type}&date=${dateValue}`);
         const result = await response.json();
@@ -735,7 +733,7 @@ s
   -->
 
   <!-- Auth and Mobile Menu Handler -->
-  <script src="../js/auth.js"></script>
+
 
 
   <!-- FUTURISTIC LIVE TELEMETRY FOOTER CLOCK -->

@@ -376,7 +376,8 @@ class ThreadedCamera:
                     # 🌐 POST event directly to Node.js backend to log in cloud DB and send cloud email alert
                     import urllib.request
                     import json
-                    backend_url = os.environ.get("BACKEND_URL", "https://codevortex.in")
+                    import ssl
+                    backend_url = os.environ.get("BACKEND_URL", "https://www.codevortex.in")
                     payload = {
                         "danger": True,
                         "confidence": int(ai_confidence),
@@ -397,7 +398,8 @@ class ThreadedCamera:
                             headers={'Content-Type': 'application/json'},
                             method='POST'
                         )
-                        with urllib.request.urlopen(req, timeout=5) as response:
+                        context = ssl._create_unverified_context()
+                        with urllib.request.urlopen(req, context=context, timeout=5) as response:
                             resp_text = response.read().decode('utf-8')
                             print(f"[POST] Cloud backend response: {response.status} | {resp_text}")
                     except Exception as post_err:
@@ -493,7 +495,8 @@ class ThreadedCamera:
                     # State transitioned OUT of danger! Send danger: False POST request
                     import urllib.request
                     import json
-                    backend_url = os.environ.get("BACKEND_URL", "https://codevortex.in")
+                    import ssl
+                    backend_url = os.environ.get("BACKEND_URL", "https://www.codevortex.in")
                     payload = {
                         "danger": False,
                         "confidence": 0,
@@ -510,7 +513,8 @@ class ThreadedCamera:
                             headers={'Content-Type': 'application/json'},
                             method='POST'
                         )
-                        with urllib.request.urlopen(req, timeout=3) as response:
+                        context = ssl._create_unverified_context()
+                        with urllib.request.urlopen(req, context=context, timeout=3) as response:
                             pass
                     except Exception as clear_err:
                         print(f"[POST] Failed to notify backend that danger cleared: {clear_err}")
