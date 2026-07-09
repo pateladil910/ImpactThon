@@ -940,6 +940,28 @@
                 // Model Safety Weights: 97% - 100%
                 const accVal = Math.floor(97 + Math.random() * 4);
                 updateTelemetryMetric('accuracy-health', 'accuracy-health-bar', accVal, '%');
+
+                // Live AI Safety Status - AI Detection Accuracy: 98.2% - 99.4%
+                const confVal = (98.2 + Math.random() * 1.2).toFixed(1);
+                const confText = document.getElementById('confidence-counter');
+                const confBar = document.getElementById('confidence-bar');
+                if (confText) confText.textContent = confVal + '%';
+                if (confBar) confBar.style.width = confVal + '%';
+
+                // Live AI Safety Status - Emergency Response: 6ms - 11ms
+                const latValHUD = Math.floor(6 + Math.random() * 6);
+                const latText = document.getElementById('latency-counter');
+                if (latText) latText.textContent = latValHUD + 'ms';
+
+                // Live AI Safety Status - Active Operator Count: fluctuates between 2 and 4
+                const opsVal = Math.floor(2 + Math.random() * 3);
+                const opsText = document.getElementById('operators-counter');
+                if (opsText) opsText.textContent = opsVal;
+
+                // Real-Time Metrics Box - SYSTEM UPTIME: 99.96% - 99.99%
+                const uptimeVal = (99.96 + Math.random() * 0.03).toFixed(2);
+                const uptimeText = document.getElementById('metric-uptime');
+                if (uptimeText) uptimeText.textContent = uptimeVal + '%';
             }, 2500);
         }, 1500);
     }
