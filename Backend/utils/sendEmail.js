@@ -1,26 +1,22 @@
 const { Resend } = require("resend");
 
 const apiKey = process.env.RESEND_API_KEY || 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr';
-if (apiKey === 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr') {
-  console.warn("⚠️ Warning: Using the default hardcoded Resend API key which has been revoked by GitHub Secret Scanner. Please configure the RESEND_API_KEY environment variable with a new key.");
-}
 const resend = new Resend(apiKey);
 
 const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null, recipientEmail = null) => {
   console.log(`📧 sendAlertEmail triggering for: ${userName}`);
 
-  // Create image HTML if an image was provided (UNTOUCHED)
+  // Create image HTML if an image was provided
   const imageHtml = imageBase64
     ? `<div style="margin-top: 20px; text-align: center;">
          <img src="${imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`}" 
-              alt="Detection Snapshot" 
-              style="max-width: 100%; border-radius: 5px; border: 2px solid #d9534f;" />
+               alt="Detection Snapshot" 
+               style="max-width: 100%; border-radius: 5px; border: 2px solid #d9534f;" />
        </div>`
     : '';
 
   try {
     const { data, error } = await resend.emails.send({
-      // Resend free tier requires the From address to be onboarding@resend.dev
       from: 'AI Safety System <notifications@codevortex.in>',
       replyTo: userEmail,
       to: recipientEmail || process.env.ADMIN_EMAIL || "adilp4534@gmail.com",

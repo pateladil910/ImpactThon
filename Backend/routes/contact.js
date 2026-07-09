@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const nodemailer = require("nodemailer");
 const Contact = require("../models/Contact");
-
 const { Resend } = require("resend");
-const resend = new Resend('re_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr');
 
 router.post("/", async (req, res) => {
   try {
@@ -14,17 +11,20 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ success: false, msg: "Please fill all fields" });
     }
 
-    // 1. Save to Database for Admin Panel (Unchanged)
+    // 1. Save to Database for Admin Panel
     const newContact = await Contact.create({
       name,
       email,
       message
     });
 
+    const apiKey = process.env.RESEND_API_KEY || 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr';
+    const resend = new Resend(apiKey);
+
     // 2. Send Email via Resend API
     try {
       const { data, error } = await resend.emails.send({
-        from: 'CodeVortex System <notifications@codevortex.in>', // Using Verified Domain
+        from: 'CodeVortex System <notifications@codevortex.in>', 
         replyTo: email,
         to: "codevortex131594@gmail.com",
         subject: `New Contact Message from ${name}`,
