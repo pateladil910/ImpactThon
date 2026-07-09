@@ -914,6 +914,7 @@ body::-webkit-scrollbar-thumb:hover {
 .health-progress-bar {
     height: 100%;
     border-radius: 1.5px;
+    transition: width 0.4s ease;
 }
 
 .cyan-fill {

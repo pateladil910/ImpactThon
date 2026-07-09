@@ -906,6 +906,42 @@
                 }
             }, 25);
         });
+
+        // Helper to update telemetry text and progress bars dynamically
+        function updateTelemetryMetric(textId, barId, value, suffix, maxVal = null) {
+            const textEl = document.getElementById(textId);
+            const barEl = document.getElementById(barId);
+            if (textEl) textEl.textContent = value + suffix;
+            if (barEl) {
+                const pct = maxVal ? (value / maxVal) * 100 : value;
+                barEl.style.width = pct + '%';
+            }
+        }
+
+        // Start live fluctuations after the initial load animations finish
+        setTimeout(() => {
+            setInterval(() => {
+                // CPU Thread Cycle: 30% - 45%
+                const cpuVal = Math.floor(30 + Math.random() * 16);
+                updateTelemetryMetric('cpu-health', 'cpu-health-bar', cpuVal, '%');
+
+                // GPU Safety Core: 60% - 75%
+                const gpuVal = Math.floor(60 + Math.random() * 16);
+                updateTelemetryMetric('gpu-health', 'gpu-health-bar', gpuVal, '%');
+
+                // RAM Cache Buffer: 40% - 45%
+                const ramVal = Math.floor(40 + Math.random() * 6);
+                updateTelemetryMetric('ram-health', 'ram-health-bar', ramVal, '%');
+
+                // PLC Serial Ping: 5ms - 12ms (max 100)
+                const latVal = Math.floor(5 + Math.random() * 8);
+                updateTelemetryMetric('latency-health', 'latency-health-bar', latVal, 'ms', 100);
+
+                // Model Safety Weights: 97% - 100%
+                const accVal = Math.floor(97 + Math.random() * 4);
+                updateTelemetryMetric('accuracy-health', 'accuracy-health-bar', accVal, '%');
+            }, 2500);
+        }, 1500);
     }
 
     window.addEventListener('load', () => {
