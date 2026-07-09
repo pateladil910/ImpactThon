@@ -1462,9 +1462,10 @@
     async function loadInitialIntrusionCount() {
       try {
         const token = localStorage.getItem("token") || "";
-        const res = await fetch(`${API_BASE_URL}/api/history`, {
+        const res = await fetch(`${API_BASE_URL}/api/history?t=${Date.now()}`, {
           headers: {
-            "Authorization": token ? `Bearer ${token}` : ""
+            "Authorization": token ? `Bearer ${token}` : "",
+            "Cache-Control": "no-cache"
           }
         });
         if (res.status === 200) {

@@ -557,7 +557,8 @@
       const token = localStorage.getItem("token") || "";
       return {
         "Content-Type": "application/json",
-        "Authorization": token ? `Bearer ${token}` : ""
+        "Authorization": token ? `Bearer ${token}` : "",
+        "Cache-Control": "no-cache"
       };
     }
 
@@ -578,9 +579,10 @@
       }
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/history`, {
+        const res = await fetch(`${API_BASE_URL}/api/history?t=${Date.now()}`, {
           headers: getAuthHeaders()
         });
+
 
         if (!res.ok) {
           throw new Error("History API not available");
