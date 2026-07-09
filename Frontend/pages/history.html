@@ -244,6 +244,24 @@
         justify-content: center;
       }
     }
+
+    /* Skeleton loader for instant loading feedback */
+    @keyframes shimmer {
+      0% { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+    .skel {
+      height: 14px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, rgba(6,182,212,0.08) 25%, rgba(6,182,212,0.18) 50%, rgba(6,182,212,0.08) 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+      min-width: 30px;
+    }
+    .skeleton-row td {
+      padding: 14px 10px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 
@@ -536,6 +554,19 @@
 
     async function loadHistory() {
       const tbody = document.getElementById("historyBody");
+
+      // Show skeleton immediately before the API call
+      if (tbody.innerHTML.trim() === '' || tbody.querySelector('.skeleton-row')) {
+        tbody.innerHTML = [1,2,3,4,5].map(() => `
+          <tr class="skeleton-row">
+            <td><div class="skel"></div></td>
+            <td><div class="skel" style="width:80%"></div></td>
+            <td><div class="skel" style="width:60%"></div></td>
+            <td><div class="skel" style="width:70%"></div></td>
+            <td><div class="skel" style="width:55%"></div></td>
+            <td><div class="skel" style="width:40%"></div></td>
+          </tr>`).join('');
+      }
 
       try {
         const res = await fetch(`${API_BASE_URL}/api/history`);
