@@ -356,7 +356,17 @@ class ThreadedCamera:
                     event_id = ObjectId()
                     
                     try:
-                        from db import history_collection
+                        from db import history_collection, db
+                        local_user_id = None
+                        if hasattr(self, 'recipient_email') and self.recipient_email:
+                            try:
+                                users_col = db["users"]
+                                user_doc = users_col.find_one({"email": self.recipient_email})
+                                if user_doc:
+                                    local_user_id = user_doc["_id"]
+                            except Exception as user_err:
+                                print(f"Error looking up user locally: {user_err}")
+
                         history_collection.insert_one({
                             "_id": event_id,
                             "event": event_name,
@@ -367,9 +377,10 @@ class ThreadedCamera:
                             "confidence": ai_confidence,
                             "human_count": human_count,
                             "camera_id": str(self.source),
-                            "email_status": email_db_status
+                            "email_status": email_db_status,
+                            "userId": local_user_id
                         })
-                        print(f"[EVENT] event stored: {event_name} | Status: {self.safety_state} | Count: {human_count} | Email Status: {email_db_status}")
+                        print(f"[EVENT] event stored: {event_name} | Status: {self.safety_state} | Count: {human_count} | Email Status: {email_db_status} | Local userId: {local_user_id}")
                     except Exception as db_err:
                         print(f"Error inserting event into MongoDB: {db_err}")
 

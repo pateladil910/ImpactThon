@@ -1461,7 +1461,12 @@
 
     async function loadInitialIntrusionCount() {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/history`);
+        const token = localStorage.getItem("token") || "";
+        const res = await fetch(`${API_BASE_URL}/api/history`, {
+          headers: {
+            "Authorization": token ? `Bearer ${token}` : ""
+          }
+        });
         if (res.status === 200) {
           const data = await res.json();
           // Filter to count only DANGER events

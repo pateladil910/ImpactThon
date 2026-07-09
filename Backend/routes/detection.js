@@ -29,10 +29,44 @@ router.post("/", async (req, res) => {
       if (cameraStreamUrl) {
         try {
           const Camera = require("../models/Camera");
-          const cam = await Camera.findOne({ url: cameraStreamUrl });
-          if (cam && cam.userId) {
-            resolvedUserId = cam.userId;
-            console.log(`[DETECTION] Camera matched by URL → userId: ${resolvedUserId}`);
+          const allCameras = await Camera.find({});
+
+          const normalizeUrl = (u) => {
+            if (!u) return "";
+            let clean = u.toLowerCase().trim();
+            clean = clean.replace(/^(rtsp|rtmp|http|https):\/\//, "");
+            if (clean.includes("@")) {
+              clean = clean.substring(clean.lastIndexOf("@") + 1);
+            }
+            if (clean.endsWith("/")) {
+              clean = clean.slice(0, -1);
+            }
+            return clean;
+          };
+
+          const normalizedInput = normalizeUrl(cameraStreamUrl);
+          let matchedCam = null;
+
+          for (const cam of allCameras) {
+            if (normalizeUrl(cam.url) === normalizedInput) {
+              matchedCam = cam;
+              break;
+            }
+          }
+
+          if (!matchedCam && normalizedInput) {
+            for (const cam of allCameras) {
+              const normalizedCamUrl = normalizeUrl(cam.url);
+              if (normalizedCamUrl && (normalizedInput.includes(normalizedCamUrl) || normalizedCamUrl.includes(normalizedInput))) {
+                matchedCam = cam;
+                break;
+              }
+            }
+          }
+
+          if (matchedCam && matchedCam.userId) {
+            resolvedUserId = matchedCam.userId;
+            console.log(`[DETECTION] Camera matched by stream URL → userId: ${resolvedUserId}`);
 
             const User = require("../models/User");
             const userDoc = await User.findById(resolvedUserId);
@@ -42,7 +76,7 @@ router.post("/", async (req, res) => {
               console.log(`[DETECTION] Camera owner resolved → ${targetEmail}`);
             }
           } else {
-            console.log(`[DETECTION] No Camera record matched URL: ${cameraStreamUrl}`);
+            console.log(`[DETECTION] No Camera record matched stream URL: ${cameraStreamUrl}`);
           }
         } catch (lookupErr) {
           console.error("[DETECTION] Camera/User lookup error:", lookupErr.message);
@@ -51,6 +85,20 @@ router.post("/", async (req, res) => {
 
       // Use recipient_email from AI payload as fallback when no DB match
       const emailTarget = targetEmail || recipient_email || null;
+
+      // Fallback: If camera owner lookup failed, try to resolve userId by recipient_email
+      if (!resolvedUserId && emailTarget) {
+        try {
+          const User = require("../models/User");
+          const userDoc = await User.findOne({ email: emailTarget });
+          if (userDoc) {
+            resolvedUserId = userDoc._id;
+            console.log(`[DETECTION] Resolved userId by recipient_email fallback → userId: ${resolvedUserId}`);
+          }
+        } catch (err) {
+          console.error("[DETECTION] Failed to resolve userId by email fallback:", err.message);
+        }
+      }
 
       // ─────────────────────────────────────────────────
       // 2. Save to Detection History (scoped to owner)
