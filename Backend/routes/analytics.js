@@ -2,10 +2,15 @@ const express = require("express");
 const router = express.Router();
 const Detection = require("../models/Detection");
 const authMiddleware = require("../middleware/authMiddleware");
-// GET / (maps to /api/history when registered in server.js)
-router.get("/", async (req, res) => {
+// GET / (maps to /api/history) — scoped to the logged-in user
+router.get("/", authMiddleware, async (req, res) => {
     try {
-        const records = await Detection.find().sort({ timestamp: -1 }).lean();
+        const mongoose = require("mongoose");
+        const userId = mongoose.Types.ObjectId.isValid(req.user.id)
+            ? new mongoose.Types.ObjectId(req.user.id)
+            : null;
+
+        const records = await Detection.find({ userId }).sort({ timestamp: -1 }).lean();
         
         // Map the fields for history.html
         const formatted = records.map(doc => {
@@ -42,9 +47,14 @@ router.get("/", async (req, res) => {
     }
 });
 
-// GET /api/analytics/data?type=day|month&date=YYYY-MM-DD|jan|feb...
-router.get("/data", async (req, res) => {
+// GET /api/analytics/data?type=day|month&date=YYYY-MM-DD|jan|feb... — scoped to logged-in user
+router.get("/data", authMiddleware, async (req, res) => {
     try {
+        const mongoose = require("mongoose");
+        const userId = mongoose.Types.ObjectId.isValid(req.user.id)
+            ? new mongoose.Types.ObjectId(req.user.id)
+            : null;
+
         const { type, date } = req.query;
 
         if (!type || !date) {
@@ -78,7 +88,8 @@ router.get("/data", async (req, res) => {
                 {
                     $match: {
                         timestamp: { $gte: startDate, $lte: endDate },
-                        status: "DANGER"
+                        status: "DANGER",
+                        userId: userId
                     }
                 },
                 {
@@ -137,7 +148,8 @@ router.get("/data", async (req, res) => {
                 {
                     $match: {
                         timestamp: { $gte: startDate, $lte: endDate },
-                        status: "DANGER"
+                        status: "DANGER",
+                        userId: userId
                     }
                 },
                 {
@@ -169,10 +181,30 @@ router.get("/data", async (req, res) => {
     }
 });
 
-    // NEW ROUTE: Download Excel
+    // NEW ROUTE: Download Excel — scoped to logged-in user
+    // Accepts token via Authorization header OR ?token= query param (needed for window.location.href downloads)
 router.get("/download", async (req, res) => {
     try {
-        const detections = await Detection.find({ status: "DANGER" }).sort({ timestamp: -1 });
+        const jwt = require("jsonwebtoken");
+        // Try Authorization header first, then fall back to ?token query param
+        let token = null;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            token = authHeader.split(" ")[1];
+        } else if (req.query.token) {
+            token = req.query.token;
+        }
+        if (!token) return res.status(401).json({ msg: "No token, authorization denied" });
+
+        let decoded;
+        try { decoded = jwt.verify(token, "secretkey"); }
+        catch (e) { return res.status(401).json({ msg: "Token is not valid" }); }
+
+        const mongoose = require("mongoose");
+        const userId = mongoose.Types.ObjectId.isValid(decoded.id)
+            ? new mongoose.Types.ObjectId(decoded.id)
+            : null;
+        const detections = await Detection.find({ status: "DANGER", userId }).sort({ timestamp: -1 });
 
         // If you don't have an excel library installed yet, you can send a CSV for now
         let csv = "ID,Date,Time,Status\n";
@@ -287,10 +319,14 @@ router.post("/digest", authMiddleware, async (req, res) => {
     }
 });
 
-// POST /clear_history (clears all safety violation logs)
-router.post("/clear_history", async (req, res) => {
+// POST /clear_history — clears only the logged-in user's logs
+router.post("/clear_history", authMiddleware, async (req, res) => {
     try {
-        await Detection.deleteMany({});
+        const mongoose = require("mongoose");
+        const userId = mongoose.Types.ObjectId.isValid(req.user.id)
+            ? new mongoose.Types.ObjectId(req.user.id)
+            : null;
+        await Detection.deleteMany({ userId });
         console.log("💾 History cleared successfully from database");
         return res.status(200).json({ success: true, message: "History cleared successfully" });
     } catch (err) {

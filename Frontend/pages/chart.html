@@ -664,8 +664,14 @@ s
 
       try {
         const API_BASE_URL = window.API_BASE_URL || ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") ? "http://localhost:5000" : "https://impactthon-wjut.onrender.com");
+        const token = localStorage.getItem("token") || "";
 
-        const response = await fetch(`${API_BASE_URL}/api/analytics/data?type=${type}&date=${dateValue}`);
+        const response = await fetch(`${API_BASE_URL}/api/analytics/data?type=${type}&date=${dateValue}`, {
+          headers: {
+            "Authorization": token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json"
+          }
+        });
         const result = await response.json();
 
         if (result.success) {

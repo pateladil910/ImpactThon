@@ -552,6 +552,15 @@
     }
     var API_BASE_URL = window.API_BASE_URL;
 
+    // Helper: get auth token from storage (set by auth.js on login)
+    function getAuthHeaders() {
+      const token = localStorage.getItem("token") || "";
+      return {
+        "Content-Type": "application/json",
+        "Authorization": token ? `Bearer ${token}` : ""
+      };
+    }
+
     async function loadHistory() {
       const tbody = document.getElementById("historyBody");
 
@@ -569,7 +578,9 @@
       }
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/history`);
+        const res = await fetch(`${API_BASE_URL}/api/history`, {
+          headers: getAuthHeaders()
+        });
 
         if (!res.ok) {
           throw new Error("History API not available");
@@ -643,14 +654,17 @@
       if (!confirm("Are you sure you want to clear all detection history? This action is permanent!")) return;
 
       fetch(`${API_BASE_URL}/api/clear_history`, {
-        method: "POST"
+        method: "POST",
+        headers: getAuthHeaders()
       })
         .then(() => location.reload())
         .catch(err => console.error(err));
     }
 
     function downloadExcel() {
-      window.location.href = `${API_BASE_URL}/api/history/download`;
+      // Append token as query param since window.location.href can't send headers
+      const token = localStorage.getItem("token") || "";
+      window.location.href = `${API_BASE_URL}/api/history/download?token=${encodeURIComponent(token)}`;
     }
 
     setInterval(loadHistory, 5000);

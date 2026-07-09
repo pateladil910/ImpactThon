@@ -381,7 +381,7 @@ class ThreadedCamera:
                     payload = {
                         "danger": True,
                         "confidence": int(ai_confidence),
-                        "userId": "system",
+                        "cameraStreamUrl": str(self.source),  # stable URL for owner lookup
                         "image": img_b64,
                         "cameraName": f"Optical Node {self.source}",
                         "factory": "Factory A",
@@ -500,7 +500,7 @@ class ThreadedCamera:
                     payload = {
                         "danger": False,
                         "confidence": 0,
-                        "userId": "system",
+                        "cameraStreamUrl": str(self.source),  # stable URL for owner lookup
                         "cameraName": f"Optical Node {self.source}",
                         "recipient_email": self.recipient_email
                     }
