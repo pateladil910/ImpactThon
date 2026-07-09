@@ -423,6 +423,7 @@ body::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(90deg, var(--primary-blue), var(--primary-neon));
     box-shadow: 0 0 8px var(--primary-neon);
     border-radius: 2px;
+    transition: width 0.4s ease;
 }
 
 /* ==========================================================================
@@ -914,6 +915,7 @@ body::-webkit-scrollbar-thumb:hover {
 .health-progress-bar {
     height: 100%;
     border-radius: 1.5px;
+    transition: width 0.4s ease;
 }
 
 .cyan-fill {

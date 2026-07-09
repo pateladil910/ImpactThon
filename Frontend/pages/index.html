@@ -906,6 +906,64 @@
                 }
             }, 25);
         });
+
+        // Helper to update telemetry text and progress bars dynamically
+        function updateTelemetryMetric(textId, barId, value, suffix, maxVal = null) {
+            const textEl = document.getElementById(textId);
+            const barEl = document.getElementById(barId);
+            if (textEl) textEl.textContent = value + suffix;
+            if (barEl) {
+                const pct = maxVal ? (value / maxVal) * 100 : value;
+                barEl.style.width = pct + '%';
+            }
+        }
+
+        // Start live fluctuations after the initial load animations finish
+        setTimeout(() => {
+            setInterval(() => {
+                // CPU Thread Cycle: 30% - 45%
+                const cpuVal = Math.floor(30 + Math.random() * 16);
+                updateTelemetryMetric('cpu-health', 'cpu-health-bar', cpuVal, '%');
+
+                // GPU Safety Core: 60% - 75%
+                const gpuVal = Math.floor(60 + Math.random() * 16);
+                updateTelemetryMetric('gpu-health', 'gpu-health-bar', gpuVal, '%');
+
+                // RAM Cache Buffer: 40% - 45%
+                const ramVal = Math.floor(40 + Math.random() * 6);
+                updateTelemetryMetric('ram-health', 'ram-health-bar', ramVal, '%');
+
+                // PLC Serial Ping: 5ms - 12ms (max 100)
+                const latVal = Math.floor(5 + Math.random() * 8);
+                updateTelemetryMetric('latency-health', 'latency-health-bar', latVal, 'ms', 100);
+
+                // Model Safety Weights: 97% - 100%
+                const accVal = Math.floor(97 + Math.random() * 4);
+                updateTelemetryMetric('accuracy-health', 'accuracy-health-bar', accVal, '%');
+
+                // Live AI Safety Status - AI Detection Accuracy: 98.2% - 99.4%
+                const confVal = (98.2 + Math.random() * 1.2).toFixed(1);
+                const confText = document.getElementById('confidence-counter');
+                const confBar = document.getElementById('confidence-bar');
+                if (confText) confText.textContent = confVal + '%';
+                if (confBar) confBar.style.width = confVal + '%';
+
+                // Live AI Safety Status - Emergency Response: 6ms - 11ms
+                const latValHUD = Math.floor(6 + Math.random() * 6);
+                const latText = document.getElementById('latency-counter');
+                if (latText) latText.textContent = latValHUD + 'ms';
+
+                // Live AI Safety Status - Active Operator Count: fluctuates between 2 and 4
+                const opsVal = Math.floor(2 + Math.random() * 3);
+                const opsText = document.getElementById('operators-counter');
+                if (opsText) opsText.textContent = opsVal;
+
+                // Real-Time Metrics Box - SYSTEM UPTIME: 99.96% - 99.99%
+                const uptimeVal = (99.96 + Math.random() * 0.03).toFixed(2);
+                const uptimeText = document.getElementById('metric-uptime');
+                if (uptimeText) uptimeText.textContent = uptimeVal + '%';
+            }, 2500);
+        }, 1500);
     }
 
     window.addEventListener('load', () => {
