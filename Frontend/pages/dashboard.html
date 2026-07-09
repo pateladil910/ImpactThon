@@ -445,64 +445,67 @@
 
     </main>
 
-    <!-- ================= TELEMETRY FOOTER ================= -->
-    <footer class="telemetry-footer">
-        <!-- LEFT CLUSTER -->
-        <div class="footer-cluster left-cluster">
-            <!-- Desktop/Tablet Version -->
-            <div class="footer-item desktop-only">
-                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
-                <span class="footer-item-label">SAFETY CORE</span>
-                <span class="footer-item-value">v4.2.1</span>
-            </div>
-            <div class="footer-separator desktop-only"></div>
-            <div class="footer-item desktop-only">
-                <span class="footer-item-label">VISION MODEL</span>
-                <span class="footer-item-value">v3.0</span>
-            </div>
-            <!-- Mobile Version -->
-            <div class="footer-item mobile-only" style="color: var(--safe-green); font-weight: bold; text-shadow: 0 0 8px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 8px;">
-                <span class="status-dot-pulse" style="background-color: var(--safe-green); box-shadow: 0 0 6px var(--safe-green);"></span>
-                <span class="footer-item-label" style="color: var(--safe-green); font-weight: 700;">SYSTEM ONLINE</span>
-            </div>
+    <!-- SECTION 8: CODE VORTEX PRODUCTION FOOTER -->
+    <footer class="codevortex-footer">
+      <div class="cv-footer-container">
+        <div class="cv-footer-brand">
+          <a href="index.html" class="cv-footer-logo">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"/>
+            </svg>
+            <span class="company">CODE VORTEX</span>
+            <span class="tag">AI SAFETY SHIELD</span>
+          </a>
+          <p class="cv-footer-desc">
+            Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing.
+          </p>
+          <div class="cv-status-pill">
+            <span class="cv-status-dot"></span>
+            <span>Code Vortex Security Cloud: Operational</span>
+          </div>
         </div>
 
-        <!-- CENTER CLUSTER -->
-        <div class="footer-cluster center-cluster">
-            <!-- Desktop/Tablet Version -->
-            <div class="footer-item desktop-only">
-                <span class="footer-item-label">PLC NETWORK</span>
-                <span class="footer-item-value">×4</span>
-            </div>
-            <div class="footer-separator desktop-only"></div>
-            <div class="footer-item desktop-only">
-                <span class="footer-item-label">CAMERA GRID</span>
-                <span class="footer-item-value">×4</span>
-            </div>
-            <div class="footer-separator desktop-only"></div>
-            <div class="footer-item desktop-only">
-                <span class="footer-item-label">LATENCY</span>
-                <span class="footer-item-value">8.24ms</span>
-            </div>
-            <!-- Mobile Version -->
-            <div class="footer-item mobile-only">
-                <span class="footer-item-label">NETWORK</span>
-                <span class="footer-item-value">×4</span>
-            </div>
-            <div class="footer-separator mobile-only"></div>
-            <div class="footer-item mobile-only">
-                <span class="footer-item-label">CAMERAS</span>
-                <span class="footer-item-value">×4</span>
-            </div>
+        <div class="cv-footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="dashboard.html">Live Operator Dashboard</a></li>
+            <li><a href="plant_map.html">Factory Plant Map</a></li>
+            <li><a href="chart.html">Danger Analytics</a></li>
+            <li><a href="history.html">Detection Event Logs</a></li>
+          </ul>
         </div>
 
-        <!-- RIGHT CLUSTER -->
-        <div class="footer-cluster right-cluster">
-            <div class="utc-clock-wrapper">
-                <span class="utc-label desktop-only">UTC</span>
-                <span class="utc-time" id="footer-live-clock">--:--:--</span>
-            </div>
+        <div class="cv-footer-col">
+          <h4>Hardware</h4>
+          <ul>
+            <li><a href="camera_setup.html">AI Camera Setup</a></li>
+            <li><a href="diagnostics.html">Diagnostic Matrix</a></li>
+            <li><a href="notifications.html">System Alerts</a></li>
+            <li><a href="admin.html">Admin Console</a></li>
+          </ul>
         </div>
+
+        <div class="cv-footer-col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="learn-more.html">How It Works</a></li>
+            <li><a href="contact.html">Contact Engineering</a></li>
+            <li><a href="solution.html">Solution Matrix</a></li>
+            <li><a href="login.html">Operator Gateway</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cv-footer-bottom">
+        <div>
+          &copy; 2026 Code Vortex Technologies Inc. All rights reserved.
+          <span id="footer-live-clock" style="margin-left: 15px; color: #06b6d4; font-family: monospace;"></span>
+        </div>
+        <div>
+          <a href="javascript:void(0)">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+        </div>
+      </div>
     </footer>
 
   </div>
