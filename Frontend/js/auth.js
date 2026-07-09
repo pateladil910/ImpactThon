@@ -1,3 +1,5 @@
+if (typeof window.__authScriptLoaded === 'undefined') {
+  window.__authScriptLoaded = true;
 
 // ============================================================
 // EARLY AUTH-STATE APPLICATOR — runs synchronously on script load
@@ -1039,4 +1041,6 @@ if (document.readyState === "loading") {
     document.addEventListener('DOMContentLoaded', initUnifiedAuthEngine);
 } else {
     initUnifiedAuthEngine();
+}
+
 }
