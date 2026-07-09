@@ -691,6 +691,42 @@ body::-webkit-scrollbar-thumb:hover {
     margin: 40px auto 0 auto;
     max-width: 800px;
     padding: 20px 0;
+    max-height: 140px; /* Collapsed state showing 1st item */
+    overflow: hidden;
+    transition: max-height 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Fading mask overlay when collapsed */
+.timeline-wrapper::after {
+    content: '▼ Hover to Expand Safety Logs';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: linear-gradient(to top, #030712 20%, rgba(3, 7, 18, 0.8) 50%, transparent);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    color: var(--primary-neon);
+    font-size: 11px;
+    font-family: monospace;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding-bottom: 12px;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+    text-shadow: 0 0 8px var(--primary-neon);
+}
+
+/* Expand timeline on hover */
+.timeline-section:hover .timeline-wrapper {
+    max-height: 700px; /* Expands to fit all 5 events */
+}
+
+.timeline-section:hover .timeline-wrapper::after {
+    opacity: 0;
 }
 
 /* Central Neon Axis */
