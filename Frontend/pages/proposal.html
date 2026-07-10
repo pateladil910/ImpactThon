@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Smart Safety Shield - Project Proposal</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --emerald-600: #059669;
+      --rose-600: #e11d48;
+      --warning-amber: #d97706;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--slate-800);
+      background-color: var(--slate-50);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 60px 80px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--slate-200);
+    }
+
+    /* Print & Export button */
+    .no-print-wrapper {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 1000;
+    }
+
+    .btn-export {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background-color: var(--slate-900);
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    .btn-export:hover {
+      background-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3);
+    }
+
+    /* Typography & Spacing */
+    h1, h2, h3, h4 {
+      color: var(--slate-900);
+      font-weight: 700;
+    }
+
+    .header-section {
+      text-align: center;
+      border-bottom: 2px solid var(--slate-200);
+      padding-bottom: 40px;
+      margin-bottom: 40px;
+    }
+
+    .logo-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #ffffff;
+      padding: 8px 18px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+    }
+
+    h1 {
+      font-size: 32px;
+      line-height: 1.2;
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: var(--slate-700);
+      font-weight: 400;
+    }
+
+    h2 {
+      font-size: 20px;
+      border-left: 4px solid var(--primary);
+      padding-left: 15px;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin-top: 25px;
+      margin-bottom: 10px;
+      color: var(--slate-900);
+    }
+
+    p {
+      margin-bottom: 15px;
+      font-size: 14.5px;
+      color: var(--slate-700);
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin-bottom: 20px;
+      padding-left: 25px;
+      font-size: 14px;
+      color: var(--slate-700);
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    /* Blocks & Diagrams */
+    .diagram-block {
+      background-color: var(--slate-900);
+      color: #38bdf8;
+      font-family: 'Fira Code', monospace;
+      font-size: 12px;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      overflow-x: auto;
+      line-height: 1.4;
+      border: 1px solid var(--slate-800);
+    }
+
+    .math-block {
+      background-color: var(--slate-50);
+      border: 1px dashed var(--slate-300);
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 13.5px;
+      margin: 20px 0;
+      color: var(--slate-800);
+    }
+
+    .code-block {
+      background-color: var(--slate-900);
+      color: #e2e8f0;
+      font-family: 'Fira Code', monospace;
+      font-size: 12.5px;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .code-comment {
+      color: #64748b;
+    }
+
+    .code-keyword {
+      color: #f43f5e;
+    }
+
+    .code-string {
+      color: #10b981;
+    }
+
+    /* Alert callouts */
+    .callout {
+      border-left: 4px solid;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+    }
+
+    .callout-info {
+      background-color: #f0f9ff;
+      border-color: var(--primary);
+      color: #0369a1;
+    }
+
+    .callout-danger {
+      background-color: #fff1f2;
+      border-color: var(--rose-600);
+      color: #be123c;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 25px 0;
+      font-size: 13.5px;
+    }
+
+    th, td {
+      border: 1px solid var(--slate-200);
+      padding: 12px 15px;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--slate-100);
+      color: var(--slate-900);
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background-color: var(--slate-50);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+
+    .badge-success { background-color: #d1fae5; color: var(--emerald-600); }
+    .badge-danger { background-color: #ffe4e6; color: var(--rose-600); }
+    .badge-warning { background-color: #fef3c7; color: var(--warning-amber); }
+
+    /* Page Breaks for PDF Printing */
+    .page-break {
+      page-break-before: always;
+    }
+
+    @media print {
+      body {
+        background-color: #ffffff;
+        padding: 0;
+      }
+      .container {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .no-print-wrapper {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print-wrapper">
+    <button class="btn-export" onclick="window.print()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export Proposal to PDF
+    </button>
+  </div>
+
+  <div class="container">
+    
+    <!-- COVER HEADER -->
+    <div class="header-section">
+      <div class="logo-badge">Industrial Defense Cell</div>
+      <h1>AI Smart Safety Shield</h1>
+      <div class="subtitle">Hackathon Project Submission Proposal & Technical Blueprints</div>
+      <div style="font-size: 13px; color: #64748b; margin-top: 15px; font-family: 'Fira Code', monospace;">
+        Domain: codevortex.in | Global World Hackathon Standard
+      </div>
+    </div>
+
+    <!-- EXECUTIVE SUMMARY -->
+    <h2>1. Executive Summary & Problem Statement</h2>
+    <p>
+      Industrial manufacturing spaces contain heavy machinery capable of causing catastrophic, life-altering trauma or fatalities in milliseconds. Standard mechanical cages, optical light curtains, and safety mats fail because they are high-cost, inflexible, and easily bypassed by plant operators seeking to optimize their workflow times.
+    </p>
+    <p>
+      The <strong>AI Smart Safety Shield</strong> is a modern, low-cost computer vision lockout framework that establishes dynamic safety envelopes around active hazards. Fusing edge-processed neural networks, cloud state gateways, and low-latency microcontrollers, it detects human operator intrusions and halts physical machinery in milliseconds.
+    </p>
+    
+    <div class="callout callout-info">
+      <strong>Core Impact Metric:</strong> Prevents plant accidents through real-time localized tracking while creating persistent database trails, ensuring 100% industrial safety compliance audits.
+    </div>
+
+    <!-- ARCHITECTURE -->
+    <h2>2. System Architecture</h2>
+    <p>
+      The architecture combines local low-latency components with cloud identity and synchronization stacks:
+    </p>
+    
+    <div class="diagram-block">
++-------------------------+      HTTP / JWT Auth      +------------------------+
+|   Web UI Portal         | &lt;========================&gt; |  Express Backend Gateway|
+|   (dashboard.html)      |                            |  (Render Hosted)       |
++-------------------------+                            +------------------------+
+             ^                                                     ||
+             | MJPEG Feed                                          || MongoDB Driver
+             v                                                     \/
++-------------------------+      Low-Latency Serial    +------------------------+
+|  AI Edge Neural Loop    | &lt;========================&gt; |  MongoDB Cloud Atlas   |
+|  (YOLOv8 + OpenCV)      |      (UART Commands)       |  (Persistent History)  |
++-------------------------+                            +------------------------+
+             ||
+             || Contactor Control
+             \/
++-------------------------+
+|  ESP32 Lockout Relay    | ===&gt; [ Machinery Power Supply Contactor Cut ]
++-------------------------+
+    </div>
+
+    <p>
+      <strong>A. Edge AI Service:</strong> Runs locally on an edge computer connected directly to IP/CCTV cameras. It intercepts frames, feeds them to YOLOv8 posture detectors, and outputs serial signals.
+    </p>
+    <p>
+      <strong>B. Cloud Gateway Backend:</strong> Node.js Express API that registers devices, tracks history events, verifies tokens, and secures camera credentials via AES-256-CBC encryption.
+    </p>
+    <p>
+      <strong>C. Hardware Intercept Unit:</strong> An ESP32 microcontroller acting as a physical interlock, pulling machine contactor coils open or shut upon instructions.
+    </p>
+
+    <div class="page-break"></div>
+
+    <!-- WORKFLOWS -->
+    <h2>3. Step-by-Step Functional Workflows</h2>
+    
+    <h3>Workflow A: Setup & Secure Enrollment</h3>
+    <ol>
+      <li>An administrator adds a camera configuration using the web dashboard.</li>
+      <li>The frontend checks for private vs. public IP configurations. Private streams are assigned to the Edge Gateway.</li>
+      <li>The Node.js server encrypts the camera access password using AES-256-CBC before saving the record to the Mongo cluster.</li>
+      <li>The dashboard fetches the camera record and initializes the AI video element.</li>
+    </ol>
+
+    <h3>Workflow B: Vision Processing & Proximity Decisions</h3>
+    <p>
+      The Edge AI loop handles frame acquisition, skipping, and zone math:
+    </p>
+    
+    <div class="math-block">
+      // 1. Calculate Human Bounding Box Center Center
+      C_hx = (X1 + X2) / 2
+      C_hy = (Y1 + Y2) / 2
+
+      // 2. Compute Euclidean Distance to Mapped Danger Core
+      Distance = sqrt( (C_hx - Machine_Cx)^2 + (C_hy - Machine_Cy)^2 )
+
+      // 3. Evaluate safety boundaries
+      If Distance <= DANGER_THRESHOLD:
+          State = DANGER  ===> Machine STOP signal sent
+      Else if Distance <= WARNING_THRESHOLD:
+          State = WARNING ===> Warning tone sent
+      Else:
+          State = SAFE    ===> Normal operations
+    </div>
+
+    <h3>Workflow C: ESP32 Hardware Contactor Lockout</h3>
+    <p>
+      When the AI engine determines a <code>DANGER</code> condition:
+    </p>
+    <ol>
+      <li>It writes the bytes <code>"DANGER\n"</code> to the active COM port.</li>
+      <li>The ESP32 microcontroller reads the buffer, sets the relay GPIO pin <code>HIGH</code>, which immediately opens the magnetic contactor circuit, cutting power to the machinery.</li>
+      <li>When the operator clears the danger zone, the command <code>"SAFE\n"</code> is sent, allowing the system to resume once the operator presses the physical reset button.</li>
+    </ol>
+
+    <!-- access control matrix -->
+    <h2>4. Role-Based Access Matrix</h2>
+    <p>
+      To prevent plant operators from overriding safety lockouts or deleting logs, the platform implements a strict role-based access matrix:
+    </p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>System Capability</th>
+          <th>Viewer</th>
+          <th>Plant Operator</th>
+          <th>Administrator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>View Solution Landing Page</td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+        </tr>
+        <tr>
+          <td>Access Live Stream Monitor</td>
+          <td><span class="badge badge-danger">DENIED</span></td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+        </tr>
+        <tr>
+          <td>Add / Register IP Nodes</td>
+          <td><span class="badge badge-danger">DENIED</span></td>
+          <td><span class="badge badge-danger">DENIED</span></td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+        </tr>
+        <tr>
+          <td>Trigger Emergency Manual Trips</td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+        </tr>
+        <tr>
+          <td>Clear Intrusion Log History</td>
+          <td><span class="badge badge-danger">DENIED</span></td>
+          <td><span class="badge badge-danger">DENIED</span></td>
+          <td><span class="badge badge-success">ALLOWED</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- CODE SAMPLES -->
+    <h2>5. Core Implementations</h2>
+    
+    <h3>AI Server Telemetry Loop (Python snippet)</h3>
+    <div class="code-block">
+<span class="code-comment"># danger_zone_detection.py - Core Decision Block</span>
+<span class="code-keyword">if</span> self.safety_state == <span class="code-string">"DANGER"</span>:
+    <span class="code-keyword">if</span> self._last_safety_state <span class="code-keyword">in</span> [<span class="code-string">"SAFE"</span>, <span class="code-string">"WARNING"</span>]:
+        trigger_email = <span class="code-keyword">True</span>
+        
+    <span class="code-keyword">if</span> trigger_email:
+        <span class="code-comment"># Dispatch warning payload with base64 snapshot to Cloud Gateway</span>
+        payload = {
+            <span class="code-string">"danger"</span>: <span class="code-keyword">True</span>,
+            <span class="code-string">"confidence"</span>: int(ai_confidence),
+            <span class="code-string">"cameraStreamUrl"</span>: str(self.source),
+            <span class="code-string">"image"</span>: img_b64,
+            <span class="code-string">"recipient_email"</span>: self.recipient_email
+        }
+        dispatch_cloud_alert(payload)
+    </div>
+
+    <h3>ESP32 Controller Firmware (C++ Code)</h3>
+    <div class="code-block">
+<span class="code-comment">// ESP32 Contactor Controller</span>
+<span class="code-keyword">const int</span> RELAY_PIN = 5;
+
+<span class="code-keyword">void</span> setup() {
+  Serial.begin(115200);
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW); <span class="code-comment">// Default Safe On Start</span>
+}
+
+<span class="code-keyword">void</span> loop() {
+  <span class="code-keyword">if</span> (Serial.available() > 0) {
+    String command = Serial.readStringUntil(<span class="code-string">'\n'</span>);
+    command.trim();
+    <span class="code-keyword">if</span> (command == <span class="code-string">"DANGER"</span>) {
+      digitalWrite(RELAY_PIN, HIGH); <span class="code-comment">// Open contactor (Cut Power)</span>
+    } <span class="code-keyword">else if</span> (command == <span class="code-string">"SAFE"</span>) {
+      digitalWrite(RELAY_PIN, LOW);  <span class="code-comment">// Close contactor (Restore Power)</span>
+    }
+  }
+}
+    </div>
+
+    <!-- ROADMAP -->
+    <h2>6. Commercialization & Future Expansion</h2>
+    <p>
+      The AI Smart Safety Shield represents a highly scalable safety technology. Future updates planned for scale include:
+    </p>
+    <ul>
+      <li><strong>Dynamic Mesh Contours:</strong> Allowing operators to draw safety boundaries using an interactive map, replacing rigid static rectangles.</li>
+      <li><strong>Thermal Signature Integration:</strong> Using dual-spectrum thermal cameras to detect human warmth patterns, bypassing steam, smoke, or heavy dust barriers.</li>
+      <li><strong>Sensor Fusion:</strong> Integrating ultrasonic sensor ranges with visual neural nodes to create redundancy checks.</li>
+    </ul>
+
+  </div>
+
+</body>
+</html>
