@@ -199,17 +199,27 @@ router.delete('/reset', authMiddleware, async (req, res) => {
 // GET /api/camera/all
 router.get('/all', authMiddleware, async (req, res) => {
   try {
-    // Fetch only the logged-in user's cameras
-    const cameras = await Camera.find({ userId: req.user.id });
+    // Fetch only the logged-in user's cameras (or all cameras if admin)
+    let query = { userId: req.user.id };
+    if (req.user.role === 'admin') {
+      query = {}; // Admin can access all cameras in the system
+    }
+
+    const cameras = await Camera.find(query).populate('userId', 'name');
     const decryptedCameras = cameras.map(cam => {
       let decryptedPassword = "";
       if (cam.password) {
         decryptedPassword = decrypt(cam.password);
       }
+
+      const uId = cam.userId && cam.userId._id ? cam.userId._id : cam.userId;
+      const uName = cam.userId && cam.userId.name ? cam.userId.name : "Unknown Operator";
+
       return {
         _id: cam._id,
-        userId: cam.userId,
-        name: cam.name,
+        userId: uId,
+        userName: uName,
+        name: cam.name + (req.user.role === 'admin' ? ` (${uName})` : ''),
         type: cam.type,
         cameraType: cam.type,
         url: cam.url,
@@ -234,8 +244,13 @@ router.get('/all', authMiddleware, async (req, res) => {
 
 router.get('/latest', authMiddleware, async (req, res) => {
   try {
-    // Fetch only the logged-in user's camera
-    const camera = await Camera.findOne({ userId: req.user.id });
+    // Fetch only the logged-in user's camera (or all cameras if admin)
+    let query = { userId: req.user.id };
+    if (req.user.role === 'admin') {
+      query = {}; // Admin can access any latest camera
+    }
+
+    const camera = await Camera.findOne(query).populate('userId', 'name');
 
     if (!camera) {
       return res.status(404).json({ success: false, message: 'No camera configured' });
@@ -246,12 +261,16 @@ router.get('/latest', authMiddleware, async (req, res) => {
       decryptedPassword = decrypt(camera.password);
     }
 
+    const uId = camera.userId && camera.userId._id ? camera.userId._id : camera.userId;
+    const uName = camera.userId && camera.userId.name ? camera.userId.name : "Unknown Operator";
+
     res.status(200).json({ 
       success: true, 
       camera: {
         _id: camera._id,
-        userId: camera.userId,
-        name: camera.name,
+        userId: uId,
+        userName: uName,
+        name: camera.name + (req.user.role === 'admin' ? ` (${uName})` : ''),
         type: camera.type,
         cameraType: camera.type,
         url: camera.url,

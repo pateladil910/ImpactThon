@@ -124,7 +124,7 @@ function renderUsersTable(users) {
 
     // Detections
     const tdDetections = document.createElement("td");
-    tdDetections.textContent = user.detectionCount || 0;
+    tdDetections.textContent = user.dangerCount || 0;
     tdDetections.style.fontWeight = "bold";
     tdDetections.style.color = "#4DE6D6";
     tr.appendChild(tdDetections);
@@ -185,6 +185,7 @@ async function updateUserRole(userId) {
     const data = await res.json();
     if (data.success) {
       alert("Role updated successfully!");
+      loadUsers(); // Refresh the table
     } else {
       alert(data.msg || "Failed to update role");
     }
