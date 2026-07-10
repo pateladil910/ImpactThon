@@ -98,7 +98,7 @@ router.post('/test', async (req, res) => {
 // POST /api/camera/save
 router.post('/save', authMiddleware, async (req, res) => {
   try {
-    const { name, type, url, username, password, factory, mapX, mapY, brand, channelId, status } = req.body;
+    const { name, type, url, username, password, factory, mapX, mapY, brand, channelId, status, dangerZone, warningZone } = req.body;
     const userId = req.user.id;
 
     // Encrypt password only if provided
@@ -129,6 +129,8 @@ router.post('/save', authMiddleware, async (req, res) => {
         brand: brand || 'Generic',
         channelId: channelId !== undefined ? Number(channelId) : 1,
         status: status || 'Offline',
+        dangerZone: dangerZone || '',
+        warningZone: warningZone || '',
         updatedAt: Date.now()
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }

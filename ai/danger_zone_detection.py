@@ -84,8 +84,63 @@ class ThreadedCamera:
         self._current_fps = 20.0
         self.recipient_email = ""
         
+        self.danger_zone = MACHINE_ZONE
+        self.warning_zone = WARNING_ZONE
+        self.load_zones_from_db()
+        
         self.capture_thread = None
         self.inference_thread = None
+
+    def load_zones_from_db(self):
+        try:
+            from db import db
+            url_str = str(self.source)
+            raw_url = url_str
+            if "@" in url_str:
+                prefix = ""
+                if url_str.startswith("rtsp://"):
+                    prefix = "rtsp://"
+                    body = url_str[7:]
+                elif url_str.startswith("http://"):
+                    prefix = "http://"
+                    body = url_str[7:]
+                elif url_str.startswith("https://"):
+                    prefix = "https://"
+                    body = url_str[8:]
+                
+                if prefix and "@" in body:
+                    parts = body.split("@", 1)
+                    raw_url = prefix + parts[1]
+            
+            cam_doc = db["cameras"].find_one({
+                "$or": [
+                    {"url": raw_url},
+                    {"url": url_str}
+                ]
+            })
+            if cam_doc:
+                dz_str = cam_doc.get("dangerZone", "")
+                wz_str = cam_doc.get("warningZone", "")
+                if dz_str:
+                    parts = [int(p) for p in dz_str.split(",")]
+                    if len(parts) == 4:
+                        self.danger_zone = (
+                            int(parts[0] * 640 / 1000),
+                            int(parts[1] * 480 / 1000),
+                            int(parts[2] * 640 / 1000),
+                            int(parts[3] * 480 / 1000)
+                        )
+                if wz_str:
+                    parts = [int(p) for p in wz_str.split(",")]
+                    if len(parts) == 4:
+                        self.warning_zone = (
+                            int(parts[0] * 640 / 1000),
+                            int(parts[1] * 480 / 1000),
+                            int(parts[2] * 640 / 1000),
+                            int(parts[3] * 480 / 1000)
+                        )
+        except Exception as e:
+            print(f"[DB_ERROR] Failed loading dynamic zones: {e}")
 
     def start(self):
         if self.started:
@@ -188,6 +243,11 @@ class ThreadedCamera:
                     
                 # Process Frame Details
                 frame = cv2.resize(frame, (640, 480))
+                
+                # Periodically sync calibration coordinates from database
+                if frame_count % 100 == 0:
+                    self.load_zones_from_db()
+                    
                 danger_in_frame = False
                 warning_in_frame = False
                 
@@ -224,18 +284,18 @@ class ThreadedCamera:
                     foot_x = (x1 + x2) // 2
                     foot_y = y2
                     
-                    # Check if bounding box overlaps MACHINE_ZONE or WARNING_ZONE
+                    # Check if bounding box overlaps dynamic zones
                     person_box = (x1, y1, x2, y2)
-                    in_danger_zone = box_overlap(person_box, MACHINE_ZONE)
-                    in_warning_zone = box_overlap(person_box, WARNING_ZONE)
+                    in_danger_zone = box_overlap(person_box, self.danger_zone)
+                    in_warning_zone = box_overlap(person_box, self.warning_zone)
                     print(f"[DEBUG_ZONE] Foot Point: ({foot_x},{foot_y}) | Inside Warning Zone: {in_warning_zone} | Inside Machine Zone: {in_danger_zone}")
                     
                     yolo_conf = float(box.conf[0].item())
                     yolo_conf_pct = int(yolo_conf * 100)
                     
                     # Compute distance-based confidence for UI HUD
-                    mz_cx = (MACHINE_ZONE[0] + MACHINE_ZONE[2]) // 2
-                    mz_cy = (MACHINE_ZONE[1] + MACHINE_ZONE[3]) // 2
+                    mz_cx = (self.danger_zone[0] + self.danger_zone[2]) // 2
+                    mz_cy = (self.danger_zone[1] + self.danger_zone[3]) // 2
                     dist = np.sqrt((foot_x - mz_cx)**2 + (foot_y - mz_cy)**2)
                     calculated_conf = max(0, min(100, int(100 - (dist / 6))))
                     
@@ -261,13 +321,13 @@ class ThreadedCamera:
                 warning_label = "WARNING ZONE (OCCUPIED)" if (warning_in_frame or danger_in_frame) else "WARNING ZONE"
                 cv2.rectangle(
                     frame,
-                    (WARNING_ZONE[0], WARNING_ZONE[1]),
-                    (WARNING_ZONE[2], WARNING_ZONE[3]),
+                    (self.warning_zone[0], self.warning_zone[1]),
+                    (self.warning_zone[2], self.warning_zone[3]),
                     warning_color,
                     3
                 )
                 cv2.putText(frame, warning_label,
-                            (WARNING_ZONE[0], WARNING_ZONE[1] - 10),
+                            (self.warning_zone[0], self.warning_zone[1] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, warning_color, 2)
 
                 # Draw Danger Zone / Machine Zone (Red if breached, Yellow if clear)
@@ -275,13 +335,13 @@ class ThreadedCamera:
                 danger_label = "MACHINE ZONE (DANGER BREACH)" if danger_in_frame else "MACHINE ZONE"
                 cv2.rectangle(
                     frame,
-                    (MACHINE_ZONE[0], MACHINE_ZONE[1]),
-                    (MACHINE_ZONE[2], MACHINE_ZONE[3]),
+                    (self.danger_zone[0], self.danger_zone[1]),
+                    (self.danger_zone[2], self.danger_zone[3]),
                     danger_color,
                     3
                 )
                 cv2.putText(frame, danger_label,
-                            (MACHINE_ZONE[0], MACHINE_ZONE[1] - 10),
+                            (self.danger_zone[0], self.danger_zone[1] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, danger_color, 2)
                                     
                 # Debounce state machine

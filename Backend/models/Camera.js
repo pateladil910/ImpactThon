@@ -18,6 +18,8 @@ const CameraSchema = new mongoose.Schema({
   brand: { type: String, enum: ['Hikvision', 'Dahua', 'CP Plus', 'Axis', 'Bosch', 'ONVIF', 'Generic'], default: 'Generic' },
   channelId: { type: Number, default: 1 },
   status: { type: String, enum: ['Online', 'Offline', 'No Signal', 'Auth Failed', 'Timeout'], default: 'Offline' },
+  dangerZone: { type: String, default: '' },
+  warningZone: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now }
 });
 

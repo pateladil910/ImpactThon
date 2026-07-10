@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Protected Route Gatekeeper: Instant Guest Firewall -->
+    <script>
+      if (localStorage.getItem("isLoggedIn") !== "true") {
+        console.warn("Unauthorized access blocked. Redirecting to login gateway...");
+        window.location.replace("login.html");
+      }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Safety Shield | Spatial Zone Calibration</title>
+    
+    <!-- GOOGLE FONTS & STYLESHEETS -->
+    <link rel="stylesheet" href="../css/index_new.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/navbar_responsive.css">
+    <script src="../js/auth.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --primary-neon: #06b6d4;
+            --primary-blue: #3b82f6;
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dark: #0f172a;
+            
+            --border-glow: rgba(6, 182, 212, 0.15);
+            --border-glow-focus: rgba(56, 189, 248, 0.55);
+            
+            --bg-glass: rgba(10, 15, 30, 0.5);
+            --bg-glass-heavy: rgba(6, 9, 21, 0.85);
+            
+            --safe-green: #10b981;
+            --safe-green-glow: rgba(16, 185, 129, 0.15);
+            --danger-red: #ef4444;
+            --danger-red-glow: rgba(239, 68, 68, 0.15);
+            --warning-yellow: #f59e0b;
+            --warning-yellow-glow: rgba(245, 158, 11, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-dark);
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+                linear-gradient(180deg, #020617 0%, #070a13 100%);
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #particle-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .laser-scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+            box-shadow: 0 0 12px 1px var(--primary-neon);
+            animation: screenScan 9s infinite linear;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @keyframes screenScan {
+            0% { top: 0%; opacity: 0.05; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0.05; }
+        }
+
+        /* ===== CALIBRATION SECTION CONTROLLER ===== */
+        .setup-section {
+            min-height: calc(100vh - 72px);
+            padding: 100px 8% 30px;
+            max-width: 1450px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* WIZARD FLOW STEPPER */
+        .wizard-stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(6, 9, 21, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(6, 182, 212, 0.12);
+            border-radius: 12px;
+            padding: 18px 40px;
+            width: 100%;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .step-item.active {
+            color: var(--primary-neon);
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+
+        .step-item.completed {
+            color: var(--safe-green);
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: inherit;
+        }
+
+        .step-item.active .step-number {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.2);
+        }
+
+        .step-item.completed .step-number {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--safe-green);
+            color: var(--safe-green);
+        }
+
+        .step-connector {
+            flex-grow: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.06);
+            margin: 0 20px;
+        }
+
+        .step-connector.active {
+            background: linear-gradient(90deg, var(--safe-green), var(--primary-neon));
+        }
+
+        /* DUAL COLUMN SYSTEM */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 30px;
+            width: 100%;
+        }
+
+        .setup-card {
+            background: var(--bg-glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .setup-card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-desc {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* ===== VIEWPORT OPERATOR WORKSPACE ===== */
+        .calibration-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            background: #000;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+        }
+
+        #calibrationCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            cursor: crosshair;
+        }
+
+        #previewFeed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5;
+        }
+
+        /* Zone selector options HMI */
+        .calibration-modes {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.25s ease;
+        }
+
+        .mode-btn.active.danger-mode {
+            border-color: var(--danger-red);
+            background: rgba(239, 68, 68, 0.15);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+            text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+        }
+
+        .mode-btn.active.warning-mode {
+            border-color: var(--warning-yellow);
+            background: rgba(245, 158, 11, 0.15);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
+            text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        }
+
+        .mode-btn:hover:not(.active) {
+            border-color: var(--primary-neon);
+            color: var(--text-main);
+            background: rgba(6, 182, 212, 0.08);
+        }
+
+        /* ===== CONTROLS PANEL HMI ===== */
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .coordinates-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .coords-card {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .coords-card.danger-card {
+            border-left: 3px solid var(--danger-red);
+        }
+
+        .coords-card.warning-card {
+            border-left: 3px solid var(--warning-yellow);
+        }
+
+        .coords-card h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .coords-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .coords-value {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        /* CTA BUTTONS */
+        .btn {
+            width: 100%;
+            padding: 14px 28px;
+            font-size: 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.5px;
+            border: none;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-neon));
+            color: #fff;
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(6, 182, 212, 0.45);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-muted);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--text-main);
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Cybernetic Toast Container */
+        .hud-toast-container {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .hud-toast {
+            background: rgba(3, 7, 18, 0.95);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            border-left: 4px solid var(--primary-neon);
+            border-radius: 8px;
+            padding: 16px 24px;
+            width: 320px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .hud-toast.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hud-toast.error {
+            border-left-color: var(--danger-red);
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .hud-toast-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: var(--primary-neon);
+            text-transform: uppercase;
+        }
+
+        .hud-toast.error .hud-toast-title {
+            color: var(--danger-red);
+        }
+
+        .hud-toast-msg {
+            font-size: 12.5px;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        /* Viewfinder HUD styling */
+        .scope-overlay-tag {
+            position: absolute;
+            background: rgba(2, 6, 23, 0.8);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 10px;
+            color: var(--primary-neon);
+            z-index: 12;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-resolution { top: 12px; right: 12px; }
+        .tag-feed-status { top: 12px; left: 12px; display: flex; align-items: center; gap: 6px; }
+
+        .status-pulse-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: var(--safe-green);
+            box-shadow: 0 0 6px var(--safe-green);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.85); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.85); opacity: 0.6; }
+        }
+
+        @media (max-width: 1000px) {
+            .setup-grid {
+                grid-template-columns: 1fr;
+            }
+            .setup-section {
+                padding-top: 110px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NEON GRID PARTICLES -->
+    <canvas id="particle-canvas"></canvas>
+    <div class="laser-scan-line"></div>
+
+    <!-- CENTRAL RESPONSIVE NAVBAR -->
+    <header class="navbar-wrapper">
+      <nav class="navbar">
+        <a href="index.html" class="logo">
+          <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"/>
+          </svg>
+          <span class="logo-text">AI SAFETY SHIELD</span>
+        </a>
+
+        <div class="menu-toggle" id="menuToggle">
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+
+        <div class="nav-menu" id="navLinks">
+          <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="dashboard.html">Live Dashboard</a></li>
+            <li><a href="plant_map.html">Factory Plant Map</a></li>
+            <li><a href="chart.html">Danger Analytics</a></li>
+            <li><a href="history.html">Detection Event Logs</a></li>
+            <li><a href="camera_setup.html" class="active">Camera Setup</a></li>
+            <li><a href="learn-more.html">How It Works</a></li>
+          </ul>
+
+          <div class="profile-box" id="profileBox" style="display: none;">
+            <span class="user-role" id="userRoleBadge">OPERATOR</span>
+            <span class="profile-name" id="profile-name">Clearance Profile</span>
+            <button class="logout-btn" onclick="window.logout()">Logout</button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <!-- WIZARD STEP SYSTEM -->
+    <section class="setup-section">
+        
+        <div class="wizard-stepper">
+            <div class="step-item completed">
+                <div class="step-number">1</div>
+                <span>Gateway Configuration</span>
+            </div>
+            <div class="step-connector active"></div>
+            <div class="step-item completed">
+                <div class="step-number">2</div>
+                <span>Video Sensor Uplink</span>
+            </div>
+            <div class="step-connector active"></div>
+            <div class="step-item active">
+                <div class="step-number">3</div>
+                <span>Core Safety Shield</span>
+            </div>
+        </div>
+
+        <!-- MAIN LAYOUT GRID -->
+        <div class="setup-grid">
+            
+            <!-- LEFT COLUMN: DRAG CALIBRATOR -->
+            <div class="setup-card">
+                <h2>Spatial Safety Zone Calibration</h2>
+                <p class="card-desc">Calibrate coordinates for automated isolation. Drag the corners to resize or drag the center of the box to reposition.</p>
+
+                <div class="calibration-container">
+                    <img id="previewFeed" src="" alt="Camera Feed Preview">
+                    <canvas id="calibrationCanvas"></canvas>
+
+                    <!-- Viewfinder details overlay -->
+                    <div class="scope-overlay-tag tag-feed-status">
+                        <div class="status-pulse-dot"></div>
+                        <span>CALIBRATING: LIVE_STREAM</span>
+                    </div>
+                    <div class="scope-overlay-tag tag-resolution">
+                        <span>1920x1080 @ 30 FPS</span>
+                    </div>
+                </div>
+
+                <div class="calibration-modes">
+                    <button class="mode-btn active danger-mode" id="btnExclusionMode" onclick="setMode('exclusion')">
+                        <span style="color: var(--danger-red);">🟥</span> Adjust Danger Zone (Exclusion)
+                    </button>
+                    <button class="mode-btn warning-mode" id="btnWarningMode" onclick="setMode('warning')">
+                        <span style="color: var(--warning-yellow);">🟧</span> Adjust Warning Zone (Slowdown)
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: CONTROL PANEL DETAILS -->
+            <div class="setup-card control-panel">
+                <h2>Calibration Coordinates</h2>
+                <p class="card-desc">Current zone vectors parsed directly from the optical interface. Values will be saved to the neural shield configuration registry.</p>
+
+                <div class="coordinates-grid">
+                    <div class="coords-card danger-card">
+                        <h4 style="color: var(--danger-red);">Danger Exclusion Area</h4>
+                        <div class="coords-row"><span>Start X:</span><span class="coords-value" id="dangerX1">0</span></div>
+                        <div class="coords-row"><span>Start Y:</span><span class="coords-value" id="dangerY1">0</span></div>
+                        <div class="coords-row"><span>End X:</span><span class="coords-value" id="dangerX2">0</span></div>
+                        <div class="coords-row"><span>End Y:</span><span class="coords-value" id="dangerY2">0</span></div>
+                    </div>
+
+                    <div class="coords-card warning-card">
+                        <h4 style="color: var(--warning-yellow);">Warning Slowdown Area</h4>
+                        <div class="coords-row"><span>Start X:</span><span class="coords-value" id="warningX1">0</span></div>
+                        <div class="coords-row"><span>Start Y:</span><span class="coords-value" id="warningY1">0</span></div>
+                        <div class="coords-row"><span>End X:</span><span class="coords-value" id="warningX2">0</span></div>
+                        <div class="coords-row"><span>End Y:</span><span class="coords-value" id="warningY2">0</span></div>
+                    </div>
+                </div>
+
+                <div class="coords-card" style="border-left: 3px solid var(--primary-neon);">
+                    <h4 style="color: var(--primary-neon);">Device Uplink Information</h4>
+                    <div class="coords-row"><span>Name:</span><span class="coords-value" id="infoName">-</span></div>
+                    <div class="coords-row"><span>Location:</span><span class="coords-value" id="infoLocation">-</span></div>
+                    <div class="coords-row"><span>Stream URL:</span><span class="coords-value" style="word-break: break-all;" id="infoUrl">-</span></div>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-top: auto;">
+                    <button class="btn btn-outline" onclick="location.href='camera_setup.html'" style="width: 35%;">Back</button>
+                    <button class="btn btn-primary" id="btnDeploy" onclick="deployCoreShield()" style="width: 65%;">Deploy Core Shield</button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CUSTOM HUD TOAST NOTIFICATION CONTAINER -->
+    <div class="hud-toast-container" id="hudToastContainer"></div>
+
+    <!-- FOOTER -->
+    <footer class="codevortex-footer">
+      <div class="cv-footer-container">
+        <div class="cv-footer-brand">
+          <a href="index.html" class="cv-footer-logo">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.599-3.75A11.959 11.959 0 0112 2.714z"/>
+            </svg>
+            <span class="company">CODE VORTEX</span>
+            <span class="tag">AI SAFETY SHIELD</span>
+          </a>
+          <p class="cv-footer-desc">
+            Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing.
+          </p>
+          <div class="cv-status-pill">
+            <span class="cv-status-dot"></span>
+            <span>Code Vortex Security Cloud: Operational</span>
+          </div>
+        </div>
+
+        <div class="cv-footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="dashboard.html">Live Operator Dashboard</a></li>
+            <li><a href="plant_map.html">Factory Plant Map</a></li>
+            <li><a href="chart.html">Danger Analytics</a></li>
+            <li><a href="history.html">Detection Event Logs</a></li>
+          </ul>
+        </div>
+
+        <div class="cv-footer-col">
+          <h4>Hardware</h4>
+          <ul>
+            <li><a href="camera_setup.html">AI Camera Setup</a></li>
+            <li><a href="diagnostics.html">Diagnostic Matrix</a></li>
+            <li><a href="notifications.html">System Alerts</a></li>
+            <li><a href="admin.html">Admin Console</a></li>
+          </ul>
+        </div>
+
+        <div class="cv-footer-col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="learn-more.html">How It Works</a></li>
+            <li><a href="contact.html">Contact Engineering</a></li>
+            <li><a href="solution.html">Solution Matrix</a></li>
+            <li><a href="login.html">Operator Gateway</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cv-footer-bottom">
+        <div>&copy; 2026 Code Vortex Technologies Inc. All rights reserved. <span id="footer-live-clock" style="margin-left: 15px; color: #06b6d4; font-family: monospace;"></span></div>
+        <div>
+          <a href="javascript:void(0)">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script>
+        // ==========================================
+        // 1. ACTIVE PARTICLE BACKDROP CANVAS ENGINE
+        // ==========================================
+        const particleCanvas = document.getElementById('particle-canvas');
+        const particleCtx = particleCanvas.getContext('2d');
+
+        function resizeCanvas() {
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * particleCanvas.width;
+                this.y = Math.random() * particleCanvas.height;
+                this.size = Math.random() * 2.2 + 0.6;
+                this.speedX = Math.random() * 0.4 - 0.2;
+                this.speedY = -(Math.random() * 0.35 + 0.1);
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.y < -10) {
+                    this.y = particleCanvas.height + 10;
+                    this.x = Math.random() * particleCanvas.width;
+                }
+                if (this.x < -10 || this.x > particleCanvas.width + 10) {
+                    this.speedX = -this.speedX;
+                }
+            }
+            draw() {
+                particleCtx.fillStyle = 'rgba(6, 182, 212, 0.22)';
+                particleCtx.beginPath();
+                particleCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                particleCtx.fill();
+            }
+        }
+
+        const particles = Array.from({ length: 45 }, () => new Particle());
+        function animateParticles() {
+            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ==========================================
+        // 2. LIVE TELEMETRY FOOTER CLOCK
+        // ==========================================
+        (function() {
+            const utcClock = document.getElementById('footer-live-clock');
+            if (utcClock) {
+                function tick() {
+                    const now = new Date();
+                    utcClock.textContent = now.toISOString().substr(11, 8) + ' UTC';
+                }
+                tick();
+                setInterval(tick, 1000);
+            }
+        })();
+
+        // ==========================================
+        // 3. TOAST UTILITY HELPER
+        // ==========================================
+        function showHUDToast(title, msg, type = 'success') {
+            const container = document.getElementById('hudToastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `hud-toast ${type === 'error' ? 'error' : ''}`;
+            toast.innerHTML = `
+                <span class="hud-toast-title">${title}</span>
+                <span class="hud-toast-msg">${msg}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('active'), 50);
+            setTimeout(() => {
+                toast.classList.remove('active');
+                setTimeout(() => toast.remove(), 400);
+            }, 3500);
+        }
+    </script>
+
+    <!-- CALIBRATION ENGINE CORE -->
+    <script>
+        // Default relative coordinates (0-1000 range normalized coordinates)
+        let dangerBox = { x: 360, y: 100, w: 240, h: 350 };
+        let warningBox = { x: 240, y: 50, w: 380, h: 410 };
+        
+        let activeMode = 'exclusion'; // 'exclusion' or 'warning'
+        let draggingElement = null; // 'box' or 'handle'
+        let dragHandleIndex = -1; // corner handle index: 0=TL, 1=TR, 2=BR, 3=BL
+        let dragOffset = { x: 0, y: 0 };
+
+        const canvas = document.getElementById('calibrationCanvas');
+        const ctx = canvas.getContext('2d');
+        const previewFeed = document.getElementById('previewFeed');
+
+        // Config setup values
+        let tempConfig = null;
+
+        window.addEventListener('load', () => {
+            // Retrieve temp camera values
+            const stored = localStorage.getItem('tempCameraConfig');
+            if (stored) {
+                tempConfig = JSON.parse(stored);
+                document.getElementById('infoName').textContent = tempConfig.name;
+                document.getElementById('infoLocation').textContent = tempConfig.location || 'Not Configured';
+                document.getElementById('infoUrl').textContent = tempConfig.url;
+
+                // Load preview source
+                if (tempConfig.isDemo) {
+                    previewFeed.src = '../images/factory_safety_bg.webp';
+                } else {
+                    const testUrl = localStorage.getItem('edgeAgentUrl') || "http://127.0.0.1:10000";
+                    const uParam = tempConfig.username ? `&username=${encodeURIComponent(tempConfig.username)}` : '';
+                    const pParam = tempConfig.password ? `&password=${encodeURIComponent(tempConfig.password)}` : '';
+                    previewFeed.src = `${testUrl}/video_feed?source=${encodeURIComponent(tempConfig.url)}${uParam}${pParam}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t=${Date.now()}`;
+                }
+            } else {
+                showHUDToast('CALIBRATION FAILURE', 'Uplink config not found. Redirecting...', 'error');
+                setTimeout(() => { location.href = "camera_setup.html"; }, 2000);
+            }
+
+            // Sync layout canvas dimensions
+            resizeCalibCanvas();
+            window.addEventListener('resize', resizeCalibCanvas);
+
+            // Add input click/drag listeners
+            canvas.addEventListener('mousedown', handleStart);
+            canvas.addEventListener('mousemove', handleMove);
+            canvas.addEventListener('mouseup', handleEnd);
+            canvas.addEventListener('mouseleave', handleEnd);
+
+            // Touch events support
+            canvas.addEventListener('touchstart', handleStart, {passive: false});
+            canvas.addEventListener('touchmove', handleMove, {passive: false});
+            canvas.addEventListener('touchend', handleEnd);
+        });
+
+        function resizeCalibCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            drawZones();
+        }
+
+        // Mode Toggler HMI
+        function setMode(mode) {
+            activeMode = mode;
+            document.getElementById('btnExclusionMode').classList.toggle('active', mode === 'exclusion');
+            document.getElementById('btnWarningMode').classList.toggle('active', mode === 'warning');
+            drawZones();
+        }
+
+        // Draw boxes & handles on canvas
+        function drawZones() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Helper to get screen space coordinates
+            const d = getScreenCoords(dangerBox);
+            const w = getScreenCoords(warningBox);
+
+            // 1. Draw Warning Zone (Orange)
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = activeMode === 'warning' ? 3 : 1.5;
+            ctx.setLineDash([6, 6]);
+            ctx.strokeRect(w.x, w.y, w.w, w.h);
+            
+            // Faint orange fill for warning area
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.04)';
+            ctx.fillRect(w.x, w.y, w.w, w.h);
+
+            // 2. Draw Danger Zone (Red)
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = activeMode === 'exclusion' ? 3.5 : 1.5;
+            ctx.setLineDash([8, 4]);
+            ctx.strokeRect(d.x, d.y, d.w, d.h);
+            
+            // Faint red hatch pattern overlay
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.08)';
+            ctx.fillRect(d.x, d.y, d.w, d.h);
+
+            // 3. Draw Corner Handles for active mode
+            ctx.setLineDash([]);
+            const activeBox = activeMode === 'exclusion' ? d : w;
+            const handleColor = activeMode === 'exclusion' ? '#ef4444' : '#f59e0b';
+            
+            const handles = getHandles(activeBox);
+            handles.forEach(h => {
+                ctx.fillStyle = '#020617';
+                ctx.strokeStyle = handleColor;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(h.x, h.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // 4. Update coordinates HUD values
+            updateCoordsHUD();
+        }
+
+        // Coordinate calculations normalized to 1000px virtual canvas space
+        function getScreenCoords(box) {
+            return {
+                x: (box.x / 1000) * canvas.width,
+                y: (box.y / 1000) * canvas.height,
+                w: (box.w / 1000) * canvas.width,
+                h: (box.h / 1000) * canvas.height
+            };
+        }
+
+        function getNormalizedCoords(screenRect) {
+            return {
+                x: Math.round((screenRect.x / canvas.width) * 1000),
+                y: Math.round((screenRect.y / canvas.height) * 1000),
+                w: Math.round((screenRect.w / canvas.width) * 1000),
+                h: Math.round((screenRect.h / canvas.height) * 1000)
+            };
+        }
+
+        function getHandles(screenBox) {
+            return [
+                { x: screenBox.x, y: screenBox.y }, // TL (0)
+                { x: screenBox.x + screenBox.w, y: screenBox.y }, // TR (1)
+                { x: screenBox.x + screenBox.w, y: screenBox.y + screenBox.h }, // BR (2)
+                { x: screenBox.x, y: screenBox.y + screenBox.h } // BL (3)
+            ];
+        }
+
+        function updateCoordsHUD() {
+            document.getElementById('dangerX1').textContent = dangerBox.x;
+            document.getElementById('dangerY1').textContent = dangerBox.y;
+            document.getElementById('dangerX2').textContent = dangerBox.x + dangerBox.w;
+            document.getElementById('dangerY2').textContent = dangerBox.y + dangerBox.h;
+
+            document.getElementById('warningX1').textContent = warningBox.x;
+            document.getElementById('warningY1').textContent = warningBox.y;
+            document.getElementById('warningX2').textContent = warningBox.x + warningBox.w;
+            document.getElementById('warningY2').textContent = warningBox.y + warningBox.h;
+        }
+
+        // Interaction event handlers
+        function handleStart(e) {
+            e.preventDefault();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+
+            const activeBox = activeMode === 'exclusion' ? dangerBox : warningBox;
+            const screenBox = getScreenCoords(activeBox);
+            const handles = getHandles(screenBox);
+
+            // Check corner collision
+            for (let i = 0; i < handles.length; i++) {
+                const dist = Math.hypot(mouseX - handles[i].x, mouseY - handles[i].y);
+                if (dist < 12) {
+                    draggingElement = 'handle';
+                    dragHandleIndex = i;
+                    return;
+                }
+            }
+
+            // Check box interior collision
+            if (mouseX >= screenBox.x && mouseX <= screenBox.x + screenBox.w &&
+                mouseY >= screenBox.y && mouseY <= screenBox.y + screenBox.h) {
+                draggingElement = 'box';
+                dragOffset.x = mouseX - screenBox.x;
+                dragOffset.y = mouseY - screenBox.y;
+            }
+        }
+
+        function handleMove(e) {
+            if (!draggingElement) return;
+            e.preventDefault();
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+
+            const activeBox = activeMode === 'exclusion' ? dangerBox : warningBox;
+            const screenBox = getScreenCoords(activeBox);
+
+            if (draggingElement === 'box') {
+                let newX = mouseX - dragOffset.x;
+                let newY = mouseY - dragOffset.y;
+
+                // Restrict boundaries
+                newX = Math.max(0, Math.min(newX, canvas.width - screenBox.w));
+                newY = Math.max(0, Math.min(newY, canvas.height - screenBox.h));
+
+                const norm = getNormalizedCoords({ x: newX, y: newY, w: screenBox.w, h: screenBox.h });
+                activeBox.x = norm.x;
+                activeBox.y = norm.y;
+            } else if (draggingElement === 'handle') {
+                let x = Math.max(0, Math.min(mouseX, canvas.width));
+                let y = Math.max(0, Math.min(mouseY, canvas.height));
+
+                if (dragHandleIndex === 0) { // TL
+                    const w = screenBox.x + screenBox.w - x;
+                    const h = screenBox.y + screenBox.h - y;
+                    if (w > 20 && h > 20) {
+                        const norm = getNormalizedCoords({ x: x, y: y, w: w, h: h });
+                        activeBox.x = norm.x;
+                        activeBox.y = norm.y;
+                        activeBox.w = norm.w;
+                        activeBox.h = norm.h;
+                    }
+                } else if (dragHandleIndex === 1) { // TR
+                    const w = x - screenBox.x;
+                    const h = screenBox.y + screenBox.h - y;
+                    if (w > 20 && h > 20) {
+                        const norm = getNormalizedCoords({ x: screenBox.x, y: y, w: w, h: h });
+                        activeBox.y = norm.y;
+                        activeBox.w = norm.w;
+                        activeBox.h = norm.h;
+                    }
+                } else if (dragHandleIndex === 2) { // BR
+                    const w = x - screenBox.x;
+                    const h = y - screenBox.y;
+                    if (w > 20 && h > 20) {
+                        const norm = getNormalizedCoords({ x: screenBox.x, y: screenBox.y, w: w, h: h });
+                        activeBox.w = norm.w;
+                        activeBox.h = norm.h;
+                    }
+                } else if (dragHandleIndex === 3) { // BL
+                    const w = screenBox.x + screenBox.w - x;
+                    const h = y - screenBox.y;
+                    if (w > 20 && h > 20) {
+                        const norm = getNormalizedCoords({ x: x, y: screenBox.y, w: w, h: h });
+                        activeBox.x = norm.x;
+                        activeBox.w = norm.w;
+                        activeBox.h = norm.h;
+                    }
+                }
+            }
+
+            drawZones();
+        }
+
+        function handleEnd() {
+            draggingElement = null;
+            dragHandleIndex = -1;
+        }
+
+        // ==========================================
+        // 4. DEPLOY SAFETY MATRIX SYNC
+        // ==========================================
+        async function deployCoreShield() {
+            if (!tempConfig) return;
+
+            const btnDeploy = document.getElementById('btnDeploy');
+            btnDeploy.disabled = true;
+            btnDeploy.textContent = "Deploying Matrix...";
+
+            // Create final camera object
+            const newCam = {
+                cameraId: "cam_" + Date.now(),
+                cameraName: tempConfig.name,
+                cameraType: tempConfig.type,
+                cameraUrl: tempConfig.url,
+                username: tempConfig.username,
+                password: tempConfig.password,
+                location: tempConfig.location,
+                description: tempConfig.description,
+                factory: tempConfig.factory,
+                mapX: 50,
+                mapY: 50,
+                status: "Online",
+                aiStatus: "Ready",
+                fps: 60.0,
+                latency: 8.0,
+                active: true,
+                dangerZone: `${dangerBox.x},${dangerBox.y},${dangerBox.x+dangerBox.w},${dangerBox.y+dangerBox.h}`,
+                warningZone: `${warningBox.x},${warningBox.y},${warningBox.x+warningBox.w},${warningBox.y+warningBox.h}`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            // Save camera configuration locally
+            let existingCams = [];
+            try {
+                const savedList = localStorage.getItem('safetyShieldCameras');
+                if (savedList) {
+                    existingCams = JSON.parse(savedList);
+                }
+            } catch(err) {
+                console.error("Error parsing local camera list:", err);
+            }
+
+            existingCams.forEach(c => c.active = false);
+            existingCams.push(newCam);
+            localStorage.setItem('safetyShieldCameras', JSON.stringify(existingCams));
+            localStorage.setItem('connectedCamera', 'true');
+
+            // Send payload to backend database
+            const payload = {
+                name: tempConfig.name,
+                type: tempConfig.type.includes("WEBCAM") || tempConfig.type.includes("USB") ? "WEBCAM" : "IP_CAMERA",
+                url: tempConfig.url,
+                username: tempConfig.username,
+                password: tempConfig.password,
+                factory: tempConfig.factory,
+                dangerZone: newCam.dangerZone,
+                warningZone: newCam.warningZone,
+                mapX: 50,
+                mapY: 50
+            };
+
+            try {
+                const token = localStorage.getItem("token");
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const response = await fetch(`${window.API_BASE_URL}/api/camera/save`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                showHUDToast('SHIELD DEPLOYED', 'Core Safety Shield matrices armed successfully!', 'success');
+                localStorage.removeItem('tempCameraConfig');
+                
+                setTimeout(() => {
+                    location.href = "dashboard.html";
+                }, 1200);
+            } catch (err) {
+                showHUDToast('SHIELD DEPLOYED', 'Deployed to local client workspace configuration.', 'success');
+                localStorage.removeItem('tempCameraConfig');
+                
+                setTimeout(() => {
+                    location.href = "dashboard.html";
+                }, 1200);
+            }
+        }
+    </script>
+
+</body>
+</html>
