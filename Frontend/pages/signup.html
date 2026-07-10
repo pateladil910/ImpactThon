@@ -682,9 +682,31 @@
             }
             if (icon) icon.style.display = 'block';
             if (loader) loader.style.display = 'none';
-            if (text) text.textContent = 'Continue with Google';
+            if (text) text.textContent = 'Sign in with Google';
         }
     };
+
+    // Helper to reset Google auth button to its original state
+    function resetGoogleButton() {
+        const btn = document.getElementById('googleAuthBtn');
+        const text = document.getElementById('googleBtnText');
+        const loader = document.getElementById('googleBtnLoader');
+        const icon = document.getElementById('googleBtnIcon');
+
+        if (btn) {
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+        }
+        if (icon) {
+            icon.style.display = 'block';
+            icon.style.margin = '0';
+        }
+        if (loader) loader.style.display = 'none';
+        if (text) text.textContent = 'Sign in with Google';
+    }
+
+    // Reset button state on load/pageshow (handles back-button cache states)
+    window.addEventListener('pageshow', resetGoogleButton);
 
     // -------------------------------------------------------
     // 3. Cyber Toast helper
