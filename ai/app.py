@@ -69,7 +69,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 @app.after_request
 def add_cors_headers(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, ngrok-skip-browser-warning, bypass-tunnel-reminder"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
 
@@ -109,7 +109,7 @@ def construct_camera_source(url, username, password):
 @app.route("/video_feed")
 def video_feed():
     from flask import request
-    source = request.args.get("source", "0")
+    source = request.args.get("source", "rtsp://admin:Codevortex%4012@192.168.1.64:554/Streaming/Channels/101")
     username = request.args.get("username", "")
     password = request.args.get("password", "")
     
@@ -122,8 +122,6 @@ def video_feed():
         generate_frames(source=resolved_source),
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
-    resp.headers['ngrok-skip-browser-warning'] = 'true'
-    resp.headers['bypass-tunnel-reminder'] = 'true'
     resp.headers['Access-Control-Allow-Origin'] = '*'
     resp.headers['Cache-Control'] = 'no-cache, private, no-store, must-revalidate'
     
@@ -134,7 +132,7 @@ def video_feed():
 def camera_snapshot():
     from flask import request
     import cv2, numpy as np
-    source = request.args.get("source", "0")
+    source = request.args.get("source", "rtsp://admin:Codevortex%4012@192.168.1.64:554/Streaming/Channels/101")
     username = request.args.get("username", "")
     password = request.args.get("password", "")
     resolved_source = construct_camera_source(source, username, password)
@@ -149,8 +147,6 @@ def camera_snapshot():
         jpeg_bytes = buffer.tobytes()
         
     resp = Response(jpeg_bytes, mimetype="image/jpeg")
-    resp.headers['ngrok-skip-browser-warning'] = 'true'
-    resp.headers['bypass-tunnel-reminder'] = 'true'
     resp.headers['Access-Control-Allow-Origin'] = '*'
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return resp
@@ -313,7 +309,7 @@ def test_camera():
     import socket
     import urllib.parse
     
-    source = request.args.get("source", "0")
+    source = request.args.get("source", "rtsp://admin:Codevortex%4012@192.168.1.64:554/Streaming/Channels/101")
     username = request.args.get("username", "")
     password = request.args.get("password", "")
     

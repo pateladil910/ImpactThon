@@ -1418,11 +1418,7 @@
             const timeoutId = setTimeout(() => controller.abort(), 1500);
             
             const response = await fetch(checkUrl, { 
-              signal: controller.signal,
-              headers: {
-                'bypass-tunnel-reminder': 'true',
-                'ngrok-skip-browser-warning': 'true'
-              }
+              signal: controller.signal
             });
             clearTimeout(timeoutId);
 
@@ -1499,11 +1495,7 @@
 
       try {
         const res = await fetch(STATUS_URL, { 
-          cache: "no-store",
-          headers: {
-            'bypass-tunnel-reminder': 'true',
-            'ngrok-skip-browser-warning': 'true'
-          }
+          cache: "no-store"
         });
         const data = await res.json();
 

@@ -722,7 +722,7 @@ camera_pool = CameraPool()
 # ==========================================
 # 🎞️ VIDEO STREAM GENERATOR & STABILITY WRAPPERS
 # ==========================================
-def generate_frames(source=0):
+def generate_frames(source="rtsp://admin:Codevortex%4012@192.168.1.64:554/Streaming/Channels/101"):
     print(f"[DEBUG] [GENERATOR] generate_frames generator function started for source: {source}")
     cam = camera_pool.acquire_camera(source)
     frame_count = 0

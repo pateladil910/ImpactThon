@@ -1,0 +1,15 @@
+[Unit]
+Description=AI Smart Safety Shield Flask Server
+After=network.target
+
+[Service]
+Type=simple
+User=codevortex
+WorkingDirectory=/home/codevortex/yolo
+ExecStart=/home/codevortex/yolo/venv/bin/python3 app.py
+Restart=always
+RestartSec=3
+Environment=PORT=10000
+
+[Install]
+WantedBy=multi-user.target

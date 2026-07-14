@@ -1121,17 +1121,17 @@
                             </div>
                             <p style="font-size:11px; color:#94a3b8; line-height:1.6; margin-bottom:8px;">
                                 This camera is on a local network (<code style="color:#f59e0b; background:rgba(245,158,11,0.1); padding:1px 5px; border-radius:3px;">192.168.x.x</code>). 
-                                Run <code style="color:#06b6d4; background:rgba(6,182,212,0.1); padding:1px 5px; border-radius:3px;">python ai/app.py</code> on the laptop connected to the camera, 
-                                then use <strong style="color:#fff;">ngrok</strong> to expose it. Paste the ngrok URL below.
+                                Run <code style="color:#06b6d4; background:rgba(6,182,212,0.1); padding:1px 5px; border-radius:3px;">python app.py</code> on the Raspberry Pi connected to the camera, 
+                                then expose it using a Cloudflare Tunnel. Enter the Tunnel URL below.
                             </p>
                             <div style="display:flex; gap:6px; margin-bottom:8px;">
-                                <code style="background:rgba(2,6,23,0.8); border:1px solid rgba(6,182,212,0.2); padding:6px 10px; border-radius:6px; font-size:10px; color:#06b6d4; flex:1;">ngrok http 10000</code>
-                                <span style="font-size:10px; color:#64748b; align-self:center;">→ copy the https URL</span>
+                                <code style="background:rgba(2,6,23,0.8); border:1px solid rgba(6,182,212,0.2); padding:6px 10px; border-radius:6px; font-size:10px; color:#06b6d4; flex:1;">cloudflared tunnel run</code>
+                                <span style="font-size:10px; color:#64748b; align-self:center;">→ map to subdomain</span>
                             </div>
                             <div class="input-group" style="margin:0;">
                                 <input type="text" id="edgeAgentUrl" placeholder=" " autocomplete="off" 
                                     style="font-family:monospace;" />
-                                <label for="edgeAgentUrl">Edge Agent URL (e.g. https://abc123.ngrok-free.app)</label>
+                                <label for="edgeAgentUrl">Edge Agent URL (e.g. https://camera.codevortex.in)</label>
                             </div>
                             <small id="edgeAgentStatus" style="font-size:10px; color:#64748b;"></small>
                         </div>

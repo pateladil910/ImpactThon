@@ -132,7 +132,7 @@ How to install, integrate, and configure the entire system from scratch:
       `python app.py`
     - (Optional) Run the Raspberry Pi edge streaming client:
       `cd ../raspberry_pi`
-      `python app.py --camera rtsp://admin:12345@192.168.1.100:554/h264`
+      `python app.py --camera rtsp://admin:Codevortex%4012@192.168.1.64:554/Streaming/Channels/101`
 
   STEP 4: HARDWARE PIN WIRING
     - Connect the ESP32 to the server USB port ("COM3").

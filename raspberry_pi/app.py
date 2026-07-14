@@ -174,8 +174,15 @@ def load_or_create_config():
         except Exception as e:
             print("Error loading config.json, prompting login.")
             
-    # If not found, prompt user for login
+    # If not found, prompt user for login or use background fallback
     if not token or not user_id:
+        if not sys.stdin.isatty():
+            print("⚠️ Background daemon running without TTY. Using offline service fallback credentials.")
+            token = "offline-system-token"
+            user_id = "system"
+            camera_url = "rtsp://admin:Codevortex%4012@192.168.1.64:554/Streaming/Channels/101"
+            return token, user_id, camera_url, None, None
+            
         print("\n🔑 --- AI Safety Shield Edge Agent Login ---")
         email = input("Email: ")
         password = getpass.getpass("Password: ")
@@ -561,7 +568,7 @@ def discover():
 @app.route("/api/test_camera")
 def test_camera():
     from flask import request
-    source = request.args.get("source", "0")
+    source = request.args.get("source", "rtsp://admin:Codevortex%4012@192.168.1.64:554/Streaming/Channels/101")
     username = request.args.get("username", "")
     password = request.args.get("password", "")
     

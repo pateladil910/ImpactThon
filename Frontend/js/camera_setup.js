@@ -85,15 +85,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const edgeAgentInput = document.getElementById('edgeAgentUrl');
         const edgeAgentUrlVal = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
-        const savedEdge = localStorage.getItem('edgeAgentUrl') || 'https://confider-celery-deskbound.ngrok-free.dev';
+        const savedEdge = localStorage.getItem('edgeAgentUrl') || 'https://camera.codevortex.in';
         const targetUrl = edgeAgentUrlVal || savedEdge || AI_SERVICE_URL;
 
         const response = await fetch(`${targetUrl}/status`, { 
-          cache: "no-store",
-          headers: {
-            'bypass-tunnel-reminder': 'true',
-            'ngrok-skip-browser-warning': 'true'
-          }
+          cache: "no-store"
         });
         const data = await response.json();
 
@@ -223,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isLocal = isPrivateIP(val);
 
     if (isLocal) {
-      urlWarning.innerHTML = '⚠️ Private IP detected. Run the AI server on the camera laptop and paste the ngrok URL below.';
+      urlWarning.innerHTML = '⚠️ Private IP detected. Make sure the AI server is running on the Raspberry Pi and enter the Cloudflare Tunnel URL below.';
       urlWarning.classList.remove('hidden');
       if (edgeAgentSection) edgeAgentSection.style.display = 'flex';
     } else {
@@ -572,29 +568,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     const edgeAgentUrl = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
 
     let testUrl;
-    if (edgeAgentUrl) {
+     if (edgeAgentUrl) {
       testUrl = edgeAgentUrl;
-    } else if (isLocal) {
+     } else if (isLocal) {
       testUrl = "http://127.0.0.1:10000";
-      showHUDToast('EDGE AGENT URL NEEDED', 'Private IP detected. Paste the ngrok URL in the Edge Agent field below for the camera to work.', 'warning');
-    } else {
+      showHUDToast('EDGE AGENT URL NEEDED', 'Private IP detected. Enter the Cloudflare Tunnel URL in the Edge Agent field below.', 'warning');
+     } else {
       testUrl = AI_SERVICE_URL;
-    }
-    const testApiUrl = `${testUrl}/api/test_camera?source=${encodeURIComponent(url)}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
+     }
+     const testApiUrl = `${testUrl}/api/test_camera?source=${encodeURIComponent(url)}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
 
-    // Create AbortController to enforce client-side timeout of 15 seconds
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, 15000);
+     // Create AbortController to enforce client-side timeout of 15 seconds
+     const controller = new AbortController();
+     const timeoutId = setTimeout(() => {
+       controller.abort();
+     }, 15000);
 
-    fetch(testApiUrl, { 
-      signal: controller.signal,
-      headers: {
-        'bypass-tunnel-reminder': 'true',
-        'ngrok-skip-browser-warning': 'true'
-      }
-    })
+     fetch(testApiUrl, { 
+       signal: controller.signal
+     })
       .then(response => response.json())
       .then(data => {
         clearTimeout(timeoutId);
@@ -615,12 +607,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const cleanUrl = url.trim();
             const uParam = (user && !cleanUrl.includes('@')) ? `&username=${encodeURIComponent(user)}` : '';
             const pParam = (pass && !cleanUrl.includes('@')) ? `&password=${encodeURIComponent(pass)}` : '';
-            const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cleanUrl)}${uParam}${pParam}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t=${Date.now()}`;
+            const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cleanUrl)}${uParam}${pParam}&t=${Date.now()}`;
             
             previewFeed.onerror = function() {
               if (this.dataset.fallbackActive) return;
               this.dataset.fallbackActive = "true";
-              const snapBase = `${testUrl}/snapshot?source=${encodeURIComponent(cleanUrl)}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`;
+              const snapBase = `${testUrl}/snapshot?source=${encodeURIComponent(cleanUrl)}`;
               setInterval(() => {
                 const temp = new Image();
                 temp.onload = () => { this.src = temp.src; };
@@ -804,7 +796,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const edgeAgentInput = document.getElementById('edgeAgentUrl');
         const edgeAgentUrlVal = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
-        const savedEdge = localStorage.getItem('edgeAgentUrl') || 'https://confider-celery-deskbound.ngrok-free.dev';
+        const savedEdge = localStorage.getItem('edgeAgentUrl') || 'https://camera.codevortex.in';
         const targetUrl = edgeAgentUrlVal || savedEdge || AI_SERVICE_URL;
 
         const response = await fetch(`${targetUrl}/api/discover`);
