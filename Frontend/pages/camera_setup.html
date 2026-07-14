@@ -10,7 +10,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Safety Shield | Video Sensor Uplink</title>
+    <title>AI Safety Shield | Camera Setup & Diagnostics</title>
     
     <!-- GOOGLE FONTS -->
     <link rel="stylesheet" href="../css/index_new.css">
@@ -938,7 +938,7 @@
             <div class="step-connector active"></div>
             <div class="step-item active">
                 <div class="step-number">2</div>
-                <span>Video Sensor Uplink</span>
+                <span>Video Camera Setup</span>
             </div>
             <div class="step-connector"></div>
             <div class="step-item">
@@ -951,8 +951,8 @@
             
             <!-- LEFT PANEL: SYSTEM DIAGNOSTICS & VERIFICATION HMI -->
             <div class="setup-card">
-                <h2>Video Sensor Diagnostics</h2>
-                <p class="card-desc">Verify optical connectivity, calibrate spatial safety zones, and evaluate threat vectors in real-time.</p>
+                <h2>Camera Setup & Diagnostics</h2>
+                <p class="card-desc">Verify connection, set up safety warnings, and evaluate safety events in real-time.</p>
 
                 <!-- Glowing interactive camera view finder scope -->
                 <div class="scope-container" id="previewContainer" style="position: relative;">
@@ -984,25 +984,25 @@
                     
                     <div class="scope-overlay-tag tag-feed-status" style="z-index: 12;">
                         <div class="status-pulse-dot" id="streamStatusDot"></div>
-                        <span id="streamStatusText">INGEST_CORE: STANDBY</span>
+                        <span id="streamStatusText">CAMERA STATUS: STANDBY</span>
                     </div>
                     <div class="scope-overlay-tag tag-resolution" id="streamResolution" style="z-index: 12;">
                         <span>1920x1080 @ 60 FPS</span>
                     </div>
                     <div class="scope-overlay-tag tag-lens-details" id="streamTitleTag" style="z-index: 12;">
-                        <span>SENSOR GATEWAY UNCONNECTED</span>
+                        <span>CAMERA DISCONNECTED</span>
                     </div>
 
                     <!-- Inner Loading animation -->
                     <div id="streamLoader" style="position: absolute; inset: 0; background: rgba(2, 6, 23, 0.85); z-index: 8; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
                         <div class="spinner"></div>
-                        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: var(--primary-neon); letter-spacing: 1px;">CONNECTING TO VIDEO SENSOR...</span>
+                        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: var(--primary-neon); letter-spacing: 1px;">CONNECTING TO VIDEO CAMERA...</span>
                     </div>
                 </div>
 
                 <!-- AI DETECTION TEST PANEL -->
                 <div class="scada-panel-title" style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--primary-neon); letter-spacing: 1.5px; text-transform: uppercase; margin: 25px 0 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(6, 182, 212, 0.2); padding-bottom: 8px;">
-                    <span>🧠 AI DETECTION TEST MATRIX</span>
+                    <span>🧠 Live AI Detection Stats</span>
                 </div>
                 <div class="scada-hud-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
                     <!-- Human Count Widget -->
@@ -1029,7 +1029,7 @@
 
                 <!-- TELEMETRY DASHBOARD SECTION -->
                 <div class="scada-panel-title" style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--primary-neon); letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(6, 182, 212, 0.2); padding-bottom: 8px;">
-                    <span>📊 REAL-TIME TELEMETRY STREAM</span>
+                    <span>📊 Live Camera Performance</span>
                 </div>
                 <div class="telemetry-grid-scada" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
                     <!-- Stream Health -->
@@ -1053,7 +1053,7 @@
             <!-- RIGHT PANEL: CAMERA CONNECTIONS FORM & DISCOVERY WIZARD -->
             <div class="setup-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(6, 182, 212, 0.15); padding-bottom: 10px;">
-                    <h2 style="margin-bottom: 0; font-size: 20px;">Optical Uplink</h2>
+                    <h2 style="margin-bottom: 0; font-size: 20px;">Add Camera Feed</h2>
                     <div style="display: flex; gap: 8px;">
                         <button type="button" class="btn-grid-tab active" id="tabManual">Manual Link</button>
                         <button type="button" class="btn-grid-tab" id="tabDiscovery">Discovery Wizard</button>
@@ -1062,13 +1062,13 @@
 
                 <!-- MANUAL ONBOARDING -->
                 <div id="manualOnboardingContainer">
-                    <p class="card-desc" style="margin-bottom: 20px;">Assign a unique optical feed input to the YOLOv8 neural hazard tracking envelope.</p>
+                    <p class="card-desc" style="margin-bottom: 20px;">Assign a unique video stream input to the AI safety detection system.</p>
 
                     <form id="cameraForm" class="setup-form" novalidate>
                         <!-- CAMERA NAME INPUT -->
                         <div class="input-group">
                             <input type="text" id="camName" placeholder=" " required autocomplete="off" />
-                            <label for="camName">Camera Node Name</label>
+                            <label for="camName">Camera Name</label>
                         </div>
 
                         <!-- CAMERA SURVEILLANCE TYPE & LOCATION -->
@@ -1084,7 +1084,7 @@
                                     <option value="MJPEG">HTTP MJPEG Camera</option>
                                     <option value="HTTPS">HTTPS Camera Feed</option>
                                 </select>
-                                <label for="camType">Sensor Protocol Type</label>
+                                <label for="camType">Camera Connection Type</label>
                             </div>
                             <div class="input-group">
                                 <input type="text" id="camLocation" placeholder=" " required autocomplete="off" />
@@ -1229,7 +1229,7 @@
             <span class="tag">AI SAFETY SHIELD</span>
           </a>
           <p class="cv-footer-desc">
-            Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing.
+            AI-powered camera safety system and proximity warning shields for industrial machinery and automation.
           </p>
           <div class="cv-status-pill">
             <span class="cv-status-dot"></span>
@@ -1251,7 +1251,7 @@
           <h4>Hardware</h4>
           <ul>
             <li><a href="camera_setup.html">AI Camera Setup</a></li>
-            <li><a href="diagnostics.html">Diagnostic Matrix</a></li>
+            <li><a href="diagnostics.html">System Diagnostics</a></li>
             <li><a href="notifications.html">System Alerts</a></li>
             <li><a href="admin.html">Admin Console</a></li>
           </ul>
@@ -1262,7 +1262,7 @@
           <ul>
             <li><a href="learn-more.html">How It Works</a></li>
             <li><a href="contact.html">Contact Engineering</a></li>
-            <li><a href="solution.html">Solution Matrix</a></li>
+            <li><a href="solution.html">Safety Features</a></li>
             <li><a href="login.html">Operator Gateway</a></li>
           </ul>
         </div>
