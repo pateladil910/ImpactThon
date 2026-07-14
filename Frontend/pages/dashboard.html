@@ -375,21 +375,6 @@
             </div>
           </div>
 
-          <!-- 🧾 INCIDENT EVENT LOG -->
-          <div class="box incident-log-panel" style="min-height: 250px; display: flex; flex-direction: column; width: 100%;">
-            <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <span>🧾 Real-Time Safety Threat Incident Log</span>
-              <div style="display: flex; gap: 6px;">
-                <button onclick="exportPDFReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); color: var(--primary-neon);">Export PDF</button>
-                <button onclick="exportExcelReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); color: var(--safe-green);">Export Excel</button>
-                <button onclick="clearIncidentLogs()" class="btn-danger-cyber" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(239,68,68,0.25);">Clear Logs</button>
-              </div>
-            </div>
-            <div id="incident-log-console" style="background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(6, 182, 212, 0.1); border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.5; color: var(--text-main); display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);">
-              <div style="color: var(--text-muted); text-align: center; margin-top: 50px;">Waiting for real-time safety telemetry events...</div>
-            </div>
-          </div>
-
         </div>
 
         <!-- RIGHT PANEL: Safety Status, System Actions, AI metrics -->
@@ -433,6 +418,21 @@
 
         </div>
 
+      </div>
+
+      <!-- 🧾 INCIDENT EVENT LOG -->
+      <div class="box incident-log-panel" style="min-height: 250px; display: flex; flex-direction: column; width: 100%; margin-bottom: 40px;">
+        <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span>🧾 Real-Time Safety Threat Incident Log</span>
+          <div style="display: flex; gap: 6px;">
+            <button onclick="exportPDFReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); color: var(--primary-neon);">Export PDF</button>
+            <button onclick="exportExcelReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); color: var(--safe-green);">Export Excel</button>
+            <button onclick="clearIncidentLogs()" class="btn-danger-cyber" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(239,68,68,0.25);">Clear Logs</button>
+          </div>
+        </div>
+        <div id="incident-log-console" style="background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(6, 182, 212, 0.1); border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.5; color: var(--text-main); display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);">
+          <div style="color: var(--text-muted); text-align: center; margin-top: 50px;">Waiting for real-time safety telemetry events...</div>
+        </div>
       </div>
 
       <!-- ================= CAMERA MANAGER PANEL ================= -->
