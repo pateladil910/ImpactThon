@@ -266,8 +266,8 @@ html.is-admin .admin-only-nav {
     }
 }
 
-/* Tablets & Mobile Drawer Collapse (Under 1300px) */
-@media (max-width: 1300px) {
+/* Tablets & Mobile Drawer Collapse (Under 1600px) */
+@media (max-width: 1600px) {
     .menu-toggle {
         display: flex; /* Bring the hamburger engine alive */
     }
@@ -427,7 +427,7 @@ html.is-admin .admin-only-nav {
 }
 
 /* ===== LAPTOP & DESKTOP CENTERED NAVBAR (1301px and above) ===== */
-@media (min-width: 1301px) {
+@media (min-width: 1601px) {
     .navbar {
         position: relative; /* Fixed position context remains, this secures absolute centering context */
     }
