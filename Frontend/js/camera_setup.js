@@ -661,24 +661,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       })
       .catch(err => {
         clearTimeout(timeoutId);
-        console.warn("Camera verification failed, falling back to Demo Mode for development:", err);
+        console.warn("Camera verification failed:", err);
         
-        isCameraVerified = true;
-        updateDeployButtonState();
         if (streamLoader) streamLoader.style.display = 'none';
-
-        if (previewFeed) {
-          previewFeed.src = '../images/factory_safety_bg.webp';
-          previewFeed.style.display = 'block';
+        
+        const isDemo = demoModeToggle && demoModeToggle.checked;
+        if (isDemo) {
+          isCameraVerified = true;
+          updateDeployButtonState();
+          if (previewFeed) {
+            previewFeed.src = '../images/factory_safety_bg.webp';
+            previewFeed.style.display = 'block';
+          }
+          verifyStream('success', 'Resolution: 1920x1080 | FPS: 30 (Demo Stream)');
+          showHUDToast('DEMO FEED ACTIVE', 'Verification bypassed. Mock live video uplink successful.', 'success');
+          if (streamResolution) streamResolution.textContent = '1920x1080';
+          if (hudFps) hudFps.textContent = '30 FPS';
+          startRealTimeTelemetry();
+        } else {
+          isCameraVerified = false;
+          updateDeployButtonState();
+          verifyStream('error', 'Camera offline or verification failed. Check Edge Agent/Tunnel connection.');
+          showHUDToast('CONNECTION FAILED', 'Could not reach the Edge Agent or Camera. Verify your settings.', 'error');
         }
-        
-        verifyStream('success', 'Resolution: 1920x1080 | FPS: 30 (Demo Stream)');
-        showHUDToast('DEMO FEED ACTIVE', 'Verification bypassed. Mock live video uplink successful.', 'success');
-        
-        if (streamResolution) streamResolution.textContent = '1920x1080';
-        if (hudFps) hudFps.textContent = '30 FPS';
-        
-        startRealTimeTelemetry();
       });
   });
 
