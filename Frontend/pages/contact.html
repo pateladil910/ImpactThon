@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Safety Shield | Secure Uplink Portal</title>
+    <title>AI Safety Shield | Contact Technical Support</title>
     
     <!-- GOOGLE FONTS -->
     <link rel="stylesheet" href="../css/index_new.css">
@@ -618,13 +618,13 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(6, 182, 212, 0.04); border: 1px solid rgba(6, 182, 212, 0.15); border-radius: 6px; padding: 10px 14px; margin-bottom: 25px; font-family: 'Space Grotesk', sans-serif;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="width: 6px; height: 6px; background-color: var(--primary-neon); border-radius: 50%; box-shadow: 0 0 6px var(--primary-neon);"></span>
-                            <span style="font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--primary-neon);">NODE // LDRP.SECURE.GATE</span>
+                            <span style="font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--primary-neon);">TECHNICAL SUPPORT PORTAL</span>
                         </div>
                         <span id="system-clock" style="font-size: 9px; font-weight: 600; color: rgba(6, 182, 212, 0.5); letter-spacing: 0.5px;">SYSTEM TIME: --:--:--</span>
                     </div>
 
-                    <h1>Security Uplink</h1>
-                    <p>Establish a secured transmission packet straight to the AI Safety Shield operational response and deployment engineering cluster.</p>
+                    <h1>Contact Technical Support</h1>
+                    <p>Get in touch with the Code Vortex engineering team. We are here to assist you with installation, setup, hardware integration, or custom support.</p>
                 </div>
 
                 <div class="info-list">
@@ -637,7 +637,7 @@
                             </svg>
                         </div>
                         <div class="info-content">
-                            <span class="info-label">Sector Coordinates</span>
+                            <span class="info-label">Headquarters Location</span>
                             <span class="info-value">LDRP-ITR, Gandhinagar, Gujarat, India</span>
                         </div>
                     </div>
@@ -650,7 +650,7 @@
                             </svg>
                         </div>
                         <div class="info-content">
-                            <span class="info-label">Secure Data Channel</span>
+                            <span class="info-label">Email Address</span>
                             <span class="info-value">codevortex09@gmail.com</span>
                         </div>
                     </div>
@@ -663,7 +663,7 @@
                             </svg>
                         </div>
                         <div class="info-content">
-                            <span class="info-label">Secured Audio Comm</span>
+                            <span class="info-label">Phone Support</span>
                             <span class="info-value">+91 91067 86186</span>
                         </div>
                     </div>
@@ -671,8 +671,8 @@
 
                 <div class="cyber-deck">
                     <div>
-                        <span class="info-label" style="font-size: 9px;">CONNECTION LAYER</span>
-                        <div style="font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px;">AES-256-GCM DIRECT UPLINK</div>
+                        <span class="info-label" style="font-size: 9px;">SECURE TRANSMISSION</span>
+                        <div style="font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px;">Encrypted Direct Mailbox</div>
                     </div>
                     <div class="deck-status">
                         <span class="deck-dot"></span>
@@ -683,31 +683,31 @@
 
             <!-- SECURE MESSAGE TRANSMITTER CARD (RIGHT) -->
             <div class="form-card">
-                <h2>Transmit Data Packet</h2>
-                <p class="form-desc">Complete all fields below. The transmission payload will be fully encrypted upon execution.</p>
+                <h2>Send Us a Message</h2>
+                <p class="form-desc">Please complete the form below. Our support team will review your inquiry and respond within 24 hours.</p>
 
                 <!-- CONTACT FORM -->
                 <form class="contact-form" id="contactForm" novalidate>
                     <div class="input-group">
                         <input type="text" id="contact-name" placeholder=" " required autocomplete="off">
-                        <label for="contact-name">Operator Name</label>
+                        <label for="contact-name">Your Name</label>
                     </div>
 
                     <div class="input-group">
                         <input type="email" id="contact-email" placeholder=" " required autocomplete="off">
-                        <label for="contact-email">Encrypted Email Address</label>
+                        <label for="contact-email">Your Email Address</label>
                     </div>
 
                     <div class="input-group">
                         <textarea id="contact-message" rows="5" placeholder=" " required autocomplete="off"></textarea>
-                        <label for="contact-message">Secure Message Details</label>
+                        <label for="contact-message">How can we help you?</label>
                     </div>
 
                     <button type="submit" id="contact-submit-btn" class="submit-btn">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"></path>
                         </svg>
-                        <span>Transmit Packet</span>
+                        <span>Send Message</span>
                     </button>
                 </form>
             </div>
@@ -924,17 +924,17 @@
 
             // Direct frontend secure scanning checks
             if (!name) {
-                showHUDToast("Transmission Alert", "Please insert a valid Operator Name key.", "error");
+                showHUDToast("Form Error", "Please enter your name.", "error");
                 nameEl.focus();
                 return;
             }
             if (!email || !email.includes('@')) {
-                showHUDToast("Transmission Alert", "Please check your Encrypted Email address format.", "error");
+                showHUDToast("Form Error", "Please enter a valid email address.", "error");
                 emailEl.focus();
                 return;
             }
             if (!message || message.length < 5) {
-                showHUDToast("Transmission Alert", "Please enrich your secure packet message content.", "error");
+                showHUDToast("Form Error", "Please enter your message (at least 5 characters).", "error");
                 messageEl.focus();
                 return;
             }
@@ -944,7 +944,7 @@
                 <svg style="animation: spin 1s linear infinite;" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
                 </svg>
-                <span>TRANSMITTING...</span>
+                <span>SENDING...</span>
             `;
             btn.disabled = true;
 
@@ -959,28 +959,28 @@
                 try {
                     data = await res.json();
                 } catch (jsonErr) {
-                    data = { success: res.ok, msg: res.ok ? "Data packet transmitted successfully." : "Uplink server returned unexpected status code." };
+                    data = { success: res.ok, msg: res.ok ? "Message sent successfully." : "Server returned unexpected status code." };
                 }
 
                 if (res.ok && data.success) {
-                    showHUDToast("Transmission Complete", "Your secure data packet has been successfully uplinked to LDRP networks.", "success");
+                    showHUDToast("Message Sent", "Your message has been successfully sent to our support team.", "success");
                     document.getElementById('contactForm').reset();
                     // Manually dispatch input events to slide down floating labels
                     [nameEl, emailEl, messageEl].forEach(element => {
                         element.dispatchEvent(new Event('input'));
                     });
                 } else {
-                    showHUDToast("Uplink Aborted", data.msg || "System gateway rejected payload transmission.", "error");
+                    showHUDToast("Sending Failed", data.msg || "Failed to send the message.", "error");
                 }
             } catch (err) {
                 console.error("API Transmission Error:", err);
-                showHUDToast("Link Offline", "Unable to reach server node. Direct proxy connection failed.", "error");
+                showHUDToast("Connection Error", "Unable to reach the server. Please check your internet connection.", "error");
             } finally {
                 btn.innerHTML = `
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"></path>
                     </svg>
-                    <span>Transmit Packet</span>
+                    <span>Send Message</span>
                 `;
                 btn.disabled = false;
             }
