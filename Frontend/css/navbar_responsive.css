@@ -266,8 +266,8 @@ html.is-admin .admin-only-nav {
     }
 }
 
-/* Tablets & Mobile Drawer Collapse (Under 1600px) */
-@media (max-width: 1600px) {
+/* Tablets & Mobile Drawer Collapse (Under 1250px) */
+@media (max-width: 1250px) {
     .menu-toggle {
         display: flex; /* Bring the hamburger engine alive */
     }
@@ -426,31 +426,37 @@ html.is-admin .admin-only-nav {
     }
 }
 
-/* ===== LAPTOP & DESKTOP CENTERED NAVBAR (1301px and above) ===== */
-@media (min-width: 1601px) {
+/* ===== LAPTOP & DESKTOP CENTERED NAVBAR (1251px and above) ===== */
+@media (min-width: 1251px) {
     .navbar {
-        position: relative; /* Fixed position context remains, this secures absolute centering context */
+        padding: 10px 24px !important;
+    }
+
+    .logo {
+        font-size: 19px !important;
     }
 
     .nav-menu {
         display: flex !important;
-        justify-content: flex-end !important; /* Push auth buttons and profile box to the far right */
+        justify-content: space-between !important;
         align-items: center !important;
         flex-grow: 1 !important;
-        margin-left: 0 !important; /* Clear old static margin */
+        margin-left: 30px !important;
     }
 
     .nav-links {
-        position: absolute !important;
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
         display: flex !important;
-        gap: 20px !important; /* Premium spacing gap for laptop layout */
+        gap: 8px !important;
         align-items: center !important;
         list-style: none !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
         padding: 0 !important;
+    }
+
+    .nav-links a {
+        font-size: 13px !important;
+        letter-spacing: 0.1px !important;
+        padding: 6px 3px !important;
     }
 }
 
