@@ -537,7 +537,7 @@
             <div class="step-connector active"></div>
             <div class="step-item completed">
                 <div class="step-number">2</div>
-                <span>Video Sensor Uplink</span>
+                <span>Video Camera Setup</span>
             </div>
             <div class="step-connector active"></div>
             <div class="step-item active">
@@ -602,7 +602,7 @@
                 </div>
 
                 <div class="coords-card" style="border-left: 3px solid var(--primary-neon);">
-                    <h4 style="color: var(--primary-neon);">Device Uplink Information</h4>
+                    <h4 style="color: var(--primary-neon);">Device Camera Information</h4>
                     <div class="coords-row"><span>Name:</span><span class="coords-value" id="infoName">-</span></div>
                     <div class="coords-row"><span>Location:</span><span class="coords-value" id="infoLocation">-</span></div>
                     <div class="coords-row"><span>Stream URL:</span><span class="coords-value" style="word-break: break-all;" id="infoUrl">-</span></div>
@@ -632,7 +632,7 @@
             <span class="tag">AI SAFETY SHIELD</span>
           </a>
           <p class="cv-footer-desc">
-            Autonomous sensor-gated proximity interlock matrix and real-time computer vision safety core for industrial robotics and manufacturing.
+            AI-powered camera safety system and proximity warning shields for industrial machinery and automation.
           </p>
           <div class="cv-status-pill">
             <span class="cv-status-dot"></span>
@@ -654,7 +654,7 @@
           <h4>Hardware</h4>
           <ul>
             <li><a href="camera_setup.html">AI Camera Setup</a></li>
-            <li><a href="diagnostics.html">Diagnostic Matrix</a></li>
+            <li><a href="diagnostics.html">System Diagnostics</a></li>
             <li><a href="notifications.html">System Alerts</a></li>
             <li><a href="admin.html">Admin Console</a></li>
           </ul>
@@ -665,7 +665,7 @@
           <ul>
             <li><a href="learn-more.html">How It Works</a></li>
             <li><a href="contact.html">Contact Engineering</a></li>
-            <li><a href="solution.html">Solution Matrix</a></li>
+            <li><a href="solution.html">Safety Features</a></li>
             <li><a href="login.html">Operator Gateway</a></li>
           </ul>
         </div>
@@ -804,7 +804,7 @@
                     previewFeed.src = `${testUrl}/video_feed?source=${encodeURIComponent(tempConfig.url)}${uParam}${pParam}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t=${Date.now()}`;
                 }
             } else {
-                showHUDToast('CALIBRATION FAILURE', 'Uplink config not found. Redirecting...', 'error');
+                showHUDToast('CALIBRATION FAILURE', 'Camera configuration not found. Redirecting...', 'error');
                 setTimeout(() => { location.href = "camera_setup.html"; }, 2000);
             }
 
@@ -1044,7 +1044,7 @@
 
             const btnDeploy = document.getElementById('btnDeploy');
             btnDeploy.disabled = true;
-            btnDeploy.textContent = "Deploying Matrix...";
+            btnDeploy.textContent = "Deploying Safety System...";
 
             // Create final camera object
             const newCam = {
