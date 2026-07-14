@@ -44,21 +44,31 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-// 2. Get all users with DANGER detection counts
+// 2. Get all users with DANGER detections, cameras status, and alert email telemetry
 router.get("/users", async (req, res) => {
   try {
     const users = await User.aggregate([
+      // Lookup detections history
       {
         $lookup: {
-          from: "history", // Ensure this matches the collection name in MongoDB
-          localField: "_id", // CHANGED: Use _id for more reliable linking
-          foreignField: "userId", // Ensure this matches the field in your Detection schema
+          from: "history",
+          localField: "_id",
+          foreignField: "userId",
           as: "userDetections"
+        }
+      },
+      // Lookup cameras
+      {
+        $lookup: {
+          from: "cameras",
+          localField: "_id",
+          foreignField: "userId",
+          as: "userCameras"
         }
       },
       {
         $addFields: {
-          // NEW: Filter only the 'DANGER' status detections before counting
+          // Count only 'DANGER' status detections
           dangerCount: {
             $size: {
               $filter: {
@@ -68,14 +78,46 @@ router.get("/users", async (req, res) => {
               }
             }
           },
-          // Keep total count if you still want it
-          totalDetections: { $size: "$userDetections" }
+          totalDetections: { $size: "$userDetections" },
+          
+          // Cameras telemetry
+          camerasCount: { $size: "$userCameras" },
+          activeCamerasCount: {
+            $size: {
+              $filter: {
+                input: "$userCameras",
+                as: "c",
+                cond: { $eq: ["$$c.status", "Online"] }
+              }
+            }
+          },
+
+          // Alert emails telemetry
+          emailAlertsSent: {
+            $size: {
+              $filter: {
+                input: "$userDetections",
+                as: "d",
+                cond: { $eq: ["$$d.email_status", "sent"] }
+              }
+            }
+          },
+          emailAlertsFailed: {
+            $size: {
+              $filter: {
+                input: "$userDetections",
+                as: "d",
+                cond: { $eq: ["$$d.email_status", "failed"] }
+              }
+            }
+          }
         }
       },
       {
         $project: {
           password: 0,
-          userDetections: 0
+          userDetections: 0,
+          userCameras: 0
         }
       }
     ]);

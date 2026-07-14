@@ -6,22 +6,34 @@ if (typeof window.API_BASE_URL === 'undefined') {
 var API_BASE_URL = window.API_BASE_URL;
 var ADMIN_API_BASE = `${API_BASE_URL}/api/admin`;
 
+// Helper: retrieve secure JWT header
+function getAuthHeaders() {
+  const token = localStorage.getItem("token") || "";
+  return {
+    "Authorization": token ? `Bearer ${token}` : "",
+    "Cache-Control": "no-cache"
+  };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Immediately check if user is allowed here by fetching stats
-  // If they aren't an admin, the backend will return 401 or 403.
+  // 1. Load initial dashboard metrics, operators, and logs
   loadDashboardData();
+
+  // 2. Set up real-time 3-second auto-refresh polling loop
+  setInterval(loadDashboardData, 3000);
 });
 
 async function loadDashboardData() {
   try {
-    // Fetch Stats
-    const statsRes = await fetch(`${ADMIN_API_BASE}/stats`, {
-      credentials: "include" // Important for sending the auth cookie
+    // Fetch Stats with cache buster
+    const statsRes = await fetch(`${ADMIN_API_BASE}/stats?t=${Date.now()}`, {
+      credentials: "include",
+      headers: getAuthHeaders()
     });
 
     if (statsRes.status === 401 || statsRes.status === 403) {
-      // Not authorized! Kick them out immediately.
-      alert("Access Denied. You are not an admin.");
+      // Access Denied! Log out immediately.
+      alert("Access Denied. You are not authorized as an administrator.");
       window.location.replace("index.html");
       return;
     }
@@ -33,28 +45,32 @@ async function loadDashboardData() {
       document.getElementById("stat-incidents").textContent = statsData.stats.totalIncidents;
     }
 
-    // Fetch Users
-    loadUsers();
+    // Load Users (if Admin is not currently focusing on role selection dropdown)
+    const isAnySelectFocused = document.activeElement && document.activeElement.classList.contains("role-select");
+    if (!isAnySelectFocused) {
+      loadUsers();
+    }
     
-    // Fetch Contacts
+    // Load Contacts
     loadContacts();
 
   } catch (error) {
-    console.error("Dashboard load error:", error);
+    console.error("Dashboard real-time polling error:", error);
   }
 }
 
 async function loadContacts() {
   try {
-    const res = await fetch(`${ADMIN_API_BASE}/contacts`, {
-      credentials: "include"
+    const res = await fetch(`${ADMIN_API_BASE}/contacts?t=${Date.now()}`, {
+      credentials: "include",
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (data.success) {
       renderContactsTable(data.contacts);
     }
   } catch (error) {
-    console.error("Failed to load contacts:", error);
+    console.error("Failed to load contacts in real-time:", error);
   }
 }
 
@@ -63,7 +79,7 @@ function renderContactsTable(contacts) {
   tbody.innerHTML = "";
   
   if (contacts.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No messages yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No inbound messages yet.</td></tr>';
     return;
   }
 
@@ -71,7 +87,7 @@ function renderContactsTable(contacts) {
     const tr = document.createElement("tr");
 
     const tdDate = document.createElement("td");
-    tdDate.textContent = new Date(msg.createdAt).toLocaleString();
+    tdDate.textContent = new Date(msg.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     tr.appendChild(tdDate);
 
     const tdName = document.createElement("td");
@@ -92,8 +108,9 @@ function renderContactsTable(contacts) {
 
 async function loadUsers() {
   try {
-    const res = await fetch(`${ADMIN_API_BASE}/users`, {
-      credentials: "include"
+    const res = await fetch(`${ADMIN_API_BASE}/users?t=${Date.now()}`, {
+      credentials: "include",
+      headers: getAuthHeaders()
     });
     const data = await res.json();
 
@@ -101,7 +118,7 @@ async function loadUsers() {
       renderUsersTable(data.users);
     }
   } catch (error) {
-    console.error("Failed to load users:", error);
+    console.error("Failed to load users in real-time:", error);
   }
 }
 
@@ -112,24 +129,44 @@ function renderUsersTable(users) {
   users.forEach(user => {
     const tr = document.createElement("tr");
 
-    // Name
+    // 1. Name
     const tdName = document.createElement("td");
-    tdName.textContent = user.name;
+    tdName.textContent = user.name || "Operator";
     tr.appendChild(tdName);
 
-    // Email
+    // 2. Email Address
     const tdEmail = document.createElement("td");
     tdEmail.textContent = user.email;
     tr.appendChild(tdEmail);
 
-    // Detections
+    // 3. Active Cameras (Status Badge)
+    const tdCameras = document.createElement("td");
+    if (!user.camerasCount || user.camerasCount === 0) {
+      tdCameras.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700; color:#94a3b8;">No Cameras</span>`;
+    } else if (user.activeCamerasCount > 0) {
+      tdCameras.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700; color:#10b981; text-shadow:0 0 8px rgba(16,185,129,0.3);"><span style="width:6px; height:6px; background-color:#10b981; border-radius:50%; box-shadow:0 0 8px #10b981;"></span>Online (${user.activeCamerasCount}/${user.camerasCount})</span>`;
+    } else {
+      tdCameras.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700; color:#ef4444; text-shadow:0 0 8px rgba(239,68,68,0.3);"><span style="width:6px; height:6px; background-color:#ef4444; border-radius:50%; box-shadow:0 0 8px #ef4444;"></span>Offline (0/${user.camerasCount})</span>`;
+    }
+    tr.appendChild(tdCameras);
+
+    // 4. Danger Intrusions (Breaches)
     const tdDetections = document.createElement("td");
-    tdDetections.textContent = user.dangerCount || 0;
-    tdDetections.style.fontWeight = "bold";
-    tdDetections.style.color = "#4DE6D6";
+    const count = user.dangerCount || 0;
+    tdDetections.innerHTML = `<span style="font-weight:bold; color:#4DE6D6; text-shadow:0 0 8px rgba(77,230,214,0.3);">${count} ${count === 1 ? 'breach' : 'breaches'}</span>`;
     tr.appendChild(tdDetections);
 
-    // Role Select
+    // 5. Alert Emails (Sent / Failed Status)
+    const tdEmails = document.createElement("td");
+    tdEmails.innerHTML = `
+      <div style="display:inline-flex; flex-direction:column; gap:2px; font-size:11px; font-family:'Fira Code', monospace; line-height:1.2;">
+        <span style="color:#10b981; font-weight:bold;">📬 ${user.emailAlertsSent || 0} Sent</span>
+        ${(user.emailAlertsFailed > 0) ? `<span style="color:#ef4444; font-weight:bold;">❌ ${user.emailAlertsFailed} Failed</span>` : ''}
+      </div>
+    `;
+    tr.appendChild(tdEmails);
+
+    // 6. Role Select Dropdown
     const tdRole = document.createElement("td");
     const select = document.createElement("select");
     select.className = "role-select";
@@ -146,12 +183,12 @@ function renderUsersTable(users) {
     tdRole.appendChild(select);
     tr.appendChild(tdRole);
 
-    // Actions
+    // 7. Security Actions
     const tdActions = document.createElement("td");
 
     const updateBtn = document.createElement("button");
     updateBtn.className = "action-btn btn-update";
-    updateBtn.textContent = "Update Role";
+    updateBtn.textContent = "Update";
     updateBtn.onclick = () => updateUserRole(user._id);
 
     const deleteBtn = document.createElement("button");
@@ -177,7 +214,10 @@ async function updateUserRole(userId) {
   try {
     const res = await fetch(`${ADMIN_API_BASE}/users/${userId}/role`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...getAuthHeaders()
+      },
       credentials: "include",
       body: JSON.stringify({ role: newRole })
     });
@@ -185,7 +225,7 @@ async function updateUserRole(userId) {
     const data = await res.json();
     if (data.success) {
       alert("Role updated successfully!");
-      loadUsers(); // Refresh the table
+      loadUsers(); // Refresh the table immediately
     } else {
       alert(data.msg || "Failed to update role");
     }
@@ -203,13 +243,14 @@ async function deleteUser(userId) {
   try {
     const res = await fetch(`${ADMIN_API_BASE}/users/${userId}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
       credentials: "include"
     });
 
     const data = await res.json();
     if (data.success) {
-      alert("User deleted!");
-      loadUsers(); // Refresh the table
+      alert("User deleted successfully!");
+      loadUsers(); // Refresh the table immediately
     } else {
       alert(data.msg || "Failed to delete user");
     }
