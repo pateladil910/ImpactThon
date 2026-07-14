@@ -188,6 +188,35 @@
       height: 1px;
       background: rgba(6, 182, 212, 0.12);
     }
+    
+    /* Custom aligned flex layout for dashboard grid panels */
+    .dashboard-grid-flex {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 40px;
+      align-items: flex-start;
+      width: 100%;
+    }
+    .dashboard-col-left {
+      flex: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      min-width: 0;
+    }
+    .dashboard-col-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      min-width: 0;
+    }
+    @media (max-width: 1024px) {
+      .dashboard-grid-flex {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
   </style>
 </head>
 
@@ -289,109 +318,119 @@
       <div class="section-heading">Live Telemetry Grid</div>
 
       <!-- ================= GRID ================= -->
-      <div class="dashboard-grid">
+      <div class="dashboard-grid-flex">
 
-        <!-- 🎥 CAMERA VIEWPORT GRID -->
-        <div class="box camera" style="grid-column: span 2; grid-row: span 2; display: flex; flex-direction: column;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-            <div class="box-title" style="margin-bottom: 0;">🎥 Multi-Sensor AI Grid Console</div>
-            
-            <!-- GRID SELECTOR TOOLBAR -->
-            <div style="display: flex; gap: 4px; background: rgba(2, 6, 23, 0.6); padding: 4px; border-radius: 6px; border: 1px solid rgba(6, 182, 212, 0.15);">
-              <button type="button" class="btn-grid-tab active" data-grid="1">1 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="4">4 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="9">9 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="16">16 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="25">25 CH</button>
-              <button type="button" class="btn-grid-tab" data-grid="36">36 CH</button>
+        <!-- LEFT PANEL: Video Console, Telemetry, and Threat Logs -->
+        <div class="dashboard-col-left">
+          
+          <!-- 🎥 CAMERA VIEWPORT GRID -->
+          <div class="box camera" style="min-height: 480px; display: flex; flex-direction: column; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+              <div class="box-title" style="margin-bottom: 0;">🎥 Multi-Sensor AI Grid Console</div>
+              
+              <!-- GRID SELECTOR TOOLBAR -->
+              <div style="display: flex; gap: 4px; background: rgba(2, 6, 23, 0.6); padding: 4px; border-radius: 6px; border: 1px solid rgba(6, 182, 212, 0.15);">
+                <button type="button" class="btn-grid-tab active" data-grid="1">1 CH</button>
+                <button type="button" class="btn-grid-tab" data-grid="4">4 CH</button>
+                <button type="button" class="btn-grid-tab" data-grid="9">9 CH</button>
+                <button type="button" class="btn-grid-tab" data-grid="16">16 CH</button>
+                <button type="button" class="btn-grid-tab" data-grid="25">25 CH</button>
+                <button type="button" class="btn-grid-tab" data-grid="36">36 CH</button>
+              </div>
+            </div>
+
+            <div class="camera-viewport-wrapper" style="position: relative; flex: 1; display: flex; flex-direction: column;">
+              <!-- DYNAMIC GRID CONTAINER -->
+              <div id="cameraGridContainer" class="camera-grid-1" style="display: grid; gap: 10px; background: rgba(0,0,0,0.65); border-radius: 10px; padding: 10px; border: 1px solid rgba(6, 182, 212, 0.15); flex: 1; width: 100%; min-height: 380px;">
+                <!-- Grid Slots populated dynamically by javascript -->
+              </div>
+            </div>
+
+            <div class="camera-status" id="camera-status-text" style="margin-top: 10px; font-size: 11px; color: var(--text-muted);">
+              SYSTEM READY – Click or drag camera nodes below to construct dynamic CCTV grid matrix. Double click any active tile to maximize.
             </div>
           </div>
 
-          <div class="camera-viewport-wrapper" style="position: relative; flex: 1; display: flex; flex-direction: column;">
-            <!-- DYNAMIC GRID CONTAINER -->
-            <div id="cameraGridContainer" class="camera-grid-1" style="display: grid; gap: 10px; background: rgba(0,0,0,0.65); border-radius: 10px; padding: 10px; border: 1px solid rgba(6, 182, 212, 0.15); flex: 1; width: 100%; min-height: 380px;">
-              <!-- Grid Slots populated dynamically by javascript -->
+          <!-- 🧠 AI TELEMETRY GRID -->
+          <div class="box" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; text-align: center; min-height: auto; width: 100%;">
+            <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
+              <div class="metric-label">Human Count</div>
+              <div id="hud-human-count" class="metric-value">0</div>
+              <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Detected Workers</div>
+            </div>
+            <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
+              <div class="metric-label">Surveillance FPS</div>
+              <div id="hud-fps" class="metric-value">0.0</div>
+              <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Real-time Feed Rate</div>
+            </div>
+            <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
+              <div class="metric-label">Link Latency</div>
+              <div id="hud-latency" class="metric-value">0ms</div>
+              <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Network Round-trip</div>
+            </div>
+            <div style="padding: 10px 8px;">
+              <div class="metric-label">Vision Model</div>
+              <div class="metric-value" style="color: var(--safe-green);">YOLOv8n</div>
+              <div style="font-size:10px; color:var(--safe-green); margin-top:3px; opacity:0.7;">Active &amp; Running</div>
             </div>
           </div>
 
-          <div class="camera-status" id="camera-status-text" style="margin-top: 10px; font-size: 11px; color: var(--text-muted);">
-            SYSTEM READY – Click or drag camera nodes below to construct dynamic CCTV grid matrix. Double click any active tile to maximize.
-          </div>
-        </div>  
-
-        <!-- 🛡 SAFETY STATUS CARD -->
-        <div class="box safe" id="safety-box">
-          <div class="box-title">🛡 Safety Zone</div>
-          <div class="box-value" id="safety-status">SAFE</div>
-          <div class="box-desc" id="safety-desc">
-            Human distance above threshold
-          </div>
-        </div>
-
-        <!-- 🧠 AI CONFIDENCE -->
-        <div class="box">
-          <div class="box-title">🧠 AI Confidence</div>
-          <div class="box-value" id="confidence-value">0%</div>
-          <div class="box-desc">
-            YOLO Object Detection Accuracy
-          </div>
-        </div>
-
-        <!-- 🕒 SHIFT / MODE WATCHDOG CARD -->
-        <div class="box" id="shift-watchdog-box">
-          <div class="box-title">🕒 Schedule Watchdog</div>
-          <div class="box-value" id="shift-watchdog-title" style="font-size: 22px;">--</div>
-          <div class="box-desc" id="shift-watchdog-status" style="color: var(--safe-green);">
-            Continuous Mode Active
-          </div>
-        </div>
-
-        <!-- 🚨 SYSTEM ACTION -->
-        <div class="box safe" id="action-box">
-          <div class="box-title">🚨 System Action</div>
-          <div class="box-value" id="system-action">RUN</div>
-          <div class="box-desc" id="system-desc">
-            System running normally
-          </div>
-        </div>
-
-        <!-- 🧠 AI TELEMETRY GRID -->
-        <div class="box" style="grid-column: span 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; text-align: center;">
-          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
-            <div class="metric-label">Human Count</div>
-            <div id="hud-human-count" class="metric-value">0</div>
-            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Detected Workers</div>
-          </div>
-          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
-            <div class="metric-label">Surveillance FPS</div>
-            <div id="hud-fps" class="metric-value">0.0</div>
-            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Real-time Feed Rate</div>
-          </div>
-          <div style="padding: 10px 8px; border-right: 1px solid rgba(6,182,212,0.08);">
-            <div class="metric-label">Link Latency</div>
-            <div id="hud-latency" class="metric-value">0ms</div>
-            <div style="font-size:10px; color:var(--text-muted); margin-top:3px;">Network Round-trip</div>
-          </div>
-          <div style="padding: 10px 8px;">
-            <div class="metric-label">Vision Model</div>
-            <div class="metric-value" style="color: var(--safe-green);">YOLOv8n</div>
-            <div style="font-size:10px; color:var(--safe-green); margin-top:3px; opacity:0.7;">Active &amp; Running</div>
-          </div>
-        </div>
-
-        <!-- 🧾 INCIDENT EVENT LOG -->
-        <div class="box incident-log-panel" style="grid-column: span 2; min-height: 250px; display: flex; flex-direction: column;">
-          <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <span>🧾 Real-Time Safety Threat Incident Log</span>
-            <div style="display: flex; gap: 6px;">
-              <button onclick="exportPDFReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); color: var(--primary-neon);">Export PDF</button>
-              <button onclick="exportExcelReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); color: var(--safe-green);">Export Excel</button>
-              <button onclick="clearIncidentLogs()" class="btn-danger-cyber" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(239,68,68,0.25);">Clear Logs</button>
+          <!-- 🧾 INCIDENT EVENT LOG -->
+          <div class="box incident-log-panel" style="min-height: 250px; display: flex; flex-direction: column; width: 100%;">
+            <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <span>🧾 Real-Time Safety Threat Incident Log</span>
+              <div style="display: flex; gap: 6px;">
+                <button onclick="exportPDFReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); color: var(--primary-neon);">Export PDF</button>
+                <button onclick="exportExcelReport()" class="btn-grid-tab" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); color: var(--safe-green);">Export Excel</button>
+                <button onclick="clearIncidentLogs()" class="btn-danger-cyber" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(239,68,68,0.25);">Clear Logs</button>
+              </div>
+            </div>
+            <div id="incident-log-console" style="background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(6, 182, 212, 0.1); border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.5; color: var(--text-main); display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);">
+              <div style="color: var(--text-muted); text-align: center; margin-top: 50px;">Waiting for real-time safety telemetry events...</div>
             </div>
           </div>
-          <div id="incident-log-console" style="background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(6, 182, 212, 0.1); border-radius: 8px; padding: 12px; height: 180px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.5; color: var(--text-main); display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);">
-            <div style="color: var(--text-muted); text-align: center; margin-top: 50px;">Waiting for real-time safety telemetry events...</div>
+
+        </div>
+
+        <!-- RIGHT PANEL: Safety Status, System Actions, AI metrics -->
+        <div class="dashboard-col-right">
+
+          <!-- 🛡 SAFETY STATUS CARD -->
+          <div class="box safe" id="safety-box" style="min-height: 140px; width: 100%;">
+            <div class="box-title">🛡 Safety Zone</div>
+            <div class="box-value" id="safety-status">SAFE</div>
+            <div class="box-desc" id="safety-desc">
+              Human distance above threshold
+            </div>
           </div>
+
+          <!-- 🚨 SYSTEM ACTION -->
+          <div class="box safe" id="action-box" style="min-height: 140px; width: 100%;">
+            <div class="box-title">🚨 System Action</div>
+            <div class="box-value" id="system-action">RUN</div>
+            <div class="box-desc" id="system-desc">
+              System running normally
+            </div>
+          </div>
+
+          <!-- 🧠 AI CONFIDENCE -->
+          <div class="box" style="min-height: 140px; width: 100%;">
+            <div class="box-title">🧠 AI Confidence</div>
+            <div class="box-value" id="confidence-value">0%</div>
+            <div class="box-desc">
+              YOLO Object Detection Accuracy
+            </div>
+          </div>
+
+          <!-- 🕒 SHIFT / MODE WATCHDOG CARD -->
+          <div class="box" id="shift-watchdog-box" style="min-height: 140px; width: 100%;">
+            <div class="box-title">🕒 Schedule Watchdog</div>
+            <div class="box-value" id="shift-watchdog-title" style="font-size: 22px;">--</div>
+            <div class="box-desc" id="shift-watchdog-status" style="color: var(--safe-green);">
+              Continuous Mode Active
+            </div>
+          </div>
+
         </div>
 
       </div>
