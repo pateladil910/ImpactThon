@@ -400,15 +400,21 @@ def generate_video_stream():
     global output_frame, lock
     
     while True:
+        frame_to_send = None
         with lock:
-            if output_frame is None:
-                continue
-            
-            # Encode frame as JPEG
-            success, encoded_image = cv2.imencode(".jpg", output_frame)
-            if not success:
-                continue
+            if output_frame is not None:
+                frame_to_send = output_frame.copy()
                 
+        if frame_to_send is None:
+            time.sleep(0.1)
+            continue
+            
+        # Encode frame as JPEG
+        success, encoded_image = cv2.imencode(".jpg", frame_to_send)
+        if not success:
+            time.sleep(0.03)
+            continue
+                 
         # Yield the output frame in MJPEG byte format
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encoded_image) + b'\r\n')
 
