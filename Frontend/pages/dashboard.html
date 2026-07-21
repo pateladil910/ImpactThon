@@ -1443,6 +1443,27 @@
     // ==========================================
     // 📡 CAMERA HEALTH DAEMON
     // ==========================================
+    // ==========================================
+    // 🖥️ HEALTH DAEMON CHECKER
+    // ==========================================
+    async function updateCameraStatusInDB(url, status) {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = {
+          "Content-Type": "application/json"
+        };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        await fetch(`${API_BASE_URL}/api/camera/update_status`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ url, status })
+        });
+      } catch (err) {
+        console.error("Failed to persist camera status update:", err);
+      }
+    }
+
     function startHealthDaemon() {
       if (healthInterval) clearInterval(healthInterval);
 
@@ -1465,17 +1486,20 @@
               if (cam.status !== "Online") {
                 cam.status = "Online";
                 addIncidentLog("Sensor Node online: " + cam.cameraName, "SAFE");
+                updateCameraStatusInDB(cam.cameraUrl, "Online");
               }
             } else {
               if (cam.status !== "Offline") {
                 cam.status = "Offline";
                 addIncidentLog("Sensor Node connection error: " + cam.cameraName, "CRITICAL");
+                updateCameraStatusInDB(cam.cameraUrl, "Offline");
               }
             }
           } catch(e) {
             if (cam.status !== "Offline") {
               cam.status = "Offline";
               addIncidentLog("Sensor Node offline (unreachable): " + cam.cameraName, "CRITICAL");
+              updateCameraStatusInDB(cam.cameraUrl, "Offline");
             }
           }
         }
