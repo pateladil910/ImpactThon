@@ -1667,11 +1667,15 @@
 
         if (data.confidence !== undefined) {
           const confVal = document.getElementById("confidence-value");
-          if (confVal) confVal.innerText = data.confidence + "%";
+          if (confVal) confVal.innerText = Math.round(data.confidence) + "%";
         }
 
-        // Cumulative danger intrusions counter is rendered to hud-human-count
-        updateHumanCountUI();
+        if (data.humanCount !== undefined) {
+          const countEl = document.getElementById("hud-human-count");
+          if (countEl) countEl.innerText = data.humanCount;
+        } else {
+          updateHumanCountUI();
+        }
 
         if (document.getElementById("hud-fps")) {
           document.getElementById("hud-fps").innerText = data.fps !== undefined ? Number(data.fps).toFixed(1) : "0.0";
@@ -1684,41 +1688,13 @@
           document.getElementById("shift-watchdog-status").style.color = "var(--primary-neon)";
         }
 
-        /* ORIGINAL SAFETY STATE UPDATER - PRESERVED FOR EASY RESTORE
-        if (data.safety !== lastSafety) {
-          if (data.safety === "DANGER") {
-            totalDangerIntrusions++;
-            updateHumanCountUI();
+        const currentSafetyState = data.safety || data.zone || "SAFE";
 
-            safetyStatus.innerText = "DANGER";
-            safetyDesc.innerText = "Operator safety boundary breached!";
-            safetyBox.classList.add("danger");
-            safetyBox.classList.remove("safe", "warning");
-            
-            playWarningTone();
-            addIncidentLog(`Hazard breach detected in machine zone!`, "CRITICAL", activeCamera.cameraName);
-          } else if (data.safety === "WARNING") {
-            safetyStatus.innerText = "WARNING";
-            safetyDesc.innerText = "Operator approaching machine zone!";
-            safetyBox.classList.add("warning");
-            safetyBox.classList.remove("safe", "danger");
-            
-            addIncidentLog(`Operator entered warning zone!`, "WARNING", activeCamera.cameraName);
-          } else {
-            safetyStatus.innerText = "SAFE";
-            safetyDesc.innerText = "Operator clear of hazards";
-            safetyBox.classList.add("safe");
-            safetyBox.classList.remove("danger", "warning");
-          }
-          lastSafety = data.safety;
-        }
-        */
-
-        // NEW UPGRADED STATE UPDATER WITH BODY OVERLAYS & TRANSITIONS
-        if (data.safety !== lastSafety) {
-          if (data.safety === "DANGER") {
+        // UPGRADED STATE UPDATER WITH BODY OVERLAYS & TRANSITIONS
+        if (currentSafetyState !== lastSafety) {
+          if (currentSafetyState === "DANGER") {
             totalDangerIntrusions++;
-            updateHumanCountUI();
+            if (data.humanCount === undefined) updateHumanCountUI();
 
             safetyStatus.innerText = "DANGER";
             safetyDesc.innerText = "Operator safety boundary breached!";
@@ -1731,7 +1707,7 @@
             
             playWarningTone();
             addIncidentLog(`Hazard breach detected in machine zone!`, "CRITICAL", activeCamera.cameraName);
-          } else if (data.safety === "WARNING") {
+          } else if (currentSafetyState === "WARNING") {
             safetyStatus.innerText = "WARNING";
             safetyDesc.innerText = "Operator approaching machine zone!";
             safetyBox.classList.add("warning");
@@ -1751,7 +1727,7 @@
             // Remove body warning effects
             document.body.classList.remove("danger-mode", "warning-mode");
           }
-          lastSafety = data.safety;
+          lastSafety = currentSafetyState;
         }
 
         const action = data.safety === "DANGER" || stopTriggered ? "STOP" : "RUN";

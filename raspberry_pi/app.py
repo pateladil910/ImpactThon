@@ -11,7 +11,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|max_delay;500000|flags;low_delay"
 
 import torch
 torch.set_num_threads(1)
@@ -84,11 +84,14 @@ class ThreadedCamera:
                 self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
                 continue
             
-            grabbed, frame = self.cap.read()
+            # Flush RTSP buffer to ensure zero latency
+            grabbed = self.cap.grab()
             if grabbed:
-                with self.read_lock:
-                    self.grabbed = grabbed
-                    self.frame = frame
+                success, frame = self.cap.retrieve()
+                if success:
+                    with self.read_lock:
+                        self.grabbed = True
+                        self.frame = frame
             else:
                 print(f"[CAM_WATCHDOG] Frame read failed for {self.source}. Reconnecting...")
                 with self.read_lock:
@@ -123,7 +126,7 @@ lock = threading.Lock()
 raw_lock = threading.Lock()
 last_detection_time = 0
 DETECTION_COOLDOWN = 5  # seconds between sending alerts to backend
-FRAME_SKIP = 5          # Run YOLO every Nth frame to reduce delay
+FRAME_SKIP = 3          # Run YOLO every 3rd frame (~10 FPS inference)
 STREAM_WIDTH = 640      # Stream resolution width (smaller = less lag)
 STREAM_HEIGHT = 360     # Stream resolution height
 
@@ -131,15 +134,46 @@ STREAM_HEIGHT = 360     # Stream resolution height
 current_stats = {
     "humanCount": 0,
     "confidence": 0.0,
+    "safety": "SAFE",
     "zone": "SAFE",
     "action": "RUN"
 }
 stats_lock = threading.Lock()
 
-# Zone config (normalized 0-1000, loaded from database)
-DANGER_ZONE = {"x": 300, "y": 300, "w": 400, "h": 400}   # default
-WARNING_ZONE = {"x": 150, "y": 150, "w": 700, "h": 700}  # default
+# Zone config (normalized 0-1000, default matches draw_zone.html)
+DANGER_ZONE = {"x": 360, "y": 100, "w": 240, "h": 350}   # default
+WARNING_ZONE = {"x": 240, "y": 50, "w": 380, "h": 410}  # default
 zone_lock = threading.Lock()
+
+def parse_zone_config(zone_input):
+    """Parse zone coordinates from dict or string 'x1,y1,x2,y2'"""
+    if not zone_input:
+        return None
+    if isinstance(zone_input, dict):
+        if all(k in zone_input for k in ["x", "y", "w", "h"]):
+            return {
+                "x": int(zone_input["x"]),
+                "y": int(zone_input["y"]),
+                "w": int(zone_input["w"]),
+                "h": int(zone_input["h"])
+            }
+        elif all(k in zone_input for k in ["x1", "y1", "x2", "y2"]):
+            x1, y1 = int(zone_input["x1"]), int(zone_input["y1"])
+            x2, y2 = int(zone_input["x2"]), int(zone_input["y2"])
+            return {"x": x1, "y": y1, "w": abs(x2 - x1), "h": abs(y2 - y1)}
+    if isinstance(zone_input, str):
+        parts = zone_input.split(",")
+        if len(parts) == 4:
+            try:
+                coords = [int(float(p.strip())) for p in parts]
+                x1, y1, val3, val4 = coords
+                if val3 > x1 and val4 > y1:
+                    return {"x": x1, "y": y1, "w": val3 - x1, "h": val4 - y1}
+                else:
+                    return {"x": x1, "y": y1, "w": val3, "h": val4}
+            except Exception as e:
+                print(f"Error parsing zone string '{zone_input}': {e}")
+    return None
 
 def fetch_zones_from_db():
     """Load saved zone coordinates from backend database"""
@@ -151,13 +185,15 @@ def fetch_zones_from_db():
         res = requests.get("https://codevortex.in/api/camera/latest", headers=headers, timeout=8)
         if res.status_code == 200:
             cam_data = res.json().get("camera", {})
-            dz = cam_data.get("dangerZone")
-            wz = cam_data.get("warningZone")
+            dz_raw = cam_data.get("dangerZone")
+            wz_raw = cam_data.get("warningZone")
+            dz = parse_zone_config(dz_raw)
+            wz = parse_zone_config(wz_raw)
             with zone_lock:
-                if dz and all(k in dz for k in ["x", "y", "w", "h"]):
+                if dz:
                     DANGER_ZONE = dz
                     print(f"✅ Danger zone loaded: {DANGER_ZONE}")
-                if wz and all(k in wz for k in ["x", "y", "w", "h"]):
+                if wz:
                     WARNING_ZONE = wz
                     print(f"✅ Warning zone loaded: {WARNING_ZONE}")
     except Exception as e:
@@ -470,6 +506,7 @@ def detect_objects():
         with stats_lock:
             current_stats["humanCount"] = 1 if person_detected else 0
             current_stats["confidence"] = round(highest_conf * 100, 1)
+            current_stats["safety"] = zone_status
             current_stats["zone"] = zone_status
             current_stats["action"] = "DANGER" if zone_status == "DANGER" else "RUN"
 
