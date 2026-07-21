@@ -1682,6 +1682,37 @@
 
       setInterval(updateStatus, 1000);
       setInterval(loadInitialIntrusionCount, 3000);
+
+      // Disconnect Camera Button Listener
+      const btnLogoutCam = document.getElementById("btnLogoutCam");
+      if (btnLogoutCam) {
+        btnLogoutCam.addEventListener("click", async () => {
+          if (!confirm("Are you sure you want to disconnect all configured cameras? This will reset your sensor node registry.")) return;
+          
+          try {
+            const token = localStorage.getItem("token");
+            const headers = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            const res = await fetch(`${API_BASE_URL}/api/camera/reset`, {
+              method: 'DELETE',
+              headers: headers
+            });
+
+            const data = await res.json();
+            if (data.success) {
+              localStorage.removeItem("safetyShieldCameras");
+              alert("Camera network disconnected successfully!");
+              window.location.href = "camera_setup.html";
+            } else {
+              alert("Disconnect failed: " + data.message);
+            }
+          } catch (err) {
+            console.error("Disconnect Error:", err);
+            alert("Network connection error during disconnect.");
+          }
+        });
+      }
     });
   </script>
 
