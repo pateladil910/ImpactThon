@@ -30,10 +30,10 @@
     font-family: 'Poppins', 'Outfit', sans-serif;
 }
 
+/* ORIGINAL BODY AND LASER SCAN LINE CONFIG - PRESERVED FOR EASY RECOVERY
 body {
     min-height: 100vh;
     background-color: var(--bg-dark);
-    /* Sleek, professional dark SaaS ambient gradients matching contact.html */
     background: 
         radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
         radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
@@ -43,7 +43,6 @@ body {
     position: relative;
 }
 
-/* ===== CANVAS BACKDROP & SCRIPTS ===== */
 #particle-canvas {
     position: absolute;
     inset: 0;
@@ -61,6 +60,93 @@ body {
     animation: screenScan 8s infinite linear;
     z-index: 2;
     pointer-events: none;
+}
+
+@keyframes screenScan {
+    0% { top: 0%; opacity: 0.1; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.7; }
+    100% { top: 100%; opacity: 0.1; }
+}
+*/
+
+/* NEW UPGRADED DYNAMIC SAFETY CODES */
+body {
+    min-height: 100vh;
+    background-color: var(--bg-dark);
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+        linear-gradient(180deg, #020617 0%, #070a13 100%);
+    color: var(--text-main);
+    overflow-x: hidden;
+    position: relative;
+    transition: background-color 0.5s ease;
+}
+
+/* Ambient hazard screen vignette / framing overlay */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.5s ease, box-shadow 0.5s ease;
+}
+
+body.danger-mode::before {
+    opacity: 1;
+    box-shadow: inset 0 0 60px rgba(239, 68, 68, 0.45);
+    animation: hazardVignettePulse 1.5s infinite ease-in-out;
+}
+
+body.warning-mode::before {
+    opacity: 1;
+    box-shadow: inset 0 0 50px rgba(245, 158, 11, 0.35);
+    animation: warningVignettePulse 2.0s infinite ease-in-out;
+}
+
+@keyframes hazardVignettePulse {
+    0%, 100% { box-shadow: inset 0 0 50px rgba(239, 68, 68, 0.3); }
+    50% { box-shadow: inset 0 0 85px rgba(239, 68, 68, 0.55); }
+}
+
+@keyframes warningVignettePulse {
+    0%, 100% { box-shadow: inset 0 0 40px rgba(245, 158, 11, 0.25); }
+    50% { box-shadow: inset 0 0 65px rgba(245, 158, 11, 0.45); }
+}
+
+#particle-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.laser-scan-line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+    box-shadow: 0 0 15px 2px var(--primary-neon);
+    animation: screenScan 8s infinite linear;
+    z-index: 2;
+    pointer-events: none;
+    transition: background 0.5s ease, box-shadow 0.5s ease;
+}
+
+body.danger-mode .laser-scan-line {
+    background: linear-gradient(90deg, transparent, var(--danger-red), transparent);
+    box-shadow: 0 0 20px 4px var(--danger-red);
+    animation: screenScan 3s infinite linear; /* Fast panic sweep */
+}
+
+body.warning-mode .laser-scan-line {
+    background: linear-gradient(90deg, transparent, var(--warning-yellow), transparent);
+    box-shadow: 0 0 18px 3px var(--warning-yellow);
+    animation: screenScan 5s infinite linear; /* Intermediate sweep */
 }
 
 @keyframes screenScan {
