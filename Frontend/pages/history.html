@@ -684,9 +684,20 @@
         const userRole = localStorage.getItem("userRole");
         const isAdmin = isLoggedIn === "true" && userRole && userRole.toLowerCase() === "admin";
 
+        /* ORIGINAL RESTRICTED PAGES ARRAY - PRESERVED FOR EASY RESTORE
         const restrictedPages = [
           "setup.html",
           "camera_setup.html",
+          "diagnostics.html",
+          "notifications.html",
+          "incident_log.html",
+          "admin.html"
+        ];
+        */
+
+        // NEW RESTRICTED PAGES ARRAY (camera_setup.html removed to match unrestricted settings)
+        const restrictedPages = [
+          "setup.html",
           "diagnostics.html",
           "notifications.html",
           "incident_log.html",
