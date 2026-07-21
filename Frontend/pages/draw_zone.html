@@ -798,10 +798,9 @@
                 if (tempConfig.isDemo) {
                     previewFeed.src = '../images/factory_safety_bg.webp';
                 } else {
-                    const testUrl = localStorage.getItem('edgeAgentUrl') || "http://127.0.0.1:10000";
-                    const uParam = tempConfig.username ? `&username=${encodeURIComponent(tempConfig.username)}` : '';
-                    const pParam = tempConfig.password ? `&password=${encodeURIComponent(tempConfig.password)}` : '';
-                    previewFeed.src = `${testUrl}/video_feed?source=${encodeURIComponent(tempConfig.url)}${uParam}${pParam}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t=${Date.now()}`;
+                    const testUrl = localStorage.getItem('edgeAgentUrl') || "https://camera.codevortex.in";
+                    // Use /raw_feed for zero-delay preview (no YOLO processing)
+                    previewFeed.src = `${testUrl}/raw_feed?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t=${Date.now()}`;
                 }
             } else {
                 showHUDToast('CALIBRATION FAILURE', 'Camera configuration not found. Redirecting...', 'error');

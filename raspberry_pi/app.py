@@ -117,10 +117,13 @@ class ThreadedCamera:
         if self.cap:
             self.cap.release()
 
-output_frame = None
+output_frame = None   # YOLO-annotated frame for dashboard
+raw_frame = None      # Raw frame for zero-delay stream
 lock = threading.Lock()
+raw_lock = threading.Lock()
 last_detection_time = 0
 DETECTION_COOLDOWN = 5 # seconds between sending alerts to backend
+FRAME_SKIP = 5  # Run YOLO every Nth frame to reduce delay
 
 def construct_camera_source(url, username, password):
     if not url:
@@ -249,34 +252,38 @@ def load_or_create_config():
         sys.exit(1)
 
 def detect_objects():
-    global output_frame, lock, last_detection_time, camera
+    global output_frame, raw_frame, lock, raw_lock, last_detection_time, camera
     import random
     
     # Wait until camera is initialized
     while camera is None or not camera.isOpened():
         time.sleep(0.5)
+
+    frame_counter = 0
+    last_annotated = None  # Keep last YOLO result to overlay on skipped frames
         
     while True:
-        # Dynamic Stream Subsampling / CPU Watchdog
-        try:
-            import psutil
-            cpu_usage = psutil.cpu_percent()
-        except Exception:
-            cpu_usage = 45.0 # Simulated normal load
-
-        if cpu_usage > 85.0:
-            # Subsample inputs to 10 FPS (skip frames)
-            time.sleep(0.10)
-        else:
-            time.sleep(0.03) # 30 FPS processing rate
-
         success, frame = camera.read()
         if not success or frame is None:
             print("Failed to read camera. Retrying...")
-            time.sleep(1.0)
+            time.sleep(0.5)
             continue
-            
-        # Run YOLO detection
+
+        frame_counter += 1
+
+        # Always update the raw frame for zero-delay streaming
+        with raw_lock:
+            raw_frame = frame.copy()
+
+        # Only run YOLO every FRAME_SKIP frames to reduce CPU load
+        if frame_counter % FRAME_SKIP != 0:
+            # Overlay last known YOLO annotations on current raw frame
+            if last_annotated is not None:
+                with lock:
+                    output_frame = last_annotated.copy()
+            continue
+
+        # Run YOLO detection on this frame
         results = model(frame, stream=True, conf=0.5)
         
         person_detected = False
@@ -371,9 +378,10 @@ def detect_objects():
                 args=(highest_conf, jpg_as_text, breach_type, severity, "Local Edge Camera CH1")
             ).start()
 
-        # Update global frame for Flask stream
+        # Update global frame for Flask stream (YOLO-annotated)
         with lock:
             output_frame = frame.copy()
+            last_annotated = frame.copy()
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
@@ -397,7 +405,9 @@ def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severi
         print(f"❌ Failed to send alert: {e}")
 
 def generate_video_stream():
+    """YOLO-annotated stream for dashboard (slightly delayed due to inference)"""
     global output_frame, lock
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 70]  # Lower quality = faster transfer
     
     while True:
         frame_to_send = None
@@ -406,16 +416,36 @@ def generate_video_stream():
                 frame_to_send = output_frame.copy()
                 
         if frame_to_send is None:
-            time.sleep(0.1)
+            time.sleep(0.05)
             continue
             
         # Encode frame as JPEG
-        success, encoded_image = cv2.imencode(".jpg", frame_to_send)
+        success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
         if not success:
-            time.sleep(0.03)
             continue
                  
         # Yield the output frame in MJPEG byte format
+        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encoded_image) + b'\r\n')
+
+def generate_raw_stream():
+    """Zero-delay raw stream (no YOLO) for calibration/draw_zone page"""
+    global raw_frame, raw_lock
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 75]
+    
+    while True:
+        frame_to_send = None
+        with raw_lock:
+            if raw_frame is not None:
+                frame_to_send = raw_frame.copy()
+
+        if frame_to_send is None:
+            time.sleep(0.05)
+            continue
+
+        success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
+        if not success:
+            continue
+
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encoded_image) + b'\r\n')
 
 def discover_local_cameras():
@@ -649,8 +679,13 @@ def test_camera():
 
 @app.route("/video_feed")
 def video_feed():
-    # MJPEG Streaming route
+    """YOLO-annotated MJPEG stream for dashboard"""
     return Response(generate_video_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/raw_feed")
+def raw_feed():
+    """Zero-delay raw MJPEG stream for calibration page"""
+    return Response(generate_raw_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/status")
 def status():
