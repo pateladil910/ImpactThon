@@ -30,6 +30,7 @@
     .camera-grid-25 { grid-template-columns: repeat(5, 1fr); }
     .camera-grid-36 { grid-template-columns: repeat(6, 1fr); }
 
+    /* ORIGINAL GRID SLOT SYSTEM - PRESERVED FOR EASY RESTORE
     .grid-slot {
       background: rgba(2, 6, 23, 0.95);
       border: 1px dashed rgba(6, 182, 212, 0.2);
@@ -61,6 +62,78 @@
       aspect-ratio: auto !important;
       border-radius: 0 !important;
       background: #000 !important;
+    }
+    */
+
+    /* NEW UPGRADED DYNAMIC GRID SLOTS & FEED BORDERS */
+    .grid-slot {
+      background: rgba(8, 14, 27, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px dashed rgba(6, 182, 212, 0.25);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 16/9;
+      cursor: grab;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+    
+    .grid-slot:hover {
+      transform: scale(1.01);
+      border-color: rgba(6, 182, 212, 0.5);
+    }
+    
+    .grid-slot.drag-over {
+      border-color: var(--primary-neon);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.45);
+      transform: scale(1.02);
+    }
+    
+    .grid-slot.active-pin {
+      border: 1.5px solid var(--primary-blue);
+      box-shadow: inset 0 0 12px rgba(59, 130, 246, 0.25);
+    }
+    
+    /* Focused active scanning camera */
+    .grid-slot.active-cam {
+      border: 2px solid var(--primary-neon);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4), inset 0 0 10px rgba(6, 182, 212, 0.15);
+    }
+    
+    /* Active camera in danger warning */
+    body.danger-mode .grid-slot.active-cam {
+      border-color: var(--danger-red);
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.7), inset 0 0 15px rgba(239, 68, 68, 0.3);
+      animation: alertSlotPulse 1s infinite ease-in-out;
+    }
+    
+    body.warning-mode .grid-slot.active-cam {
+      border-color: var(--warning-yellow);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.5), inset 0 0 12px rgba(245, 158, 11, 0.25);
+      animation: alertSlotPulse 2s infinite ease-in-out;
+    }
+    
+    @keyframes alertSlotPulse {
+      0%, 100% { opacity: 1; border-width: 2px; }
+      50% { opacity: 0.95; border-width: 2.5px; }
+    }
+    
+    .grid-slot.fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 999999 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      aspect-ratio: auto !important;
+      border-radius: 0 !important;
+      background: #000 !important;
+      transform: none !important;
     }
 
     .btn-grid-tab {
@@ -1201,10 +1274,25 @@
             `;
           }
           
+          /* ORIGINAL PIN SLOT CLASS ASSIGNER - PRESERVED FOR EASY RESTORE
           if (cam.pinned) {
             slot.classList.add("active-pin");
           } else {
             slot.classList.remove("active-pin");
+          }
+          */
+
+          // NEW UPGRADED SLOT CLASS ASSIGNER
+          if (cam.pinned) {
+            slot.classList.add("active-pin");
+          } else {
+            slot.classList.remove("active-pin");
+          }
+
+          if (cam.active) {
+            slot.classList.add("active-cam");
+          } else {
+            slot.classList.remove("active-cam");
           }
         } else {
           if (currentMappedUrl !== "none") {
@@ -1216,7 +1304,12 @@
                 <div style="font-size: 8px; margin-top: 4px; letter-spacing: 1px; font-family: 'Fira Code', monospace; opacity: 0.4;">CH ${i + 1} &bull; STANDBY</div>
               </div>
             `;
+            /* ORIGINAL SIGNAL STANDBY PIN RESET - PRESERVED FOR EASY RESTORE
             slot.classList.remove("active-pin");
+            */
+            // NEW SIGNAL STANDBY RESET
+            slot.classList.remove("active-pin");
+            slot.classList.remove("active-cam");
           }
         }
         
@@ -1591,6 +1684,7 @@
           document.getElementById("shift-watchdog-status").style.color = "var(--primary-neon)";
         }
 
+        /* ORIGINAL SAFETY STATE UPDATER - PRESERVED FOR EASY RESTORE
         if (data.safety !== lastSafety) {
           if (data.safety === "DANGER") {
             totalDangerIntrusions++;
@@ -1615,6 +1709,47 @@
             safetyDesc.innerText = "Operator clear of hazards";
             safetyBox.classList.add("safe");
             safetyBox.classList.remove("danger", "warning");
+          }
+          lastSafety = data.safety;
+        }
+        */
+
+        // NEW UPGRADED STATE UPDATER WITH BODY OVERLAYS & TRANSITIONS
+        if (data.safety !== lastSafety) {
+          if (data.safety === "DANGER") {
+            totalDangerIntrusions++;
+            updateHumanCountUI();
+
+            safetyStatus.innerText = "DANGER";
+            safetyDesc.innerText = "Operator safety boundary breached!";
+            safetyBox.classList.add("danger");
+            safetyBox.classList.remove("safe", "warning");
+            
+            // Add body classes for fullscreen warning effects
+            document.body.classList.add("danger-mode");
+            document.body.classList.remove("warning-mode");
+            
+            playWarningTone();
+            addIncidentLog(`Hazard breach detected in machine zone!`, "CRITICAL", activeCamera.cameraName);
+          } else if (data.safety === "WARNING") {
+            safetyStatus.innerText = "WARNING";
+            safetyDesc.innerText = "Operator approaching machine zone!";
+            safetyBox.classList.add("warning");
+            safetyBox.classList.remove("safe", "danger");
+            
+            // Add body classes for fullscreen warning effects
+            document.body.classList.add("warning-mode");
+            document.body.classList.remove("danger-mode");
+            
+            addIncidentLog(`Operator entered warning zone!`, "WARNING", activeCamera.cameraName);
+          } else {
+            safetyStatus.innerText = "SAFE";
+            safetyDesc.innerText = "Operator clear of hazards";
+            safetyBox.classList.add("safe");
+            safetyBox.classList.remove("danger", "warning");
+            
+            // Remove body warning effects
+            document.body.classList.remove("danger-mode", "warning-mode");
           }
           lastSafety = data.safety;
         }
