@@ -122,8 +122,43 @@ raw_frame = None      # Raw frame for zero-delay stream
 lock = threading.Lock()
 raw_lock = threading.Lock()
 last_detection_time = 0
-DETECTION_COOLDOWN = 5 # seconds between sending alerts to backend
-FRAME_SKIP = 5  # Run YOLO every Nth frame to reduce delay
+DETECTION_COOLDOWN = 5  # seconds between sending alerts to backend
+FRAME_SKIP = 5          # Run YOLO every Nth frame to reduce delay
+STREAM_WIDTH = 640      # Stream resolution width (smaller = less lag)
+STREAM_HEIGHT = 360     # Stream resolution height
+
+# Zone config (normalized 0-1000, loaded from database)
+DANGER_ZONE = {"x": 300, "y": 300, "w": 400, "h": 400}   # default
+WARNING_ZONE = {"x": 150, "y": 150, "w": 700, "h": 700}  # default
+zone_lock = threading.Lock()
+
+def fetch_zones_from_db():
+    """Load saved zone coordinates from backend database"""
+    global DANGER_ZONE, WARNING_ZONE
+    if not AUTH_TOKEN:
+        return
+    try:
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        res = requests.get("https://codevortex.in/api/camera/latest", headers=headers, timeout=8)
+        if res.status_code == 200:
+            cam_data = res.json().get("camera", {})
+            dz = cam_data.get("dangerZone")
+            wz = cam_data.get("warningZone")
+            with zone_lock:
+                if dz and all(k in dz for k in ["x", "y", "w", "h"]):
+                    DANGER_ZONE = dz
+                    print(f"✅ Danger zone loaded: {DANGER_ZONE}")
+                if wz and all(k in wz for k in ["x", "y", "w", "h"]):
+                    WARNING_ZONE = wz
+                    print(f"✅ Warning zone loaded: {WARNING_ZONE}")
+    except Exception as e:
+        print(f"⚠️ Could not fetch zones: {e}")
+
+def zone_refresh_worker():
+    """Refresh zones from DB every 30 seconds"""
+    while True:
+        time.sleep(30)
+        fetch_zones_from_db()
 
 def construct_camera_source(url, username, password):
     if not url:
@@ -269,7 +304,9 @@ def detect_objects():
             time.sleep(0.5)
             continue
 
-        frame_counter += 1
+        # Resize frame for low-lag streaming (smaller = much faster network transfer)
+        frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
+        height, width = frame.shape[:2]
 
         # Always update the raw frame for zero-delay streaming
         with raw_lock:
@@ -277,28 +314,39 @@ def detect_objects():
 
         # Only run YOLO every FRAME_SKIP frames to reduce CPU load
         if frame_counter % FRAME_SKIP != 0:
-            # Overlay last known YOLO annotations on current raw frame
             if last_annotated is not None:
                 with lock:
                     output_frame = last_annotated.copy()
             continue
 
         # Run YOLO detection on this frame
-        results = model(frame, stream=True, conf=0.5)
-        
+        results = model(frame, stream=True, conf=0.45, imgsz=320)
+
         person_detected = False
         forklift_detected = False
         highest_conf = 0.0
-        
-        height, width = frame.shape[:2]
-        
-        # Draw Zones for HMI feedback
-        # Safe Zone (Green) - outer boundary
-        cv2.rectangle(frame, (0, 0), (width, height), (0, 255, 0), 2)
-        # Warning Zone (Yellow) - middle boundary
-        cv2.rectangle(frame, (int(width * 0.15), int(height * 0.15)), (int(width * 0.85), int(height * 0.85)), (0, 255, 255), 2)
-        # Restricted Zone (Red) - dangerous center proximity area
-        cv2.rectangle(frame, (int(width * 0.3), int(height * 0.3)), (int(width * 0.7), int(height * 0.7)), (0, 0, 255), 2)
+
+        # Load current zones
+        with zone_lock:
+            dz = DANGER_ZONE.copy()
+            wz = WARNING_ZONE.copy()
+
+        # Convert normalized (0-1000) zone coords to pixel coords
+        def norm_to_px(zone, w, h):
+            x1 = int((zone["x"] / 1000) * w)
+            y1 = int((zone["y"] / 1000) * h)
+            x2 = int(((zone["x"] + zone["w"]) / 1000) * w)
+            y2 = int(((zone["y"] + zone["h"]) / 1000) * h)
+            return x1, y1, x2, y2
+
+        dz_x1, dz_y1, dz_x2, dz_y2 = norm_to_px(dz, width, height)
+        wz_x1, wz_y1, wz_x2, wz_y2 = norm_to_px(wz, width, height)
+
+        # Draw zones: Warning (yellow), Danger (red)
+        cv2.rectangle(frame, (wz_x1, wz_y1), (wz_x2, wz_y2), (0, 255, 255), 2)
+        cv2.putText(frame, 'WARNING ZONE', (wz_x1 + 4, wz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
+        cv2.rectangle(frame, (dz_x1, dz_y1), (dz_x2, dz_y2), (0, 0, 255), 2)
+        cv2.putText(frame, 'DANGER ZONE', (dz_x1 + 4, dz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1)
 
         for r in results:
             boxes = r.boxes
@@ -315,27 +363,26 @@ def detect_objects():
                     person_detected = True
                     if conf > highest_conf:
                         highest_conf = conf
-                    
+
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    # Determine current zone by center point coordinates
                     cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-                    
-                    # Proximity check
-                    in_restricted = (int(width * 0.3) < cx < int(width * 0.7)) and (int(height * 0.3) < cy < int(height * 0.7))
-                    in_warning = (int(width * 0.15) < cx < int(width * 0.85)) and (int(height * 0.15) < cy < int(height * 0.85))
-                    
-                    box_color = (0, 255, 0) # Green
+
+                    # Check which zone the person center is in
+                    in_danger  = (dz_x1 < cx < dz_x2) and (dz_y1 < cy < dz_y2)
+                    in_warning = (wz_x1 < cx < wz_x2) and (wz_y1 < cy < wz_y2)
+
+                    box_color  = (0, 255, 0)  # Green = safe
                     zone_label = "Safe Zone"
-                    if in_restricted:
-                        box_color = (0, 0, 255) # Red
-                        zone_label = "RESTRICTED ZONE BREACH"
+                    if in_danger:
+                        box_color  = (0, 0, 255)
+                        zone_label = "DANGER ZONE BREACH"
                     elif in_warning:
-                        box_color = (0, 255, 255) # Yellow
-                        zone_label = "Warning Zone Proximity"
-                    
+                        box_color  = (0, 255, 255)
+                        zone_label = "WARNING ZONE"
+
                     cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
-                    cv2.putText(frame, f'Person {conf:.2f} ({zone_label})', (x1, y1 - 10), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 2)
+                    cv2.putText(frame, f'Person {conf:.2f} | {zone_label}', (x1, max(y1 - 8, 12)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, box_color, 1)
 
                 elif is_forklift:
                     forklift_detected = True
@@ -407,7 +454,7 @@ def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severi
 def generate_video_stream():
     """YOLO-annotated stream for dashboard (slightly delayed due to inference)"""
     global output_frame, lock
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 70]  # Lower quality = faster transfer
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 50]  # Lower quality = much faster network transfer
     
     while True:
         frame_to_send = None
@@ -419,18 +466,16 @@ def generate_video_stream():
             time.sleep(0.05)
             continue
             
-        # Encode frame as JPEG
         success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
         if not success:
             continue
                  
-        # Yield the output frame in MJPEG byte format
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encoded_image) + b'\r\n')
 
 def generate_raw_stream():
     """Zero-delay raw stream (no YOLO) for calibration/draw_zone page"""
     global raw_frame, raw_lock
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 75]
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 55]
     
     while True:
         frame_to_send = None
@@ -720,13 +765,21 @@ if __name__ == "__main__":
             camera = None
         
         if camera:
-            # 3. Start background detection thread
+            # 3. Fetch saved zones from database
+            fetch_zones_from_db()
+            
+            # 4. Start background detection thread
             t = threading.Thread(target=detect_objects)
             t.daemon = True
             t.start()
+            
+            # 5. Start zone refresh thread (updates zones every 30s)
+            zt = threading.Thread(target=zone_refresh_worker)
+            zt.daemon = True
+            zt.start()
     else:
         print("⚠️ [NO CAMERA] Idle mode active. Flask server is online to accept setup requests.")
     
-    # 4. Start Flask server
+    # 6. Start Flask server
     print("🚀 Starting AI Edge Agent Stream on port 5000...")
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
