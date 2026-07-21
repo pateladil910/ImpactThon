@@ -291,4 +291,31 @@ router.get('/latest', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/camera/update_status
+router.post('/update_status', authMiddleware, async (req, res) => {
+  try {
+    const { url, status } = req.body;
+    const userId = req.user.id;
+
+    if (!url || !status) {
+      return res.status(400).json({ success: false, message: 'URL and status are required' });
+    }
+
+    const camera = await Camera.findOneAndUpdate(
+      { userId: userId, url: url },
+      { status: status, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    if (!camera) {
+      return res.status(404).json({ success: false, message: 'Camera not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Camera status updated successfully', camera });
+  } catch (error) {
+    console.error('Camera status update error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

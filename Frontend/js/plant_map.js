@@ -471,6 +471,24 @@ function updateTelemetryFooterStats() {
 // ==========================================
 // 7. REAL-TIME THREAT & HEALTH SWEEPS
 // ==========================================
+async function updateCameraStatusInDB(url, status) {
+  try {
+    const token = localStorage.getItem("token");
+    const headers = {
+      "Content-Type": "application/json"
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    await fetch(`${API_BASE_URL}/api/camera/update_status`, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ url, status })
+    });
+  } catch (err) {
+    console.error("Failed to persist camera status update:", err);
+  }
+}
+
 function startTelemetrySweeps() {
   // Check sensor online statuses (every 5 seconds)
   healthInterval = setInterval(async () => {
@@ -487,12 +505,21 @@ function startTelemetrySweeps() {
         clearTimeout(timeoutId);
 
         if (res.status === 200) {
-          cam.status = "Online";
+          if (cam.status !== "Online") {
+            cam.status = "Online";
+            updateCameraStatusInDB(cam.cameraUrl, "Online");
+          }
         } else {
-          cam.status = "Offline";
+          if (cam.status !== "Offline") {
+            cam.status = "Offline";
+            updateCameraStatusInDB(cam.cameraUrl, "Offline");
+          }
         }
       } catch(e) {
-        cam.status = "Offline";
+        if (cam.status !== "Offline") {
+          cam.status = "Offline";
+          updateCameraStatusInDB(cam.cameraUrl, "Offline");
+        }
       }
     }
     renderLayoutMap();

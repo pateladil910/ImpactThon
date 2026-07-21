@@ -232,8 +232,8 @@ def load_or_create_config():
             
         if cam_res.status_code == 404:
             print("\n⚠️  [NO CAMERA] You have not configured a camera yet.")
-            print("👉 Please log in to https://codevortex.in/pages/camera_setup.html and connect a camera first!")
-            sys.exit(1)
+            print("👉 Keeping Edge Server ONLINE so you can configure it via the web page.")
+            return token, user_id, None, None, None
             
         cam_data = cam_res.json()
         camera_info = cam_data.get("camera", {})
@@ -400,15 +400,21 @@ def generate_video_stream():
     global output_frame, lock
     
     while True:
+        frame_to_send = None
         with lock:
-            if output_frame is None:
-                continue
-            
-            # Encode frame as JPEG
-            success, encoded_image = cv2.imencode(".jpg", output_frame)
-            if not success:
-                continue
+            if output_frame is not None:
+                frame_to_send = output_frame.copy()
                 
+        if frame_to_send is None:
+            time.sleep(0.1)
+            continue
+            
+        # Encode frame as JPEG
+        success, encoded_image = cv2.imencode(".jpg", frame_to_send)
+        if not success:
+            time.sleep(0.03)
+            continue
+                 
         # Yield the output frame in MJPEG byte format
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encoded_image) + b'\r\n')
 
@@ -664,23 +670,27 @@ if __name__ == "__main__":
         username = None
         password = None
         
-    # Initialize camera (Dynamic input: Webcam OR IP Camera/RTSP)
-    cam_source = construct_camera_source(camera_url, username, password)
-    print(f"📡 Connecting to camera source: {camera_url}")
-    camera = ThreadedCamera(cam_source).start()
-    
-    # Optimize resolution for better FPS
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    
-    if not camera.isOpened():
-        print(f"❌ ERROR: Could not open camera source {camera_url}")
-        sys.exit(1)
-
-    # 3. Start background detection thread
-    t = threading.Thread(target=detect_objects)
-    t.daemon = True
-    t.start()
+    # Initialize camera if source is available (Dynamic input: Webcam OR IP Camera/RTSP)
+    if camera_url:
+        cam_source = construct_camera_source(camera_url, username, password)
+        print(f"📡 Connecting to camera source: {camera_url}")
+        camera = ThreadedCamera(cam_source).start()
+        
+        # Optimize resolution for better FPS
+        camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        
+        if not camera.isOpened():
+            print(f"❌ ERROR: Could not open camera source {camera_url}")
+            camera = None
+        
+        if camera:
+            # 3. Start background detection thread
+            t = threading.Thread(target=detect_objects)
+            t.daemon = True
+            t.start()
+    else:
+        print("⚠️ [NO CAMERA] Idle mode active. Flask server is online to accept setup requests.")
     
     # 4. Start Flask server
     print("🚀 Starting AI Edge Agent Stream on port 5000...")

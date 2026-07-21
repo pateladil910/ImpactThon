@@ -267,7 +267,7 @@
       display: flex;
       gap: 30px;
       margin-bottom: 40px;
-      align-items: flex-start;
+      align-items: stretch;
       width: 100%;
     }
     .dashboard-col-left {
@@ -397,7 +397,7 @@
         <div class="dashboard-col-left">
           
           <!-- 🎥 CAMERA VIEWPORT GRID -->
-          <div class="box camera" style="min-height: 480px; display: flex; flex-direction: column; width: 100%;">
+          <div class="box camera" style="min-height: 480px; display: flex; flex-direction: column; width: 100%; flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
               <div class="box-title" style="margin-bottom: 0;">🎥 Live Camera Views</div>
               
@@ -454,7 +454,7 @@
         <div class="dashboard-col-right">
 
           <!-- 🛡 SAFETY STATUS CARD -->
-          <div class="box safe" id="safety-box" style="min-height: 140px; width: 100%;">
+          <div class="box safe" id="safety-box" style="flex: 1; min-height: 120px; width: 100%;">
             <div class="box-title">🛡 Safety Zone</div>
             <div class="box-value" id="safety-status">SAFE</div>
             <div class="box-desc" id="safety-desc">
@@ -463,7 +463,7 @@
           </div>
 
           <!-- 🚨 SYSTEM ACTION -->
-          <div class="box safe" id="action-box" style="min-height: 140px; width: 100%;">
+          <div class="box safe" id="action-box" style="flex: 1; min-height: 120px; width: 100%;">
             <div class="box-title">🚨 System Action</div>
             <div class="box-value" id="system-action">RUN</div>
             <div class="box-desc" id="system-desc">
@@ -472,7 +472,7 @@
           </div>
 
           <!-- 🧠 AI CONFIDENCE -->
-          <div class="box" style="min-height: 140px; width: 100%;">
+          <div class="box" style="flex: 1; min-height: 120px; width: 100%;">
             <div class="box-title">🧠 AI Confidence</div>
             <div class="box-value" id="confidence-value">0%</div>
             <div class="box-desc">
@@ -481,7 +481,7 @@
           </div>
 
           <!-- 🕒 SHIFT / MODE WATCHDOG CARD -->
-          <div class="box" id="shift-watchdog-box" style="min-height: 140px; width: 100%;">
+          <div class="box" id="shift-watchdog-box" style="flex: 1; min-height: 120px; width: 100%;">
             <div class="box-title">🕒 Schedule Watchdog</div>
             <div class="box-value" id="shift-watchdog-title" style="font-size: 22px;">--</div>
             <div class="box-desc" id="shift-watchdog-status" style="color: var(--safe-green);">
@@ -1536,6 +1536,27 @@
     // ==========================================
     // 📡 CAMERA HEALTH DAEMON
     // ==========================================
+    // ==========================================
+    // 🖥️ HEALTH DAEMON CHECKER
+    // ==========================================
+    async function updateCameraStatusInDB(url, status) {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = {
+          "Content-Type": "application/json"
+        };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        await fetch(`${API_BASE_URL}/api/camera/update_status`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ url, status })
+        });
+      } catch (err) {
+        console.error("Failed to persist camera status update:", err);
+      }
+    }
+
     function startHealthDaemon() {
       if (healthInterval) clearInterval(healthInterval);
 
@@ -1558,17 +1579,20 @@
               if (cam.status !== "Online") {
                 cam.status = "Online";
                 addIncidentLog("Sensor Node online: " + cam.cameraName, "SAFE");
+                updateCameraStatusInDB(cam.cameraUrl, "Online");
               }
             } else {
               if (cam.status !== "Offline") {
                 cam.status = "Offline";
                 addIncidentLog("Sensor Node connection error: " + cam.cameraName, "CRITICAL");
+                updateCameraStatusInDB(cam.cameraUrl, "Offline");
               }
             }
           } catch(e) {
             if (cam.status !== "Offline") {
               cam.status = "Offline";
               addIncidentLog("Sensor Node offline (unreachable): " + cam.cameraName, "CRITICAL");
+              updateCameraStatusInDB(cam.cameraUrl, "Offline");
             }
           }
         }

@@ -603,6 +603,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           isCameraVerified = true;
           updateDeployButtonState();
           
+          if (edgeAgentUrl) {
+            localStorage.setItem('edgeAgentUrl', edgeAgentUrl);
+          }
+          
           if (previewFeed) {
             const cleanUrl = url.trim();
             const uParam = (user && !cleanUrl.includes('@')) ? `&username=${encodeURIComponent(user)}` : '';
@@ -726,6 +730,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Store in localStorage so the draw_zone page can read it and save it later
     localStorage.setItem('tempCameraConfig', JSON.stringify(tempCam));
+    const edgeAgentInput = document.getElementById('edgeAgentUrl');
+    const edgeAgentUrlVal = edgeAgentInput ? edgeAgentInput.value.trim().replace(/\/$/, '') : '';
+    if (edgeAgentUrlVal) {
+      localStorage.setItem('edgeAgentUrl', edgeAgentUrlVal);
+    }
 
     // Redirect to the new drawing page
     showHUDToast('UPLINK ESTABLISHED', 'Redirecting to Spatial Safety Zone Calibration...', 'success');
