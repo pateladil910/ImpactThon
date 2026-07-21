@@ -127,6 +127,15 @@ FRAME_SKIP = 5          # Run YOLO every Nth frame to reduce delay
 STREAM_WIDTH = 640      # Stream resolution width (smaller = less lag)
 STREAM_HEIGHT = 360     # Stream resolution height
 
+# Real-time detection stats (shown on dashboard)
+current_stats = {
+    "humanCount": 0,
+    "confidence": 0.0,
+    "zone": "SAFE",
+    "action": "RUN"
+}
+stats_lock = threading.Lock()
+
 # Zone config (normalized 0-1000, loaded from database)
 DANGER_ZONE = {"x": 300, "y": 300, "w": 400, "h": 400}   # default
 WARNING_ZONE = {"x": 150, "y": 150, "w": 700, "h": 700}  # default
@@ -437,6 +446,33 @@ def detect_objects():
                 args=(highest_conf, jpg_as_text, breach_type, severity, "Local Edge Camera CH1")
             ).start()
 
+        # Update real-time stats (always, every YOLO frame)
+        person_count = sum(
+            1 for r in results
+            for box in r.boxes
+            if int(box.cls[0]) == 0
+        ) if not person_detected else 1
+
+        zone_status = "SAFE"
+        if person_detected:
+            # Determine overall zone status
+            for r in results:
+                for box in r.boxes:
+                    if int(box.cls[0]) == 0:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                        if (dz_x1 < cx < dz_x2) and (dz_y1 < cy < dz_y2):
+                            zone_status = "DANGER"
+                            break
+                        elif (wz_x1 < cx < wz_x2) and (wz_y1 < cy < wz_y2):
+                            zone_status = "WARNING"
+
+        with stats_lock:
+            current_stats["humanCount"] = 1 if person_detected else 0
+            current_stats["confidence"] = round(highest_conf * 100, 1)
+            current_stats["zone"] = zone_status
+            current_stats["action"] = "DANGER" if zone_status == "DANGER" else "RUN"
+
         # Update global frame for Flask stream (YOLO-annotated)
         with lock:
             output_frame = frame.copy()
@@ -466,7 +502,7 @@ def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severi
 def generate_video_stream():
     """YOLO-annotated stream for dashboard (slightly delayed due to inference)"""
     global output_frame, lock
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 50]  # Lower quality = much faster network transfer
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 50]
     
     while True:
         frame_to_send = None
@@ -482,7 +518,11 @@ def generate_video_stream():
         if not success:
             continue
                  
-        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encoded_image) + b'\r\n')
+        yield(b'--frame\r\n'
+              b'Content-Type: image/jpeg\r\n'
+              b'Cache-Control: no-store, no-cache\r\n'
+              b'\r\n' + bytearray(encoded_image) + b'\r\n')
+        time.sleep(0.04)  # ~25 fps max, prevents buffering
 
 def generate_raw_stream():
     """Zero-delay raw stream (no YOLO) for calibration/draw_zone page"""
@@ -503,7 +543,11 @@ def generate_raw_stream():
         if not success:
             continue
 
-        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encoded_image) + b'\r\n')
+        yield(b'--frame\r\n'
+              b'Content-Type: image/jpeg\r\n'
+              b'Cache-Control: no-store, no-cache\r\n'
+              b'\r\n' + bytearray(encoded_image) + b'\r\n')
+        time.sleep(0.04)
 
 def discover_local_cameras():
     import socket
@@ -746,11 +790,43 @@ def raw_feed():
 
 @app.route("/status")
 def status():
+    with stats_lock:
+        stats = current_stats.copy()
     return jsonify({
-        "status": "running", 
+        "status": "running",
         "camera": camera.isOpened() if camera else False,
-        "userId": GLOBAL_USER_ID
+        "userId": GLOBAL_USER_ID,
+        **stats
     })
+
+@app.route("/api/stats")
+def api_stats():
+    """Real-time detection stats for dashboard polling"""
+    with stats_lock:
+        stats = current_stats.copy()
+    return jsonify({
+        "camera": camera.isOpened() if camera else False,
+        **stats
+    })
+
+@app.route("/api/zones", methods=["POST", "OPTIONS"])
+def update_zones():
+    """Accept zone updates directly from draw_zone calibration page"""
+    from flask import request
+    if request.method == "OPTIONS":
+        return jsonify({"ok": True})
+    global DANGER_ZONE, WARNING_ZONE
+    data = request.get_json(silent=True) or {}
+    dz = data.get("dangerZone")
+    wz = data.get("warningZone")
+    with zone_lock:
+        if dz and all(k in dz for k in ["x", "y", "w", "h"]):
+            DANGER_ZONE = dz
+            print(f"✅ Danger zone updated via API: {DANGER_ZONE}")
+        if wz and all(k in wz for k in ["x", "y", "w", "h"]):
+            WARNING_ZONE = wz
+            print(f"✅ Warning zone updated via API: {WARNING_ZONE}")
+    return jsonify({"success": True, "dangerZone": DANGER_ZONE, "warningZone": WARNING_ZONE})
 
 if __name__ == "__main__":
     # 1. Load config and authenticate
