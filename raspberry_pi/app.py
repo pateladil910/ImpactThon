@@ -258,33 +258,45 @@ def load_or_create_config():
             print(f"❌ Authentication Error: {e}")
             sys.exit(1)
             
-    # 2. ALWAYS fetch User's Latest Camera details from the cloud to reflect web edits
-    try:
-        print("📡 Fetching active camera configuration from cloud...")
-        headers = {"Authorization": f"Bearer {token}"}
-        cam_res = requests.get("https://codevortex.in/api/camera/latest", headers=headers, timeout=10)
-        
-        if cam_res.status_code == 401:
-            print("❌ Saved session expired. Please delete config.json and restart to login again.")
-            sys.exit(1)
-            
-        if cam_res.status_code == 404:
-            print("\n⚠️  [NO CAMERA] You have not configured a camera yet.")
-            print("👉 Keeping Edge Server ONLINE so you can configure it via the web page.")
-            return token, user_id, None, None, None
-            
-        cam_data = cam_res.json()
-        camera_info = cam_data.get("camera", {})
-        cam_url = camera_info.get("url")
-        username = camera_info.get("username")
-        password = camera_info.get("password")
-        
-        print(f"✅ Active Camera Stream loaded: {cam_url}")
-        return token, user_id, cam_url, username, password
-        
-    except Exception as e:
-        print(f"❌ Connection/Setup Error: {e}")
-        sys.exit(1)
+    # 2. If --camera flag is given, skip the cloud fetch entirely (works offline)
+    if args.camera is not None:
+        print("📡 [OFFLINE MODE] Using --camera flag. Skipping cloud camera fetch.")
+        return token, user_id, args.camera, None, None
+
+    # 3. Fetch camera config from cloud (with retry for sleeping Render server)
+    print("📡 Fetching active camera configuration from cloud...")
+    for attempt in range(3):
+        try:
+            headers = {"Authorization": f"Bearer {token}"}
+            cam_res = requests.get("https://codevortex.in/api/camera/latest", headers=headers, timeout=15)
+
+            if cam_res.status_code == 401:
+                print("❌ Saved session expired. Please delete config.json and restart.")
+                sys.exit(1)
+
+            if cam_res.status_code == 404:
+                print("\n⚠️  [NO CAMERA] You have not configured a camera yet.")
+                print("👉 Keeping Edge Server ONLINE so you can configure it via the web page.")
+                return token, user_id, None, None, None
+
+            cam_data = cam_res.json()
+            camera_info = cam_data.get("camera", {})
+            cam_url = camera_info.get("url")
+            username = camera_info.get("username")
+            password = camera_info.get("password")
+
+            print(f"✅ Active Camera Stream loaded: {cam_url}")
+            return token, user_id, cam_url, username, password
+
+        except Exception as e:
+            print(f"⚠️  Cloud fetch attempt {attempt+1}/3 failed: {e}")
+            if attempt < 2:
+                print("   Retrying in 5 seconds (server may be waking up)...")
+                time.sleep(5)
+
+    # All retries failed - start in idle mode
+    print("⚠️  Could not reach cloud. Starting in IDLE mode (no camera).")
+    return token, user_id, None, None, None
 
 def detect_objects():
     global output_frame, raw_frame, lock, raw_lock, last_detection_time, camera
