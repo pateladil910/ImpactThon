@@ -150,7 +150,7 @@ router.get("/data", authMiddleware, async (req, res) => {
                     $match: {
                         timestamp: { $gte: startDate, $lte: endDate },
                         status: "DANGER",
-                        userId: userId
+                        $or: userMatchList
                     }
                 },
                 {
