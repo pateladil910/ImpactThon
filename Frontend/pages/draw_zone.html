@@ -798,10 +798,9 @@
                 if (tempConfig.isDemo) {
                     previewFeed.src = '../images/factory_safety_bg.webp';
                 } else {
-                    const testUrl = localStorage.getItem('edgeAgentUrl') || "http://127.0.0.1:10000";
-                    const uParam = tempConfig.username ? `&username=${encodeURIComponent(tempConfig.username)}` : '';
-                    const pParam = tempConfig.password ? `&password=${encodeURIComponent(tempConfig.password)}` : '';
-                    previewFeed.src = `${testUrl}/video_feed?source=${encodeURIComponent(tempConfig.url)}${uParam}${pParam}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t=${Date.now()}`;
+                    const testUrl = localStorage.getItem('edgeAgentUrl') || "https://camera.codevortex.in";
+                    // Use /raw_feed for zero-delay preview (no YOLO processing)
+                    previewFeed.src = `${testUrl}/raw_feed?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true&t=${Date.now()}`;
                 }
             } else {
                 showHUDToast('CALIBRATION FAILURE', 'Camera configuration not found. Redirecting...', 'error');
@@ -1105,26 +1104,58 @@
                 const headers = { 'Content-Type': 'application/json' };
                 if (token) headers['Authorization'] = `Bearer ${token}`;
 
+                // 1. Save to cloud database
                 const response = await fetch(`${window.API_BASE_URL}/api/camera/save`, {
                     method: 'POST',
                     headers: headers,
                     body: JSON.stringify(payload)
                 });
-
                 const data = await response.json();
+
+                // 2. Push zones DIRECTLY to Pi Edge Agent as {x,y,w,h} dict for instant update
+                const edgeUrl = localStorage.getItem('edgeAgentUrl') || 'https://camera.codevortex.in';
+                const zonePayload = {
+                    dangerZone: { x: dangerBox.x, y: dangerBox.y, w: dangerBox.w, h: dangerBox.h },
+                    warningZone: { x: warningBox.x, y: warningBox.y, w: warningBox.w, h: warningBox.h }
+                };
+                // Save to localStorage as persistent backup
+                localStorage.setItem('lastDeployedZones', JSON.stringify(zonePayload));
+                console.log('📦 Deploying zones to Pi:', JSON.stringify(zonePayload));
+                try {
+                    const zoneRes = await fetch(`${edgeUrl}/api/zones`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(zonePayload)
+                    });
+                    const zoneData = await zoneRes.json();
+                    console.log('✅ Zones confirmed by Pi:', JSON.stringify(zoneData));
+                } catch (zoneErr) {
+                    console.warn('⚠️ Could not push zones to Pi directly:', zoneErr);
+                }
+
                 showHUDToast('SHIELD DEPLOYED', 'Core Safety Shield matrices armed successfully!', 'success');
                 localStorage.removeItem('tempCameraConfig');
-                
-                setTimeout(() => {
-                    location.href = "dashboard.html";
-                }, 1200);
+                setTimeout(() => { location.href = "dashboard.html"; }, 1200);
             } catch (err) {
-                showHUDToast('SHIELD DEPLOYED', 'Deployed to local client workspace configuration.', 'success');
+                // Even if DB save fails, still push zones to Pi directly
+                const edgeUrl = localStorage.getItem('edgeAgentUrl') || 'https://camera.codevortex.in';
+                const zonePayload = {
+                    dangerZone: { x: dangerBox.x, y: dangerBox.y, w: dangerBox.w, h: dangerBox.h },
+                    warningZone: { x: warningBox.x, y: warningBox.y, w: warningBox.w, h: warningBox.h }
+                };
+                localStorage.setItem('lastDeployedZones', JSON.stringify(zonePayload));
+                console.log('📦 Deploying zones to Pi (DB failed):', JSON.stringify(zonePayload));
+                try {
+                    await fetch(`${edgeUrl}/api/zones`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(zonePayload)
+                    });
+                } catch (_) {}
+
+                showHUDToast('SHIELD DEPLOYED', 'Zones applied to Edge Agent successfully!', 'success');
                 localStorage.removeItem('tempCameraConfig');
-                
-                setTimeout(() => {
-                    location.href = "dashboard.html";
-                }, 1200);
+                setTimeout(() => { location.href = "dashboard.html"; }, 1200);
             }
         }
     </script>

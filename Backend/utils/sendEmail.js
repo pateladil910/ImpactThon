@@ -1,17 +1,33 @@
 const { Resend } = require("resend");
 
-const apiKey = process.env.RESEND_API_KEY || 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr';
-const resend = new Resend(apiKey);
+const getResendClient = () => {
+  const apiKey = process.env.RESEND_API_KEY || "re_fallback_key";
+  return new Resend(apiKey);
+};
 
 const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null, recipientEmail = null) => {
   console.log(`📧 sendAlertEmail triggering for: ${userName}`);
+  const resend = getResendClient();
 
-  // Create image HTML if an image was provided
+  const attachments = [];
+  if (imageBase64) {
+    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    attachments.push({
+      filename: "danger_snapshot.jpg",
+      content: cleanBase64,
+      content_id: "danger_snapshot",
+      content_type: "image/jpeg"
+    });
+  }
+
   const imageHtml = imageBase64
-    ? `<div style="margin-top: 20px; text-align: center;">
-         <img src="${imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`}" 
+    ? `<div style="margin: 20px 0; text-align: center; background: #020617; padding: 20px 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.4);">
+         <div style="color: #ef4444; font-size: 12px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: bold; letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase;">📷 LIVE INTRUSION SNAPSHOT CAPTURED</div>
+         <img src="cid:danger_snapshot" 
                alt="Detection Snapshot" 
-               style="max-width: 100%; border-radius: 5px; border: 2px solid #d9534f;" />
+               width="550" 
+               style="width: 100%; max-width: 550px; height: auto; display: block; margin: 0 auto; border-radius: 8px; border: 1px solid #ef4444; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);" />
+         <p style="color: #94a3b8; font-size: 11px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-top: 10px; margin-bottom: 0;">(High-resolution photo snapshot is attached to this alert)</p>
        </div>`
     : '';
 
@@ -20,15 +36,57 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
       from: 'AI Safety System <notifications@codevortex.in>',
       replyTo: userEmail,
       to: recipientEmail || process.env.ADMIN_EMAIL || "adilp4534@gmail.com",
-      subject: "🚨 Danger Alert Detected",
+      subject: "🚨 CRITICAL ALERT: Danger Zone Proximity Breach Detected",
       html: `
-        <div style="font-family: sans-serif; padding: 20px; background: #f4f4f4; border-radius: 8px; max-width: 600px; margin: auto;">
-          <h2 style="color: #d9534f; border-bottom: 2px solid #d9534f; padding-bottom: 10px;">Security Notification</h2>
-          <p><strong>Reported By:</strong> ${userName} (${userEmail})</p>
-          <p><strong>Alert Message:</strong></p>
-          <p style="background: white; padding: 15px; border-left: 4px solid #d9534f; font-size: 16px;">${message}</p>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background: #020617; color: #f8fafc; border-radius: 12px; max-width: 620px; margin: auto; border: 1px solid #1e293b; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+          
+          <div style="border-bottom: 2px solid #ef4444; padding-bottom: 15px; margin-bottom: 20px;">
+            <h1 style="color: #06b6d4; font-size: 22px; margin: 0; font-weight: 800; letter-spacing: 1px;">CODE VORTEX</h1>
+            <div style="color: #ef4444; font-size: 11px; font-weight: 700; letter-spacing: 2px; margin-top: 3px;">INDUSTRIAL AI SAFETY SHIELD</div>
+          </div>
+
+          <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #ef4444; font-size: 13px; font-weight: 800; padding: 10px 16px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; text-align: center;">
+            🚨 CRITICAL DANGER BREACH DETECTED
+          </div>
+
+          <div style="background: #0f172a; border-radius: 10px; padding: 20px; border: 1px solid #1e293b; margin-bottom: 20px;">
+            <h3 style="color: #f8fafc; margin-top: 0; font-size: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px;">Threat Incident Summary</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #cbd5e1;">
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8;">Operator Account:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #06b6d4; text-align: right;">${userName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8;">Sensor Node:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #f8fafc; text-align: right;">Local Edge Camera CH1</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8;">AI Detection Engine:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #10b981; text-align: right;">YOLOv8 Active</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8;">Machine Action:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #ef4444; text-align: right;">EMERGENCY TRIP ACTIVATED</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 15px; border-radius: 4px; font-size: 14px; color: #fca5a5; line-height: 1.5; margin-bottom: 20px;">
+            <strong>Alert Details:</strong><br/>
+            ${message}
+          </div>
+
           ${imageHtml}
-        </div>`
+
+          <div style="text-align: center; margin-top: 25px;">
+            <a href="https://codevortex.in/pages/dashboard.html" style="background: #06b6d4; color: #020617; font-weight: 700; text-decoration: none; padding: 12px 28px; border-radius: 25px; font-size: 14px; display: inline-block; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);">Open Live Dashboard →</a>
+          </div>
+
+          <div style="margin-top: 30px; border-top: 1px solid #1e293b; padding-top: 15px; text-align: center; color: #64748b; font-size: 12px;">
+            Automated Security Dispatch • Code Vortex Safety Cloud • Industrial Safety Compliance
+          </div>
+        </div>`,
+      attachments: attachments
     });
 
     if (error) {
@@ -46,6 +104,7 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
 
 const sendResetPasswordEmail = async (recipientEmail, code) => {
   console.log(`📧 Sending Reset Password Email to: ${recipientEmail}`);
+  const resend = getResendClient();
   try {
     const { data, error } = await resend.emails.send({
       from: 'AI Safety System <notifications@codevortex.in>',
