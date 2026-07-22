@@ -396,6 +396,7 @@ def detect_objects():
 
         # Resize frame for low-lag streaming (smaller = much faster network transfer)
         frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
+        frame_counter += 1
         height, width = frame.shape[:2]
 
         # Always update the raw frame for zero-delay streaming
@@ -409,8 +410,8 @@ def detect_objects():
                     output_frame = last_annotated.copy()
             continue
 
-        # Run YOLO detection on this frame
-        results = model(frame, stream=True, conf=0.45, imgsz=320)
+        # Run YOLO detection with higher resolution (imgsz=480) and higher sensitivity (conf=0.25)
+        results = model(frame, stream=True, conf=0.25, imgsz=480)
 
         person_detected = False
         forklift_detected = False
@@ -455,11 +456,16 @@ def detect_objects():
                         highest_conf = conf
 
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
-                    # Check box overlap with zones (triggers if any part of person enters)
-                    in_danger  = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
-                    in_warning = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
+                    # Add 35px safety reach margin around person box for arm/hand extensions
+                    px1 = max(0, x1 - 35)
+                    py1 = max(0, y1 - 35)
+                    px2 = min(width, x2 + 35)
+                    py2 = min(height, y2 + 35)
+
+                    # Check box overlap with zones (triggers if person or extended arm enters)
+                    in_danger  = (px1 < dz_x2 and px2 > dz_x1 and py1 < dz_y2 and py2 > dz_y1)
+                    in_warning = (px1 < wz_x2 and px2 > wz_x1 and py1 < wz_y2 and py2 > wz_y1)
 
                     box_color  = (0, 255, 0)  # Green = safe
                     zone_label = "Safe Zone"
@@ -518,13 +524,15 @@ def detect_objects():
         # Update real-time stats (always, every YOLO frame)
         zone_status = "SAFE"
         if person_detected:
-            # Determine overall zone status using box overlap
+            # Determine overall zone status using box overlap with reach margin
             for r in results:
                 for box in r.boxes:
                     if int(box.cls[0]) == 0 or "person" in model.names.get(int(box.cls[0]), "").lower():
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        in_d = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
-                        in_w = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
+                        px1, py1 = max(0, x1 - 35), max(0, y1 - 35)
+                        px2, py2 = min(width, x2 + 35), min(height, y2 + 35)
+                        in_d = (px1 < dz_x2 and px2 > dz_x1 and py1 < dz_y2 and py2 > dz_y1)
+                        in_w = (px1 < wz_x2 and px2 > wz_x1 and py1 < wz_y2 and py2 > wz_y1)
                         if in_d:
                             zone_status = "DANGER"
                             break
