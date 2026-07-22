@@ -372,32 +372,160 @@ def load_or_create_config():
     print("⚠️  Could not reach cloud. Starting in IDLE mode (no camera).")
     return token, user_id, None, None, None
 
+# Global thread-safe queues and cache for zero-latency camera streaming
+latest_live_frame = None
+latest_frame_lock = threading.Lock()
+cached_detected_boxes = []
+
+def yolo_worker_thread():
+    """Asynchronous background worker: runs YOLO without blocking camera streaming"""
+    global latest_live_frame, cached_detected_boxes, last_detection_time, model
+    
+    while True:
+        frame_to_process = None
+        with latest_frame_lock:
+            if latest_live_frame is not None:
+                frame_to_process = latest_live_frame.copy()
+
+        if frame_to_process is None:
+            time.sleep(0.02)
+            continue
+
+        try:
+            height, width = frame_to_process.shape[:2]
+
+            # Load current zones
+            with zone_lock:
+                dz = DANGER_ZONE.copy()
+                wz = WARNING_ZONE.copy()
+
+            def norm_to_px(zone, w, h):
+                x1 = int((zone["x"] / 1000) * w)
+                y1 = int((zone["y"] / 1000) * h)
+                x2 = int(((zone["x"] + zone["w"]) / 1000) * w)
+                y2 = int(((zone["y"] + zone["h"]) / 1000) * h)
+                return x1, y1, x2, y2
+
+            dz_x1, dz_y1, dz_x2, dz_y2 = norm_to_px(dz, width, height)
+            wz_x1, wz_y1, wz_x2, wz_y2 = norm_to_px(wz, width, height)
+
+            # Run YOLO detection asynchronously
+            results = model(frame_to_process, stream=True, conf=0.25, imgsz=320)
+            current_boxes = []
+            person_detected = False
+            forklift_detected = False
+            highest_conf = 0.0
+            zone_status = "SAFE"
+
+            for r in results:
+                boxes = r.boxes
+                for box in boxes:
+                    cls_idx = int(box.cls[0])
+                    cls_name = model.names.get(cls_idx, f"Class {cls_idx}").lower()
+                    conf = float(box.conf[0])
+                    
+                    is_person = "person" in cls_name or cls_idx == 0
+                    is_forklift = "forklift" in cls_name or cls_idx == 58 or cls_idx == 7
+                    
+                    if is_person:
+                        person_detected = True
+                        if conf > highest_conf:
+                            highest_conf = conf
+
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+
+                        # Check DANGER: Any box overlap with Danger Zone
+                        in_danger = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
+
+                        # Check WARNING: Any box overlap with Warning Zone
+                        in_warning = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
+
+                        box_color  = (0, 255, 0)  # Green = safe
+                        zone_label = "Safe Zone"
+                        if in_danger:
+                            box_color  = (0, 0, 255)
+                            zone_label = "DANGER ZONE BREACH"
+                            zone_status = "DANGER"
+                        elif in_warning:
+                            box_color  = (0, 255, 255)
+                            zone_label = "WARNING ZONE"
+                            if zone_status != "DANGER":
+                                zone_status = "WARNING"
+
+                        current_boxes.append({
+                            'name': 'Person', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                            'color': box_color, 'label': zone_label, 'conf': conf
+                        })
+
+                    elif is_forklift:
+                        forklift_detected = True
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        current_boxes.append({
+                            'name': 'Forklift', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                            'color': (255, 0, 0), 'label': 'Forklift', 'conf': conf
+                        })
+
+            # Safely update cached boxes for 30FPS stream overlay
+            global cached_detected_boxes
+            with lock:
+                cached_detected_boxes = current_boxes
+
+            # Handle Alerting System & Email Alerts on DANGER or WARNING breach
+            current_time = time.time()
+            if (zone_status in ["DANGER", "WARNING"]) and (current_time - last_detection_time > DETECTION_COOLDOWN):
+                last_detection_time = current_time
+                
+                breach_type = "ZONE_INTRUSION" if zone_status == "DANGER" else "WARNING_PROXIMITY"
+                severity = "DANGER" if zone_status == "DANGER" else "WARNING"
+                print(f"🚨 {zone_status} breach detected! Sending alert to cloud backend...")
+
+                _, buffer = cv2.imencode('.jpg', frame_to_process)
+                jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+                
+                threading.Thread(
+                    target=send_alert_to_backend, 
+                    args=(highest_conf, jpg_as_text, breach_type, severity, "Local Edge Camera CH1")
+                ).start()
+
+            with stats_lock:
+                current_stats["humanCount"] = 1 if person_detected else 0
+                current_stats["confidence"] = round(highest_conf * 100, 1)
+                current_stats["safety"] = zone_status
+                current_stats["zone"] = zone_status
+                current_stats["action"] = "DANGER" if zone_status == "DANGER" else "RUN"
+
+        except Exception as e:
+            print(f"YOLO worker error: {e}")
+
+        time.sleep(0.02)  # Give CPU breathing room
+
 def detect_objects():
-    global output_frame, raw_frame, lock, raw_lock, last_detection_time, camera
-    import random
+    """Main camera loop: runs at 30 FPS zero-lag by decoupling YOLO into worker thread"""
+    global output_frame, raw_frame, lock, raw_lock, camera, latest_live_frame, cached_detected_boxes
     
     # Wait until camera is initialized
     while camera is None or not camera.isOpened():
         time.sleep(0.5)
 
-    frame_counter = 0
-    last_detected_boxes = []  # Cache last detected bounding boxes for smooth 30FPS streaming
+    # Start background YOLO worker thread
+    yt = threading.Thread(target=yolo_worker_thread, daemon=True)
+    yt.start()
 
     while True:
         success, frame = camera.read()
         if not success or frame is None:
-            print("Failed to read camera. Retrying...")
-            time.sleep(0.5)
+            time.sleep(0.05)
             continue
 
         # Resize frame for low-lag streaming
         frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
-        frame_counter += 1
         height, width = frame.shape[:2]
 
-        # Always update the raw frame for zero-delay streaming
+        # Update raw frame & latest live frame for YOLO worker
         with raw_lock:
             raw_frame = frame.copy()
+        with latest_frame_lock:
+            latest_live_frame = frame.copy()
 
         # Load current zones
         with zone_lock:
@@ -420,104 +548,18 @@ def detect_objects():
         cv2.rectangle(frame, (dz_x1, dz_y1), (dz_x2, dz_y2), (0, 0, 255), 2)
         cv2.putText(frame, 'DANGER ZONE', (dz_x1 + 4, dz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1)
 
-        # On skipped frames, overlay cached boxes onto fresh live frame (0 stutter/glitch)
-        if frame_counter % FRAME_SKIP != 0:
-            for b in last_detected_boxes:
-                cv2.rectangle(frame, (b['x1'], b['y1']), (b['x2'], b['y2']), b['color'], 2)
-                cv2.putText(frame, f"{b['name']} {b['conf']:.2f} | {b['label']}", (b['x1'], max(b['y1'] - 8, 12)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, b['color'], 1)
-            with lock:
-                output_frame = frame.copy()
-            continue
-
-        # Run YOLO detection with low-latency resolution (imgsz=320 for 30FPS zero lag)
-        results = model(frame, stream=True, conf=0.25, imgsz=320)
-        current_boxes = []
-        person_detected = False
-        forklift_detected = False
-        highest_conf = 0.0
-        zone_status = "SAFE"
-
-        for r in results:
-            boxes = r.boxes
-            for box in boxes:
-                cls_idx = int(box.cls[0])
-                cls_name = model.names.get(cls_idx, f"Class {cls_idx}").lower()
-                conf = float(box.conf[0])
-                
-                # Check for person or forklift standard classes
-                is_person = "person" in cls_name or cls_idx == 0
-                is_forklift = "forklift" in cls_name or cls_idx == 58 or cls_idx == 7
-                
-                if is_person:
-                    person_detected = True
-                    if conf > highest_conf:
-                        highest_conf = conf
-
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-
-                    # Check DANGER: Any box overlap with Danger Zone
-                    in_danger = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
-
-                    # Check WARNING: Any box overlap with Warning Zone
-                    in_warning = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
-
-                    box_color  = (0, 255, 0)  # Green = safe
-                    zone_label = "Safe Zone"
-                    if in_danger:
-                        box_color  = (0, 0, 255)
-                        zone_label = "DANGER ZONE BREACH"
-                        zone_status = "DANGER"
-                    elif in_warning:
-                        box_color  = (0, 255, 255)
-                        zone_label = "WARNING ZONE"
-                        if zone_status != "DANGER":
-                            zone_status = "WARNING"
-
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
-                    cv2.putText(frame, f'Person {conf:.2f} | {zone_label}', (x1, max(y1 - 8, 12)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, box_color, 1)
-                    current_boxes.append({'name': 'Person', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2, 'color': box_color, 'label': zone_label, 'conf': conf})
-
-                elif is_forklift:
-                    forklift_detected = True
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-                    cv2.putText(frame, f'Forklift {conf:.2f}', (x1, y1 - 10), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 0, 0), 2)
-
-        last_detected_boxes = current_boxes
-
-        # Handle Alerting System & Email Alerts on DANGER or WARNING breach
-        current_time = time.time()
-        if (zone_status in ["DANGER", "WARNING"]) and (current_time - last_detection_time > DETECTION_COOLDOWN):
-            last_detection_time = current_time
-            
-            breach_type = "ZONE_INTRUSION" if zone_status == "DANGER" else "WARNING_PROXIMITY"
-            severity = "DANGER" if zone_status == "DANGER" else "WARNING"
-            print(f"🚨 {zone_status} breach detected! Sending alert to cloud backend...")
-
-            # Encode frame to base64 for backend
-            _, buffer = cv2.imencode('.jpg', frame)
-            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-            
-            # Send alert payload with cameraStreamUrl and userId
-            threading.Thread(
-                target=send_alert_to_backend, 
-                args=(highest_conf, jpg_as_text, breach_type, severity, "Local Edge Camera CH1")
-            ).start()
-
-        with stats_lock:
-            current_stats["humanCount"] = 1 if person_detected else 0
-            current_stats["confidence"] = round(highest_conf * 100, 1)
-            current_stats["safety"] = zone_status
-            current_stats["zone"] = zone_status
-            current_stats["action"] = "DANGER" if zone_status == "DANGER" else "RUN"
-
-        # Update global frame for Flask stream (YOLO-annotated)
+        # Overlay latest cached YOLO boxes onto fresh 30FPS live frame
         with lock:
-            output_frame = frame.copy()
-            last_annotated = frame.copy()
+            boxes_to_draw = list(cached_detected_boxes)
+
+        for b in boxes_to_draw:
+            cv2.rectangle(frame, (b['x1'], b['y1']), (b['x2'], b['y2']), b['color'], 2)
+            cv2.putText(frame, f"{b['name']} {b['conf']:.2f} | {b['label']}", (b['x1'], max(b['y1'] - 8, 12)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, b['color'], 1)
+
+        # Update output frame for MJPEG HTTP server
+        with lock:
+            output_frame = frame
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
