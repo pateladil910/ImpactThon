@@ -487,41 +487,7 @@ def detect_objects():
                     cv2.putText(frame, f'Forklift {conf:.2f}', (x1, y1 - 10), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 0, 0), 2)
 
-        # Handle Alerting System & PPE compliance simulation (if using standard COCO yolov8n)
-        current_time = time.time()
-        if person_detected and (current_time - last_detection_time > DETECTION_COOLDOWN):
-            last_detection_time = current_time
-            
-            # Determine alert severity and PPE violations
-            breach_type = "PROXIMITY"
-            severity = "DANGER"
-            
-            # Trigger custom violations
-            ppe_roll = random.random()
-            if ppe_roll < 0.15:
-                breach_type = "NO_HELMET"
-                severity = "ALARM"
-                print("🚨 Helmet Violation detected!")
-            elif ppe_roll < 0.30:
-                breach_type = "NO_VEST"
-                severity = "ALARM"
-                print("🚨 Safety Vest Violation detected!")
-            else:
-                breach_type = "ZONE_INTRUSION"
-                severity = "DANGER"
-                print("🚨 Zone Intrusion Proximity Breach!")
-
-            # Encode frame to base64 for backend
-            _, buffer = cv2.imencode('.jpg', frame)
-            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-            
-            # Send alert payload
-            threading.Thread(
-                target=send_alert_to_backend, 
-                args=(highest_conf, jpg_as_text, breach_type, severity, "Local Edge Camera CH1")
-            ).start()
-
-        # Update real-time stats (always, every YOLO frame)
+        # Calculate real-time zone status (SAFE / WARNING / DANGER)
         zone_status = "SAFE"
         if person_detected:
             # Determine overall zone status using box overlap with reach margin
@@ -539,6 +505,25 @@ def detect_objects():
                         elif in_w:
                             zone_status = "WARNING"
 
+        # Handle Alerting System & Email Alerts on DANGER or WARNING breach
+        current_time = time.time()
+        if (zone_status in ["DANGER", "WARNING"]) and (current_time - last_detection_time > DETECTION_COOLDOWN):
+            last_detection_time = current_time
+            
+            breach_type = "ZONE_INTRUSION" if zone_status == "DANGER" else "WARNING_PROXIMITY"
+            severity = "DANGER" if zone_status == "DANGER" else "WARNING"
+            print(f"🚨 {zone_status} breach detected! Sending alert to cloud backend...")
+
+            # Encode frame to base64 for backend
+            _, buffer = cv2.imencode('.jpg', frame)
+            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+            
+            # Send alert payload with cameraStreamUrl and userId
+            threading.Thread(
+                target=send_alert_to_backend, 
+                args=(highest_conf, jpg_as_text, breach_type, severity, "Local Edge Camera CH1")
+            ).start()
+
         with stats_lock:
             current_stats["humanCount"] = 1 if person_detected else 0
             current_stats["confidence"] = round(highest_conf * 100, 1)
@@ -553,10 +538,12 @@ def detect_objects():
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
+        conf_val = int(confidence * 100) if confidence <= 1.0 else int(confidence)
         payload = {
             "danger": True,
-            "confidence": int(confidence * 100),
+            "confidence": conf_val,
             "userId": GLOBAL_USER_ID,
+            "cameraStreamUrl": camera_url or "rtsp://192.168.1.64:554/Streaming/Channels/101",
             "image": f"data:image/jpeg;base64,{image_b64}",
             "cameraName": camera_name,
             "factory": "Factory A",
@@ -564,13 +551,13 @@ def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severi
             "severity": severity
         }
         headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
-        res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=5)
+        res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=8)
         if res.status_code == 200:
-            print("✅ Alert successfully synced to cloud logs & dispatched alert emails.")
+            print(f"✅ Alert successfully synced to cloud logs & dispatched email to user.")
         else:
-            print(f"⚠️ Backend returned status {res.status_code}")
+            print(f"⚠️ Backend returned status {res.status_code}: {res.text}")
     except Exception as e:
-        print(f"❌ Failed to send alert: {e}")
+        print(f"❌ Failed to send alert to cloud: {e}")
 
 def generate_video_stream():
     """YOLO-annotated stream for dashboard (slightly delayed due to inference)"""
