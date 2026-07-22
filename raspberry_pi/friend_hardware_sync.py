@@ -10,10 +10,16 @@ import time
 import requests
 import serial
 
-# Cloud status endpoint URL (Render deployment or local IP)
-# Cloud status endpoint URL — same backend the dashboard uses
-# Cloud status endpoint URL — same backend the dashboard uses
-CLOUD_STATUS_URL = "https://codevortex.in/api/status"
+# Status URL list — tries each in order until one returns a valid response
+# ⚠️ IMPORTANT: The AI Flask server runs LOCALLY on this same machine (Raspberry Pi)
+# The cloud backend (codevortex.in) CANNOT see local camera state — it only knows its own server state
+# So we MUST poll localhost first!
+STATUS_URLS = [
+    "http://127.0.0.1:5000/status",         # Local Flask AI server (Raspberry Pi - primary)
+    "http://localhost:5000/status",          # Same as above (alternative)
+    "http://127.0.0.1:10000/status",        # Alternative port
+    "https://codevortex.in/status",          # Cloud backend (last resort fallback)
+]
 
 def get_serial_connection():
     possible_ports = [
@@ -30,58 +36,77 @@ def get_serial_connection():
             pass
     return None
 
+def poll_status():
+    """Try each status URL in order, return True if DANGER detected."""
+    for url in STATUS_URLS:
+        try:
+            res = requests.get(url, timeout=3)
+            if res.status_code == 200:
+                data = res.json()
+                # Format 1: AI Flask /status → {danger_state: "DANGER", machine_state: "STOP"}
+                danger_state = data.get("danger_state", "")
+                machine_state = data.get("machine_state", "")
+                # Format 2: Backend /api/status → {danger: true/false, zone: "DANGER"}
+                is_danger_bool = data.get("danger", False)
+                zone = data.get("zone", "")
+
+                if (danger_state == "DANGER" or machine_state == "STOP"
+                        or is_danger_bool or zone == "DANGER"):
+                    print(f"[STATUS] DANGER detected via {url}")
+                    return True
+                else:
+                    return False  # Got a valid safe response — stop trying
+        except Exception as e:
+            print(f"[STATUS] Could not reach {url}: {e}")
+    return False  # All URLs failed — assume SAFE
+
 def main():
     print("🔌 Searching for connected ESP32 / Arduino hardware...")
     ser = get_serial_connection()
 
     if not ser:
-        print("⚠️ Warning: No USB serial device connected initially. Will auto-retry on detection...")
-    
+        print("⚠️ Warning: No USB serial device connected initially. Will auto-retry...")
+
     last_action = None
-    print(f"🚀 Starting Hardware Motor Sync Daemon -> Polling {CLOUD_STATUS_URL} ...\n")
+    print(f"🚀 Hardware Motor Sync Daemon running. Polling status every 0.3s ...\n")
 
     while True:
         try:
             if not ser:
                 ser = get_serial_connection()
 
-            res = requests.get(CLOUD_STATUS_URL, timeout=3)
-            if res.status_code == 200:
-                data = res.json()
-                is_danger = data.get("danger", False)
-                zone = data.get("zone", data.get("safety", "SAFE"))
+            is_danger = poll_status()
+            current_action = "STOP" if is_danger else "SAFE"
 
-                current_action = "STOP" if (is_danger or zone == "DANGER") else "SAFE"
+            if current_action == "STOP":
+                print("🚨 DANGER → Sending STOP to motor relay!")
+                if ser:
+                    try:
+                        ser.write(b"STOP\n")
+                        ser.flush()
+                        ser.write(b"DANGER\n")
+                        ser.flush()
+                    except Exception as ser_err:
+                        print(f"Serial write error: {ser_err}")
+                        ser = None
 
-                if current_action == "STOP":
-                    print("🚨 DANGER BREACH DETECTED -> CONTINUOUS MOTOR STOP ACTIVE!")
-                    if ser:
-                        try:
-                            ser.write(b"STOP\n")
-                            ser.flush()
-                            ser.write(b"DANGER\n")
-                            ser.flush()
-                        except Exception as ser_err:
-                            print(f"Serial write error: {ser_err}")
-                            ser = None
+            elif current_action == "SAFE" and last_action != "SAFE":
+                print("🟢 SAFE → Sending SAFE to motor relay!")
+                if ser:
+                    try:
+                        ser.write(b"SAFE\n")
+                        ser.flush()
+                    except Exception as ser_err:
+                        print(f"Serial write error: {ser_err}")
+                        ser = None
 
-                elif current_action == "SAFE" and last_action != "SAFE":
-                    print("🟢 SAFETY CLEAR -> Sending SAFE to Motor!")
-                    if ser:
-                        try:
-                            ser.write(b"SAFE\n")
-                            ser.flush()
-                        except Exception as ser_err:
-                            print(f"Serial write error: {ser_err}")
-                            ser = None
+            last_action = current_action
 
-                last_action = current_action
-
-                # Print incoming serial responses from Arduino/ESP32
-                if ser and ser.in_waiting:
-                    reply = ser.readline().decode(errors="ignore").strip()
-                    if reply:
-                        print(f"ESP32 Reply: {reply}")
+            # Read any serial replies from Arduino/ESP32
+            if ser and ser.in_waiting:
+                reply = ser.readline().decode(errors="ignore").strip()
+                if reply:
+                    print(f"ESP32: {reply}")
 
         except Exception as err:
             print(f"Sync polling error: {err}")

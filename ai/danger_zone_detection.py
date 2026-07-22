@@ -38,21 +38,13 @@ system_status = {
 }
 system_status_lock = threading.Lock()
 
-# ORIGINAL VALUES - PRESERVED FOR EASY RESTORE
-# ENTER_THRESHOLD = 1
-# EXIT_THRESHOLD = 8
-# FRAME_SKIP = 2
-# EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 60.0))
-# ORIGINAL VALUES - PRESERVED FOR EASY RESTORE
-# ENTER_THRESHOLD = 2
-# EXIT_THRESHOLD = 12
-# FRAME_SKIP = 4
-# EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 300.0))
+# ORIGINAL VALUES (PRESERVED FOR EASY RESTORE):
+# ENTER_THRESHOLD = 1, EXIT_THRESHOLD = 8, FRAME_SKIP = 2, EMAIL_ALERT_INTERVAL = 60.0
 
-ENTER_THRESHOLD = 1            # INSTANT TRIGGER: 1 frame breach triggers DANGER immediately!
+ENTER_THRESHOLD = 1            # Instant trigger: 1 frame breach = DANGER
 EXIT_THRESHOLD = 6             # Fast clearing when area is empty
-FRAME_SKIP = 1                 # NO LAG: Run YOLO on EVERY frame (0ms latency)
-EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 180.0))  # 1 email per breach (3-min cooldown)
+FRAME_SKIP = 3                 # YOLO every 3rd frame - smooth video, fast detection, no lag on Pi
+EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 180.0))  # 1 email per 3 min cooldown
 
 # ==========================================
 # 📐 BOX OVERLAP CHECK (ANY OVERLAP = DANGER)
