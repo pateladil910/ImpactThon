@@ -874,21 +874,41 @@ def api_stats():
         **stats
     })
 
-@app.route("/api/zones", methods=["POST", "OPTIONS"])
+@app.route("/api/zones", methods=["GET", "POST", "OPTIONS"])
 def update_zones():
-    """Accept zone updates directly from draw_zone calibration page"""
+    """GET or POST zone vectors directly from draw_zone calibration page or dashboard"""
     from flask import request
     if request.method == "OPTIONS":
         resp = jsonify({"ok": True})
         resp.headers['Access-Control-Allow-Origin'] = '*'
         resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
         return resp
+
     global DANGER_ZONE, WARNING_ZONE
+
+    if request.method == "GET":
+        with zone_lock:
+            dz = DANGER_ZONE.copy()
+            wz = WARNING_ZONE.copy()
+        
+        danger_coords = {"x1": dz["x"], "y1": dz["y"], "x2": dz["x"] + dz["w"], "y2": dz["y"] + dz["h"]}
+        warning_coords = {"x1": wz["x"], "y1": wz["y"], "x2": wz["x"] + wz["w"], "y2": wz["y"] + wz["h"]}
+        
+        return jsonify({
+            "success": True,
+            "danger": danger_coords,
+            "warning": warning_coords,
+            "dangerZone": dz,
+            "warningZone": wz
+        })
+
+    # POST logic
     data = request.get_json(force=True, silent=True) or {}
     print(f"📩 Received zone update: {data}")
-    dz_raw = data.get("dangerZone")
-    wz_raw = data.get("warningZone")
+
+    dz_raw = data.get("danger") or data.get("dangerZone")
+    wz_raw = data.get("warning") or data.get("warningZone")
     dz = parse_zone_config(dz_raw)
     wz = parse_zone_config(wz_raw)
     updated = False
@@ -903,7 +923,21 @@ def update_zones():
             updated = True
     if updated:
         save_zones_to_file()  # persist immediately so it survives restarts
-    return jsonify({"success": True, "dangerZone": DANGER_ZONE, "warningZone": WARNING_ZONE})
+
+    with zone_lock:
+        dz_curr = DANGER_ZONE.copy()
+        wz_curr = WARNING_ZONE.copy()
+
+    danger_coords = {"x1": dz_curr["x"], "y1": dz_curr["y"], "x2": dz_curr["x"] + dz_curr["w"], "y2": dz_curr["y"] + dz_curr["h"]}
+    warning_coords = {"x1": wz_curr["x"], "y1": wz_curr["y"], "x2": wz_curr["x"] + wz_curr["w"], "y2": wz_curr["y"] + wz_curr["h"]}
+
+    return jsonify({
+        "success": True,
+        "danger": danger_coords,
+        "warning": warning_coords,
+        "dangerZone": dz_curr,
+        "warningZone": wz_curr
+    })
 
 if __name__ == "__main__":
     # 1. Load config and authenticate

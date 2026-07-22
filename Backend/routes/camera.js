@@ -244,10 +244,9 @@ router.get('/all', authMiddleware, async (req, res) => {
 
 router.get('/latest', authMiddleware, async (req, res) => {
   try {
-    // Fetch only the logged-in user's camera (or all cameras if admin)
     let query = { userId: req.user.id };
     if (req.user.role === 'admin') {
-      query = {}; // Admin can access any latest camera
+      query = {};
     }
 
     const camera = await Camera.findOne(query).populate('userId', 'name');
@@ -263,6 +262,20 @@ router.get('/latest', authMiddleware, async (req, res) => {
 
     const uId = camera.userId && camera.userId._id ? camera.userId._id : camera.userId;
     const uName = camera.userId && camera.userId.name ? camera.userId.name : "Unknown Operator";
+
+    // Parse zone string "x1,y1,x2,y2" into object, or pass through if already object
+    function parseZoneStr(zone) {
+      if (!zone) return null;
+      if (typeof zone === 'object' && zone.x !== undefined) return zone;
+      if (typeof zone === 'string') {
+        const parts = zone.split(',').map(v => parseInt(v.trim(), 10));
+        if (parts.length === 4 && parts.every(n => !isNaN(n))) {
+          return { x: parts[0], y: parts[1], w: parts[2] - parts[0], h: parts[3] - parts[1],
+                   x1: parts[0], y1: parts[1], x2: parts[2], y2: parts[3] };
+        }
+      }
+      return null;
+    }
 
     res.status(200).json({ 
       success: true, 
@@ -283,11 +296,77 @@ router.get('/latest', authMiddleware, async (req, res) => {
         brand: camera.brand || 'Generic',
         channelId: camera.channelId !== undefined ? camera.channelId : 1,
         status: camera.status || 'Offline',
+        dangerZone: parseZoneStr(camera.dangerZone),
+        warningZone: parseZoneStr(camera.warningZone),
         createdAt: camera.createdAt
       }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// GET /api/camera/zones - returns zones in {danger:{x1,y1,x2,y2}, warning:{x1,y1,x2,y2}} format
+router.get('/zones', authMiddleware, async (req, res) => {
+  try {
+    const camera = await Camera.findOne({ userId: req.user.id });
+    if (!camera) {
+      return res.status(404).json({ success: false, message: 'No camera configured' });
+    }
+
+    function parseZone(zone) {
+      if (!zone) return null;
+      if (typeof zone === 'object' && zone.x1 !== undefined) return zone;
+      if (typeof zone === 'object' && zone.x !== undefined) {
+        return { x1: zone.x, y1: zone.y, x2: zone.x + zone.w, y2: zone.y + zone.h };
+      }
+      if (typeof zone === 'string') {
+        const parts = zone.split(',').map(v => parseInt(v.trim(), 10));
+        if (parts.length === 4 && parts.every(n => !isNaN(n))) {
+          return { x1: parts[0], y1: parts[1], x2: parts[2], y2: parts[3] };
+        }
+      }
+      return null;
+    }
+
+    const danger = parseZone(camera.dangerZone);
+    const warning = parseZone(camera.warningZone);
+
+    return res.json({
+      success: true,
+      danger:  danger  || { x1: 360, y1: 100, x2: 600, y2: 450 },
+      warning: warning || { x1: 240, y1:  50, x2: 620, y2: 460 }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/camera/zones - save zones from draw_zone.html
+router.post('/zones', authMiddleware, async (req, res) => {
+  try {
+    const { danger, warning } = req.body;
+    const userId = req.user.id;
+
+    function toStorageStr(z) {
+      if (!z) return '';
+      if (z.x1 !== undefined) return `${z.x1},${z.y1},${z.x2},${z.y2}`;
+      if (z.x !== undefined)  return `${z.x},${z.y},${z.x + z.w},${z.y + z.h}`;
+      return '';
+    }
+
+    const dangerStr  = toStorageStr(danger);
+    const warningStr = toStorageStr(warning);
+
+    await Camera.findOneAndUpdate(
+      { userId },
+      { dangerZone: dangerStr, warningZone: warningStr, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    return res.json({ success: true, danger, warning });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
