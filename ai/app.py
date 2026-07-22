@@ -234,23 +234,25 @@ def status():
                 if response:
                     print("ESP32:", response)
 
-        # 📧 AUTOMATIC EMAIL ALERT WITH SNAPSHOT
-        if not email_sent_for_current_danger:
-            email_sent_for_current_danger = True
-            try:
-                latest_frame = get_latest_frame(source=camera_pool.last_active_source)
-                image_b64 = None
-                if latest_frame is not None:
-                    import cv2
-                    _, img_buf = cv2.imencode(".jpg", latest_frame)
-                    image_b64 = base64.b64encode(img_buf).decode("utf-8")
-                threading.Thread(
-                    target=send_email_async,
-                    kwargs={"custom_message": "🚨 CRITICAL HAZARD BREACH! Operator entered machine zone.", "image_base64": image_b64},
-                    daemon=True
-                ).start()
-            except Exception as e:
-                print("Email dispatch error:", e)
+        # 📧 EMAIL ALERT - DISABLED HERE to avoid duplicate emails
+        # danger_zone_detection.py already handles email with proper 5-min cooldown
+        # ORIGINAL DUPLICATE EMAIL BLOCK - PRESERVED FOR EASY RESTORE
+        # if not email_sent_for_current_danger:
+        #     email_sent_for_current_danger = True
+        #     try:
+        #         latest_frame = get_latest_frame(source=camera_pool.last_active_source)
+        #         image_b64 = None
+        #         if latest_frame is not None:
+        #             import cv2
+        #             _, img_buf = cv2.imencode(".jpg", latest_frame)
+        #             image_b64 = base64.b64encode(img_buf).decode("utf-8")
+        #         threading.Thread(
+        #             target=send_email_async,
+        #             kwargs={"custom_message": "CRITICAL HAZARD BREACH! Operator entered machine zone.", "image_base64": image_b64},
+        #             daemon=True
+        #         ).start()
+        #     except Exception as e:
+        #         print("Email dispatch error:", e)
 
         last_logged_state = "DANGER"
 

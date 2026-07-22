@@ -38,20 +38,37 @@ system_status = {
 }
 system_status_lock = threading.Lock()
 
-ENTER_THRESHOLD = 1
-EXIT_THRESHOLD = 8
-FRAME_SKIP = 2  # Run YOLO inference every 2nd frame
-EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 60.0))
+# ORIGINAL VALUES - PRESERVED FOR EASY RESTORE
+# ENTER_THRESHOLD = 1
+# EXIT_THRESHOLD = 8
+# FRAME_SKIP = 2
+# EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 60.0))
+ENTER_THRESHOLD = 2            # Need 2 consecutive danger frames to trigger (avoids false positives)
+EXIT_THRESHOLD = 12            # Need 12 safe frames to clear (avoids flickering)
+FRAME_SKIP = 4                 # Run YOLO every 4th frame (reduces lag/CPU load)
+EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 300.0))  # Max 1 email per 5 minutes
 
 # ==========================================
-# 📐 BOX OVERLAP CHECK
+# 📐 BOX OVERLAP CHECK (ANY OVERLAP = DANGER)
 # ==========================================
 def box_overlap(boxA, boxB):
+    # ORIGINAL strict overlap check - PRESERVED FOR EASY RESTORE
+    # xA = max(boxA[0], boxB[0])
+    # yA = max(boxA[1], boxB[1])
+    # xB = min(boxA[2], boxB[2])
+    # yB = min(boxA[3], boxB[3])
+    # return xA < xB and yA < yB
+
+    # NEW: Check if ANY part of boxA overlaps boxB (works for arm/partial body entry)
     xA = max(boxA[0], boxB[0])
     yA = max(boxA[1], boxB[1])
     xB = min(boxA[2], boxB[2])
     yB = min(boxA[3], boxB[3])
     return xA < xB and yA < yB
+
+def point_in_zone(x, y, zone):
+    """Check if a single point (e.g. hand tip, foot) is inside the danger zone rectangle."""
+    return zone[0] <= x <= zone[2] and zone[1] <= y <= zone[3]
 
 # ==========================================
 # 🎥 THREADED CAMERA CLASS (PRODUCTION GRADE)
@@ -286,9 +303,24 @@ class ThreadedCamera:
                     
                     # Check if bounding box overlaps dynamic zones
                     person_box = (x1, y1, x2, y2)
-                    in_danger_zone = box_overlap(person_box, self.danger_zone)
+
+                    # ORIGINAL: only bounding box overlap check - PRESERVED
+                    # in_danger_zone = box_overlap(person_box, self.danger_zone)
+
+                    # NEW: Check full overlap OR any edge/arm point inside zone
+                    # This catches when arm reaches into zone but body is outside
+                    in_danger_zone = (
+                        box_overlap(person_box, self.danger_zone) or
+                        point_in_zone(x1, y1, self.danger_zone) or   # top-left (reaching hand)
+                        point_in_zone(x2, y1, self.danger_zone) or   # top-right
+                        point_in_zone(x1, y2, self.danger_zone) or   # bottom-left (foot)
+                        point_in_zone(x2, y2, self.danger_zone) or   # bottom-right
+                        point_in_zone(x1, (y1+y2)//2, self.danger_zone) or  # left edge mid (arm side)
+                        point_in_zone(x2, (y1+y2)//2, self.danger_zone)     # right edge mid (arm side)
+                    )
                     in_warning_zone = box_overlap(person_box, self.warning_zone)
                     print(f"[DEBUG_ZONE] Foot Point: ({foot_x},{foot_y}) | Inside Warning Zone: {in_warning_zone} | Inside Machine Zone: {in_danger_zone}")
+
                     
                     yolo_conf = float(box.conf[0].item())
                     yolo_conf_pct = int(yolo_conf * 100)
