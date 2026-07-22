@@ -429,14 +429,20 @@ class ThreadedCamera:
                 # Define now_time explicitly
                 now_time = time.time()
                 
-                # Check alert and database logging trigger conditions (DANGER state only)
+                # Check alert and database logging trigger conditions (STRICT DANGER STATE ONLY)
                 trigger_email = False
                 if self.safety_state == "DANGER":
-                    if self._last_safety_state in ["SAFE", "WARNING"]:
-                        trigger_email = True
-                    elif now_time - self._last_email_sent_time >= EMAIL_ALERT_INTERVAL:
-                        trigger_email = True
-                        
+                    # Only trigger if coming from SAFE/WARNING AND at least 30s has passed since last email
+                    if (now_time - self._last_email_sent_time >= 30.0):
+                        if self._last_safety_state in ["SAFE", "WARNING"]:
+                            trigger_email = True
+                        elif now_time - self._last_email_sent_time >= EMAIL_ALERT_INTERVAL:
+                            trigger_email = True
+
+                if trigger_email:
+                    # Instantly set timestamp to block duplicate thread triggers
+                    self._last_email_sent_time = now_time
+
                 should_log = trigger_email
                 
                 if should_log:

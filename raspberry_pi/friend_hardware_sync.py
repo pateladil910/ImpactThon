@@ -12,52 +12,70 @@ import serial
 
 # Cloud status endpoint URL (Render deployment or local IP)
 # Cloud status endpoint URL — same backend the dashboard uses
-# ORIGINAL: CLOUD_STATUS_URL = "https://impactthon-ai.onrender.com/status"  # ← wrong URL
+# Cloud status endpoint URL — same backend the dashboard uses
 CLOUD_STATUS_URL = "https://codevortex.in/api/status"
 
-def main():
-    print("🔌 Searching for connected ESP32 / Arduino hardware...")
-    
-    ser = None
-    possible_ports = ["/dev/ttyUSB0", "/dev/ttyACM0", "COM3", "COM4", "COM5", "COM6"]
+def get_serial_connection():
+    possible_ports = [
+        "/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0", "/dev/ttyACM1",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "COM10"
+    ]
     for port in possible_ports:
         try:
             ser = serial.Serial(port, 115200, timeout=1)
             time.sleep(2)
             print(f"✅ Hardware Motor Relay connected on {port}")
-            break
+            return ser
         except Exception:
-            ser = None
+            pass
+    return None
+
+def main():
+    print("🔌 Searching for connected ESP32 / Arduino hardware...")
+    ser = get_serial_connection()
 
     if not ser:
-        print("⚠️ Warning: No USB serial device connected. Please connect ESP32/Arduino via USB.")
+        print("⚠️ Warning: No USB serial device connected initially. Will auto-retry on detection...")
     
     last_action = None
     print(f"🚀 Starting Hardware Motor Sync Daemon -> Polling {CLOUD_STATUS_URL} ...\n")
 
     while True:
         try:
+            if not ser:
+                ser = get_serial_connection()
+
             res = requests.get(CLOUD_STATUS_URL, timeout=3)
             if res.status_code == 200:
                 data = res.json()
-                # Backend /api/status returns: danger (bool), zone, action or machine_state
                 is_danger = data.get("danger", False)
                 zone = data.get("zone", data.get("safety", "SAFE"))
 
                 current_action = "STOP" if (is_danger or zone == "DANGER") else "SAFE"
 
-                if current_action != last_action:
-                    if current_action == "STOP":
-                        print("🚨 DANGER BREACH DETECTED ON DASHBOARD -> Sending STOP to Motor!")
-                        if ser:
+                if current_action == "STOP":
+                    print("🚨 DANGER BREACH DETECTED -> CONTINUOUS MOTOR STOP ACTIVE!")
+                    if ser:
+                        try:
                             ser.write(b"STOP\n")
                             ser.flush()
-                    else:
-                        print("🟢 SAFETY CLEAR -> Sending SAFE to Motor!")
-                        if ser:
+                            ser.write(b"DANGER\n")
+                            ser.flush()
+                        except Exception as ser_err:
+                            print(f"Serial write error: {ser_err}")
+                            ser = None
+
+                elif current_action == "SAFE" and last_action != "SAFE":
+                    print("🟢 SAFETY CLEAR -> Sending SAFE to Motor!")
+                    if ser:
+                        try:
                             ser.write(b"SAFE\n")
                             ser.flush()
-                    last_action = current_action
+                        except Exception as ser_err:
+                            print(f"Serial write error: {ser_err}")
+                            ser = None
+
+                last_action = current_action
 
                 # Print incoming serial responses from Arduino/ESP32
                 if ser and ser.in_waiting:
