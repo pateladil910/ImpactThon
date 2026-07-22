@@ -1648,18 +1648,16 @@
     async function updateStatus() {
       if (!activeCamera) return;
 
-      const isLocal = isPrivateIP(activeCamera.cameraUrl);
-      let STATUS_URL = isLocal ? `${getResolvedEdgeUrl()}/status` : `${AI_SERVICE_URL}/status`;
-      
-      const userEmail = localStorage.getItem("username") || "";
-      if (userEmail) {
-        STATUS_URL += (STATUS_URL.includes("?") ? "&" : "?") + "user_email=" + encodeURIComponent(userEmail);
-      }
+      // Always poll Pi Edge Agent (/api/stats) for live detection telemetry
+      const edgeUrl = getResolvedEdgeUrl();
+      let STATUS_URL = `${edgeUrl}/api/stats`;
 
       try {
-        const res = await fetch(STATUS_URL, { 
-          cache: "no-store"
-        });
+        let res = await fetch(STATUS_URL, { cache: "no-store" });
+        if (!res.ok) {
+          STATUS_URL = `${AI_SERVICE_URL}/api/status`;
+          res = await fetch(STATUS_URL, { cache: "no-store" });
+        }
         const data = await res.json();
 
         const safetyBox = document.getElementById("safety-box");
@@ -1677,12 +1675,8 @@
           if (confVal) confVal.innerText = Math.round(data.confidence) + "%";
         }
 
-        if (data.humanCount !== undefined) {
-          const countEl = document.getElementById("hud-human-count");
-          if (countEl) countEl.innerText = data.humanCount;
-        } else {
-          updateHumanCountUI();
-        }
+        // HUD Human Count displays Today's Total Danger Intrusions (0, 1, 2, 3...)
+        updateHumanCountUI();
 
         if (document.getElementById("hud-fps")) {
           document.getElementById("hud-fps").innerText = data.fps !== undefined ? Number(data.fps).toFixed(1) : "0.0";
@@ -1695,13 +1689,13 @@
           document.getElementById("shift-watchdog-status").style.color = "var(--primary-neon)";
         }
 
-        const currentSafetyState = data.safety || data.zone || "SAFE";
+        const currentSafetyState = data.safety || data.zone || data.danger_state || "SAFE";
 
         // UPGRADED STATE UPDATER WITH BODY OVERLAYS & TRANSITIONS
         if (currentSafetyState !== lastSafety) {
           if (currentSafetyState === "DANGER") {
             totalDangerIntrusions++;
-            if (data.humanCount === undefined) updateHumanCountUI();
+            updateHumanCountUI();
 
             safetyStatus.innerText = "DANGER";
             safetyDesc.innerText = "Operator safety boundary breached!";
@@ -1737,7 +1731,7 @@
           lastSafety = currentSafetyState;
         }
 
-        const action = data.safety === "DANGER" || stopTriggered ? "STOP" : "RUN";
+        const action = currentSafetyState === "DANGER" || stopTriggered ? "STOP" : "RUN";
         if (action !== lastAction) {
           if (action === "STOP") {
             actionStatus.innerText = "STOP";
@@ -1752,9 +1746,8 @@
           }
           lastAction = action;
         }
-
       } catch (err) {
-        console.error("Telemetry sync error:", err);
+        console.warn("Error updating status:", err);
       }
     }
 
