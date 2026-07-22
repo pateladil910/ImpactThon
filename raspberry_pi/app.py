@@ -461,12 +461,14 @@ def detect_objects():
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
-                    # Check DANGER: Any box overlap with danger zone (triggers immediately on touch/entry)
-                    in_danger = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
+                    # Check DANGER: Person center point in danger zone OR hand/body deep inside danger box
+                    in_danger_center = (dz_x1 <= cx <= dz_x2 and dz_y1 <= cy <= dz_y2)
+                    in_danger_overlap = (x1 < dz_x2 - 50 and x2 > dz_x1 + 50 and y1 < dz_y2 - 20 and y2 > dz_y1 + 20)
+                    in_danger = in_danger_center or in_danger_overlap
 
                     # Check WARNING: Center point inside warning zone OR significant overlap into warning box
                     in_warning_center = (wz_x1 <= cx <= wz_x2 and wz_y1 <= cy <= wz_y2)
-                    in_warning_overlap = (x1 < wz_x2 - 50 and x2 > wz_x1 + 50 and y1 < wz_y2 - 30 and y2 > wz_y1 + 30)
+                    in_warning_overlap = (x1 < wz_x2 - 70 and x2 > wz_x1 + 70 and y1 < wz_y2 - 30 and y2 > wz_y1 + 30)
                     in_warning = in_warning_center or in_warning_overlap
 
                     box_color  = (0, 255, 0)  # Green = safe
