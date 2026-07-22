@@ -424,9 +424,9 @@ def detect_objects():
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
-                    # Check which zone the person center is in
-                    in_danger  = (dz_x1 < cx < dz_x2) and (dz_y1 < cy < dz_y2)
-                    in_warning = (wz_x1 < cx < wz_x2) and (wz_y1 < cy < wz_y2)
+                    # Check box overlap with zones (triggers if any part of person enters)
+                    in_danger  = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
+                    in_warning = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
 
                     box_color  = (0, 255, 0)  # Green = safe
                     zone_label = "Safe Zone"
@@ -483,24 +483,19 @@ def detect_objects():
             ).start()
 
         # Update real-time stats (always, every YOLO frame)
-        person_count = sum(
-            1 for r in results
-            for box in r.boxes
-            if int(box.cls[0]) == 0
-        ) if not person_detected else 1
-
         zone_status = "SAFE"
         if person_detected:
-            # Determine overall zone status
+            # Determine overall zone status using box overlap
             for r in results:
                 for box in r.boxes:
-                    if int(box.cls[0]) == 0:
+                    if int(box.cls[0]) == 0 or "person" in model.names.get(int(box.cls[0]), "").lower():
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-                        if (dz_x1 < cx < dz_x2) and (dz_y1 < cy < dz_y2):
+                        in_d = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
+                        in_w = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
+                        if in_d:
                             zone_status = "DANGER"
                             break
-                        elif (wz_x1 < cx < wz_x2) and (wz_y1 < cy < wz_y2):
+                        elif in_w:
                             zone_status = "WARNING"
 
         with stats_lock:
@@ -854,13 +849,15 @@ def update_zones():
         return jsonify({"ok": True})
     global DANGER_ZONE, WARNING_ZONE
     data = request.get_json(silent=True) or {}
-    dz = data.get("dangerZone")
-    wz = data.get("warningZone")
+    dz_raw = data.get("dangerZone")
+    wz_raw = data.get("warningZone")
+    dz = parse_zone_config(dz_raw)
+    wz = parse_zone_config(wz_raw)
     with zone_lock:
-        if dz and all(k in dz for k in ["x", "y", "w", "h"]):
+        if dz:
             DANGER_ZONE = dz
             print(f"✅ Danger zone updated via API: {DANGER_ZONE}")
-        if wz and all(k in wz for k in ["x", "y", "w", "h"]):
+        if wz:
             WARNING_ZONE = wz
             print(f"✅ Warning zone updated via API: {WARNING_ZONE}")
     return jsonify({"success": True, "dangerZone": DANGER_ZONE, "warningZone": WARNING_ZONE})
