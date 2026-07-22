@@ -450,31 +450,49 @@ def detect_objects():
                 is_person = "person" in cls_name or cls_idx == 0
                 is_forklift = "forklift" in cls_name or cls_idx == 58 or cls_idx == 7
                 
+        person_detected = False
+        forklift_detected = False
+        highest_conf = 0.0
+        zone_status = "SAFE"
+
+        for r in results:
+            boxes = r.boxes
+            for box in boxes:
+                cls_idx = int(box.cls[0])
+                cls_name = model.names.get(cls_idx, f"Class {cls_idx}").lower()
+                conf = float(box.conf[0])
+                
+                # Check for person or forklift standard classes
+                is_person = "person" in cls_name or cls_idx == 0
+                is_forklift = "forklift" in cls_name or cls_idx == 58 or cls_idx == 7
+                
                 if is_person:
                     person_detected = True
                     if conf > highest_conf:
                         highest_conf = conf
 
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
-                    # Exact boundary check (5px touch margin)
-                    px1 = max(0, x1 - 5)
-                    py1 = max(0, y1 - 5)
-                    px2 = min(width, x2 + 5)
-                    py2 = min(height, y2 + 5)
+                    # Check DANGER: Any box overlap with danger zone (triggers immediately on touch/entry)
+                    in_danger = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
 
-                    # Check box overlap with zones (triggers if person or extended arm enters)
-                    in_danger  = (px1 < dz_x2 and px2 > dz_x1 and py1 < dz_y2 and py2 > dz_y1)
-                    in_warning = (px1 < wz_x2 and px2 > wz_x1 and py1 < wz_y2 and py2 > wz_y1)
+                    # Check WARNING: Center point inside warning zone OR significant overlap into warning box
+                    in_warning_center = (wz_x1 <= cx <= wz_x2 and wz_y1 <= cy <= wz_y2)
+                    in_warning_overlap = (x1 < wz_x2 - 50 and x2 > wz_x1 + 50 and y1 < wz_y2 - 30 and y2 > wz_y1 + 30)
+                    in_warning = in_warning_center or in_warning_overlap
 
                     box_color  = (0, 255, 0)  # Green = safe
                     zone_label = "Safe Zone"
                     if in_danger:
                         box_color  = (0, 0, 255)
                         zone_label = "DANGER ZONE BREACH"
+                        zone_status = "DANGER"
                     elif in_warning:
                         box_color  = (0, 255, 255)
                         zone_label = "WARNING ZONE"
+                        if zone_status != "DANGER":
+                            zone_status = "WARNING"
 
                     cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
                     cv2.putText(frame, f'Person {conf:.2f} | {zone_label}', (x1, max(y1 - 8, 12)),
@@ -486,24 +504,6 @@ def detect_objects():
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(frame, f'Forklift {conf:.2f}', (x1, y1 - 10), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 0, 0), 2)
-
-        # Calculate real-time zone status (SAFE / WARNING / DANGER)
-        zone_status = "SAFE"
-        if person_detected:
-            # Determine overall zone status using box overlap
-            for r in results:
-                for box in r.boxes:
-                    if int(box.cls[0]) == 0 or "person" in model.names.get(int(box.cls[0]), "").lower():
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        px1, py1 = max(0, x1 - 5), max(0, y1 - 5)
-                        px2, py2 = min(width, x2 + 5), min(height, y2 + 5)
-                        in_d = (px1 < dz_x2 and px2 > dz_x1 and py1 < dz_y2 and py2 > dz_y1)
-                        in_w = (px1 < wz_x2 and px2 > wz_x1 and py1 < wz_y2 and py2 > wz_y1)
-                        if in_d:
-                            zone_status = "DANGER"
-                            break
-                        elif in_w:
-                            zone_status = "WARNING"
 
         # Handle Alerting System & Email Alerts on DANGER or WARNING breach
         current_time = time.time()
