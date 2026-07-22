@@ -11,7 +11,9 @@ import requests
 import serial
 
 # Cloud status endpoint URL (Render deployment or local IP)
-CLOUD_STATUS_URL = "https://impactthon-ai.onrender.com/status"
+# Cloud status endpoint URL — same backend the dashboard uses
+# ORIGINAL: CLOUD_STATUS_URL = "https://impactthon-ai.onrender.com/status"  # ← wrong URL
+CLOUD_STATUS_URL = "https://codevortex.in/api/status"
 
 def main():
     print("🔌 Searching for connected ESP32 / Arduino hardware...")
@@ -38,10 +40,11 @@ def main():
             res = requests.get(CLOUD_STATUS_URL, timeout=3)
             if res.status_code == 200:
                 data = res.json()
-                safety = data.get("safety", "SAFE")
-                action = data.get("action", "RUN")
+                # Backend /api/status returns: danger (bool), zone, action or machine_state
+                is_danger = data.get("danger", False)
+                zone = data.get("zone", data.get("safety", "SAFE"))
 
-                current_action = "STOP" if (safety == "DANGER" or action == "STOP") else "SAFE"
+                current_action = "STOP" if (is_danger or zone == "DANGER") else "SAFE"
 
                 if current_action != last_action:
                     if current_action == "STOP":

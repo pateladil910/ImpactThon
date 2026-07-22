@@ -9,7 +9,8 @@ import base64
 # ===============================
 SENDER_EMAIL = "adilp4534@gmail.com"
 APP_PASSWORD = "fpdkyriibohtspan"   # 16-digit app password
-RECEIVER_EMAIL = "adilp4534@gmail.com"
+# ORIGINAL: RECEIVER_EMAIL = "adilp4534@gmail.com"  # ← was sending to wrong address
+RECEIVER_EMAIL = "anshptel1255@gmail.com"   # ← Your registered mobile/gmail account
 
 
 def send_alert_email(custom_message=None, image_base64=None, filename="detection.jpg", html_body=None):
