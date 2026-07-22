@@ -438,18 +438,6 @@ def detect_objects():
         cv2.putText(frame, 'WARNING ZONE', (wz_x1 + 4, wz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
         cv2.rectangle(frame, (dz_x1, dz_y1), (dz_x2, dz_y2), (0, 0, 255), 2)
         cv2.putText(frame, 'DANGER ZONE', (dz_x1 + 4, dz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1)
-
-        for r in results:
-            boxes = r.boxes
-            for box in boxes:
-                cls_idx = int(box.cls[0])
-                cls_name = model.names.get(cls_idx, f"Class {cls_idx}").lower()
-                conf = float(box.conf[0])
-                
-                # Check for person or forklift standard classes
-                is_person = "person" in cls_name or cls_idx == 0
-                is_forklift = "forklift" in cls_name or cls_idx == 58 or cls_idx == 7
-                
         person_detected = False
         forklift_detected = False
         highest_conf = 0.0
