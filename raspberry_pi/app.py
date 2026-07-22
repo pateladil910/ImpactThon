@@ -11,7 +11,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|max_delay;500000|flags;low_delay"
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp|fflags;nobuffer|max_delay;0|flags;low_delay"
 
 import torch
 torch.set_num_threads(1)
@@ -85,13 +85,17 @@ class ThreadedCamera:
                     print(f"Cam reconnect error: {e}")
                 continue
 
-            # Read latest frame cleanly with zero latency
-            success, frame = self.cap.read()
+            # Drain queued RTSP buffer frames to guarantee 0.0ms real-time latency
+            for _ in range(3):
+                if not self.cap.grab():
+                    break
+
+            success, frame = self.cap.retrieve()
             if success and frame is not None:
                 with self.read_lock:
                     self.grabbed = True
                     self.frame = frame
-                time.sleep(0.01)  # Prevent CPU tight-loop thread starvation
+                time.sleep(0.005)
             else:
                 time.sleep(0.1)
 
