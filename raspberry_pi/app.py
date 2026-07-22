@@ -974,6 +974,14 @@ if __name__ == "__main__":
     else:
         print("⚠️ [NO CAMERA] Idle mode active. Flask server is online to accept setup requests.")
     
-    # 6. Start Flask server
+    # 6. Start Hardware Serial Interlock Daemon (Syncs Cloud Status with local Arduino/ESP32 Motor Relay)
+    try:
+        from friend_hardware_sync import main as start_hardware_sync
+        ht = threading.Thread(target=start_hardware_sync, daemon=True)
+        ht.start()
+    except Exception as e:
+        print(f"Hardware sync daemon init notice: {e}")
+
+    # 7. Start Flask server
     print("🚀 Starting AI Edge Agent Stream on port 5000...")
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
