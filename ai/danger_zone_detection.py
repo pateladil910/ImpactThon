@@ -43,10 +43,16 @@ system_status_lock = threading.Lock()
 # EXIT_THRESHOLD = 8
 # FRAME_SKIP = 2
 # EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 60.0))
-ENTER_THRESHOLD = 2            # Need 2 consecutive danger frames to trigger (avoids false positives)
-EXIT_THRESHOLD = 12            # Need 12 safe frames to clear (avoids flickering)
-FRAME_SKIP = 4                 # Run YOLO every 4th frame (reduces lag/CPU load)
-EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 300.0))  # Max 1 email per 5 minutes
+# ORIGINAL VALUES - PRESERVED FOR EASY RESTORE
+# ENTER_THRESHOLD = 2
+# EXIT_THRESHOLD = 12
+# FRAME_SKIP = 4
+# EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 300.0))
+
+ENTER_THRESHOLD = 1            # INSTANT TRIGGER: 1 frame breach triggers DANGER immediately!
+EXIT_THRESHOLD = 6             # Fast clearing when area is empty
+FRAME_SKIP = 1                 # NO LAG: Run YOLO on EVERY frame (0ms latency)
+EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 180.0))  # 1 email per breach (3-min cooldown)
 
 # ==========================================
 # 📐 BOX OVERLAP CHECK (ANY OVERLAP = DANGER)
@@ -268,19 +274,20 @@ class ThreadedCamera:
                 danger_in_frame = False
                 warning_in_frame = False
                 
-                # YOLO detect humans only (Class 0)
+                # YOLO detect humans (conf=0.15 to detect partial arms/limbs/hands)
                 t_inf_start = time.time()
                 if frame_count % FRAME_SKIP == 0:
-                    results = model(frame, conf=0.25, classes=[0], verbose=False)
+                    # ORIGINAL: results = model(frame, conf=0.25, classes=[0], verbose=False)
+                    results = model(frame, conf=0.15, verbose=False)
                     last_results = results
                     
                     # Diagnostics Logging
                     for r in results:
                         cls_ids = [int(box.cls[0].item()) for box in r.boxes]
                         scores = [float(box.conf[0].item()) for box in r.boxes]
-                        has_person = 0 in cls_ids
+                        has_person = 0 in cls_ids or len(cls_ids) > 0
                         h, w = frame.shape[:2]
-                        print(f"[DEBUG] [YOLO_INFERENCE] Model: yolov8n.pt | Conf Thresh: 0.25 | Resolution: {w}x{h} | Detected Classes: {cls_ids} | Scores: {[round(s, 2) for s in scores]} | Person Present: {has_person}")
+                        print(f"[DEBUG] [YOLO_INFERENCE] Model: yolov8n.pt | Conf Thresh: 0.15 | Resolution: {w}x{h} | Detected Classes: {cls_ids} | Scores: {[round(s, 2) for s in scores]} | Person Present: {has_person}")
                 else:
                     results = last_results
                 t_inf_end = time.time()
@@ -316,10 +323,11 @@ class ThreadedCamera:
                         point_in_zone(x1, y2, self.danger_zone) or   # bottom-left (foot)
                         point_in_zone(x2, y2, self.danger_zone) or   # bottom-right
                         point_in_zone(x1, (y1+y2)//2, self.danger_zone) or  # left edge mid (arm side)
-                        point_in_zone(x2, (y1+y2)//2, self.danger_zone)     # right edge mid (arm side)
+                        point_in_zone(x2, (y1+y2)//2, self.danger_zone) or  # right edge mid (arm side)
+                        point_in_zone((x1+x2)//2, y1, self.danger_zone)      # top mid (reaching hand)
                     )
                     in_warning_zone = box_overlap(person_box, self.warning_zone)
-                    print(f"[DEBUG_ZONE] Foot Point: ({foot_x},{foot_y}) | Inside Warning Zone: {in_warning_zone} | Inside Machine Zone: {in_danger_zone}")
+                    print(f"[DEBUG_ZONE] BBox: ({x1},{y1},{x2},{y2}) | Inside Warning: {in_warning_zone} | Inside Danger: {in_danger_zone}")
 
                     
                     yolo_conf = float(box.conf[0].item())
