@@ -144,6 +144,7 @@ stats_lock = threading.Lock()
 DANGER_ZONE = {"x": 360, "y": 100, "w": 240, "h": 350}   # default
 WARNING_ZONE = {"x": 240, "y": 50, "w": 380, "h": 410}  # default
 zone_lock = threading.Lock()
+ZONES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zones.json")
 
 def parse_zone_config(zone_input):
     """Parse zone coordinates from dict or string 'x1,y1,x2,y2'"""
@@ -174,6 +175,38 @@ def parse_zone_config(zone_input):
             except Exception as e:
                 print(f"Error parsing zone string '{zone_input}': {e}")
     return None
+
+def save_zones_to_file():
+    """Persist current zones to zones.json so they survive Pi restarts"""
+    with zone_lock:
+        data = {"dangerZone": DANGER_ZONE, "warningZone": WARNING_ZONE}
+    try:
+        with open(ZONES_FILE, 'w') as f:
+            json.dump(data, f)
+        print(f"💾 Zones saved: DZ={data['dangerZone']} WZ={data['warningZone']}")
+    except Exception as e:
+        print(f"⚠️ Could not save zones: {e}")
+
+def load_zones_from_file():
+    """Load zones from zones.json if it exists (called at startup)"""
+    global DANGER_ZONE, WARNING_ZONE
+    if not os.path.exists(ZONES_FILE):
+        print("📂 No saved zones file found, using defaults")
+        return
+    try:
+        with open(ZONES_FILE, 'r') as f:
+            data = json.load(f)
+        dz = parse_zone_config(data.get("dangerZone"))
+        wz = parse_zone_config(data.get("warningZone"))
+        with zone_lock:
+            if dz:
+                DANGER_ZONE = dz
+                print(f"📂 Danger zone loaded from file: {DANGER_ZONE}")
+            if wz:
+                WARNING_ZONE = wz
+                print(f"📂 Warning zone loaded from file: {WARNING_ZONE}")
+    except Exception as e:
+        print(f"⚠️ Could not load zones from file: {e}")
 
 def fetch_zones_from_db():
     """Load saved zone coordinates from backend database"""
@@ -846,20 +879,30 @@ def update_zones():
     """Accept zone updates directly from draw_zone calibration page"""
     from flask import request
     if request.method == "OPTIONS":
-        return jsonify({"ok": True})
+        resp = jsonify({"ok": True})
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        return resp
     global DANGER_ZONE, WARNING_ZONE
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(force=True, silent=True) or {}
+    print(f"📩 Received zone update: {data}")
     dz_raw = data.get("dangerZone")
     wz_raw = data.get("warningZone")
     dz = parse_zone_config(dz_raw)
     wz = parse_zone_config(wz_raw)
+    updated = False
     with zone_lock:
         if dz:
             DANGER_ZONE = dz
-            print(f"✅ Danger zone updated via API: {DANGER_ZONE}")
+            print(f"✅ Danger zone updated: {DANGER_ZONE}")
+            updated = True
         if wz:
             WARNING_ZONE = wz
-            print(f"✅ Warning zone updated via API: {WARNING_ZONE}")
+            print(f"✅ Warning zone updated: {WARNING_ZONE}")
+            updated = True
+    if updated:
+        save_zones_to_file()  # persist immediately so it survives restarts
     return jsonify({"success": True, "dangerZone": DANGER_ZONE, "warningZone": WARNING_ZONE})
 
 if __name__ == "__main__":
@@ -887,7 +930,9 @@ if __name__ == "__main__":
             camera = None
         
         if camera:
-            # 3. Fetch saved zones from database
+            # 3. Load zones from local file (survives restarts)
+            load_zones_from_file()
+            # Also try to sync from DB (if server is awake)
             fetch_zones_from_db()
             
             # 4. Start background detection thread

@@ -1112,18 +1112,23 @@
                 });
                 const data = await response.json();
 
-                // 2. Push zones DIRECTLY to Pi Edge Agent for instant update (no restart needed)
+                // 2. Push zones DIRECTLY to Pi Edge Agent as {x,y,w,h} dict for instant update
                 const edgeUrl = localStorage.getItem('edgeAgentUrl') || 'https://camera.codevortex.in';
+                const zonePayload = {
+                    dangerZone: { x: dangerBox.x, y: dangerBox.y, w: dangerBox.w, h: dangerBox.h },
+                    warningZone: { x: warningBox.x, y: warningBox.y, w: warningBox.w, h: warningBox.h }
+                };
+                // Save to localStorage as persistent backup
+                localStorage.setItem('lastDeployedZones', JSON.stringify(zonePayload));
+                console.log('📦 Deploying zones to Pi:', JSON.stringify(zonePayload));
                 try {
-                    await fetch(`${edgeUrl}/api/zones`, {
+                    const zoneRes = await fetch(`${edgeUrl}/api/zones`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            dangerZone: newCam.dangerZone,
-                            warningZone: newCam.warningZone
-                        })
+                        body: JSON.stringify(zonePayload)
                     });
-                    console.log('✅ Zones pushed to Pi Edge Agent directly');
+                    const zoneData = await zoneRes.json();
+                    console.log('✅ Zones confirmed by Pi:', JSON.stringify(zoneData));
                 } catch (zoneErr) {
                     console.warn('⚠️ Could not push zones to Pi directly:', zoneErr);
                 }
@@ -1132,16 +1137,19 @@
                 localStorage.removeItem('tempCameraConfig');
                 setTimeout(() => { location.href = "dashboard.html"; }, 1200);
             } catch (err) {
-                // Even if DB save fails, still try to push zones to Pi directly
+                // Even if DB save fails, still push zones to Pi directly
                 const edgeUrl = localStorage.getItem('edgeAgentUrl') || 'https://camera.codevortex.in';
+                const zonePayload = {
+                    dangerZone: { x: dangerBox.x, y: dangerBox.y, w: dangerBox.w, h: dangerBox.h },
+                    warningZone: { x: warningBox.x, y: warningBox.y, w: warningBox.w, h: warningBox.h }
+                };
+                localStorage.setItem('lastDeployedZones', JSON.stringify(zonePayload));
+                console.log('📦 Deploying zones to Pi (DB failed):', JSON.stringify(zonePayload));
                 try {
                     await fetch(`${edgeUrl}/api/zones`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            dangerZone: newCam.dangerZone,
-                            warningZone: newCam.warningZone
-                        })
+                        body: JSON.stringify(zonePayload)
                     });
                 } catch (_) {}
 
