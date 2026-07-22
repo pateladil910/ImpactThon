@@ -15,17 +15,19 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
     attachments.push({
       filename: "danger_snapshot.jpg",
       content: cleanBase64,
+      content_id: "danger_snapshot",
       content_type: "image/jpeg"
     });
   }
 
   const imageHtml = imageBase64
-    ? `<div style="margin: 20px 0; text-align: center; background: #020617; padding: 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.4);">
-         <div style="color: #ef4444; font-size: 12px; font-family: sans-serif; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase;">📷 Live Intrusion Snapshot Captured</div>
-         <img src="${imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`}" 
+    ? `<div style="margin: 20px 0; text-align: center; background: #020617; padding: 20px 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.4);">
+         <div style="color: #ef4444; font-size: 12px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: bold; letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase;">📷 LIVE INTRUSION SNAPSHOT CAPTURED</div>
+         <img src="cid:danger_snapshot" 
                alt="Detection Snapshot" 
-               style="max-width: 100%; border-radius: 6px; border: 2px solid #ef4444; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);" />
-         <p style="color: #94a3b8; font-size: 11px; margin-top: 8px;">(High-resolution photo snapshot is also attached to this email)</p>
+               width="550" 
+               style="width: 100%; max-width: 550px; height: auto; display: block; margin: 0 auto; border-radius: 8px; border: 1px solid #ef4444; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);" />
+         <p style="color: #94a3b8; font-size: 11px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-top: 10px; margin-bottom: 0;">(High-resolution photo snapshot is attached to this alert)</p>
        </div>`
     : '';
 
