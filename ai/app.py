@@ -52,6 +52,7 @@ last_relay_state = None
 # ===============================
 # 🔌 ESP32 SERIAL CONNECTION
 # ===============================
+""" ORIGINAL ESP32 CONNECTION - PRESERVED FOR EASY RESTORE
 try:
     esp = serial.Serial("COM3", 115200, timeout=1)
     time.sleep(2)
@@ -59,6 +60,22 @@ try:
 except:
     esp = None
     print("❌ ESP32 NOT connected")
+"""
+
+# NEW INTEGRATED ESP32 SERIAL CONNECTION (SUPPORTING /dev/ttyUSB0 & COM PORTS)
+esp = None
+possible_ports = ["/dev/ttyUSB0", "/dev/ttyACM0", "COM3", "COM4", "COM5"]
+for port in possible_ports:
+    try:
+        esp = serial.Serial(port, 115200, timeout=1)
+        time.sleep(2)
+        print(f"Connected to ESP32 on {port}")
+        break
+    except Exception as e:
+        esp = None
+
+if not esp:
+    print("❌ ESP32 NOT connected on any serial port")
 
 # ===============================
 # 🚀 FLASK APP
@@ -191,31 +208,60 @@ def status():
     now = time.time()
 
     # ===============================
-    # 🔴 DANGER (STABLE CHECK)
+    # 🔴 DANGER (STABLE CHECK) -> AUTOMATIC MOTOR STOP
     # ===============================
     if state == "DANGER":
         if danger_start_time is None:
             danger_start_time = now
 
-        # 🔌 RELAY DEBOUNCE
+        """ ORIGINAL RELAY WRITE - PRESERVED FOR EASY RESTORE
         if esp and last_relay_state != "DANGER":
             esp.write(b"DANGER\n")
             last_relay_state = "DANGER"
             print("📡 ESP32 -> DANGER")
+        """
+
+        # AUTOMATIC STOP SIGNAL TO ESP32 (MOTOR STOP & ALARM ON)
+        if esp and last_relay_state != "DANGER":
+            esp.write(b"STOP\n")
+            esp.flush()
+            last_relay_state = "DANGER"
+            print("STOP sent -> Motor should STOP (DANGER Breach Detected)")
+
+            # Read any serial response from ESP32
+            while esp.in_waiting:
+                response = esp.readline().decode(errors="ignore").strip()
+                if response:
+                    print("ESP32:", response)
 
         last_logged_state = "DANGER"
 
     # ===============================
-    # 🟢 SAFE (RESET)
+    # 🟢 SAFE (RESET) -> AUTOMATIC MOTOR START
     # ===============================
     else:
         danger_start_time = None
 
         if last_logged_state == "DANGER":
+            """ ORIGINAL SAFE RELAY WRITE - PRESERVED FOR EASY RESTORE
             if esp and last_relay_state != "SAFE":
                 esp.write(b"SAFE\n")
                 last_relay_state = "SAFE"
                 print("📡 ESP32 -> SAFE")
+            """
+
+            # AUTOMATIC SAFE SIGNAL TO ESP32 (MOTOR START & ALARM OFF)
+            if esp and last_relay_state != "SAFE":
+                esp.write(b"SAFE\n")
+                esp.flush()
+                last_relay_state = "SAFE"
+                print("SAFE sent -> Motor should START (Safety Clear)")
+
+                # Read any serial response from ESP32
+                while esp.in_waiting:
+                    response = esp.readline().decode(errors="ignore").strip()
+                    if response:
+                        print("ESP32:", response)
 
         email_sent_for_current_danger = False
         last_logged_state = "SAFE"

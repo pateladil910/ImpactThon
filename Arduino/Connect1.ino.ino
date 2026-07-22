@@ -27,11 +27,14 @@ void loop() {
     int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1);
     buffer[len] = '\0';  // null terminate
 
-    // 🚨 DANGER ZONE
+    // 🚨 DANGER ZONE / STOP COMMAND
+    /* ORIGINAL MATCH - PRESERVED FOR EASY RESTORE
     if (strcmp(buffer, "DANGER") == 0) {
+    */
+    if (strcmp(buffer, "DANGER") == 0 || strcmp(buffer, "STOP") == 0) {
       digitalWrite(RELAY_PIN, HIGH);   // Motor OFF
       digitalWrite(BUZZER_PIN, HIGH);  // Buzzer ON
-      Serial.println("DANGER: Motor OFF | Buzzer ON");
+      Serial.println("STOP/DANGER: Motor OFF | Buzzer ON");
     }
 
     // ✅ SAFE ZONE
