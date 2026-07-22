@@ -126,7 +126,7 @@ lock = threading.Lock()
 raw_lock = threading.Lock()
 last_detection_time = 0
 DETECTION_COOLDOWN = 5  # seconds between sending alerts to backend
-FRAME_SKIP = 3          # Run YOLO every 3rd frame (~10 FPS inference)
+FRAME_SKIP = 1          # Run YOLO on every frame for real-time bounding box tracking
 STREAM_WIDTH = 640      # Stream resolution width (smaller = less lag)
 STREAM_HEIGHT = 360     # Stream resolution height
 
@@ -438,8 +438,8 @@ def detect_objects():
                 output_frame = frame.copy()
             continue
 
-        # Run YOLO detection with low-latency resolution (imgsz=320 for 30FPS zero lag)
-        results = model(frame, stream=True, conf=0.25, imgsz=320)
+        # Run YOLO detection with high-speed 256px resolution and 0.45 confidence threshold
+        results = model(frame, stream=True, conf=0.45, imgsz=256)
         current_boxes = []
         person_detected = False
         forklift_detected = False
