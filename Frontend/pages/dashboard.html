@@ -721,13 +721,11 @@
     if (typeof window.API_BASE_URL === 'undefined') {
       window.API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
         ? "http://localhost:5000"
-        : "https://impactthon-wjut.onrender.com";
+        : "https://codevortex.in";
     }
     var API_BASE_URL = window.API_BASE_URL;
 
-    const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
-      ? "http://localhost:10000"
-      : "https://impactthon-ai.onrender.com";
+    const AI_SERVICE_URL = API_BASE_URL;
 
     let cameras = [];
     let activeCamera = null;
@@ -739,7 +737,12 @@
 
     function getResolvedEdgeUrl() {
       const savedEdge = localStorage.getItem("edgeAgentUrl");
-      return savedEdge ? savedEdge.trim().replace(/\/$/, '') : "https://camera.codevortex.in";
+      if (savedEdge && savedEdge.trim()) {
+        return savedEdge.trim().replace(/\/$/, '');
+      }
+      return (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+        ? "http://localhost:5000"
+        : "http://localhost:5000";
     }
 
     function isPrivateIP(urlStr) {
@@ -1242,8 +1245,7 @@
         const currentMappedUrl = slot.getAttribute("data-camera-url");
         
         if (cam) {
-          const isLocal = isPrivateIP(cam.cameraUrl);
-          const testUrl = isLocal ? getResolvedEdgeUrl() : AI_SERVICE_URL;
+          const testUrl = getResolvedEdgeUrl();
           const streamUrl = `${testUrl}/video_feed?source=${encodeURIComponent(cam.cameraUrl)}&username=${encodeURIComponent(cam.username)}&password=${encodeURIComponent(cam.password)}`;
           const currentStreamUrl = slot.getAttribute("data-stream-url");
           
