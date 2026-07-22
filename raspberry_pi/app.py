@@ -73,37 +73,33 @@ class ThreadedCamera:
 
     def update(self):
         while self.started:
-            if not self.cap.isOpened():
-                time.sleep(2.0)
-                if isinstance(self.source, str) and (self.source.startswith("rtsp://") or self.source.startswith("http://")):
-                    self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
-                else:
-                    self.cap = cv2.VideoCapture(self.source)
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-                self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+            if not self.cap or not self.cap.isOpened():
+                time.sleep(1.0)
+                try:
+                    if isinstance(self.source, str) and (self.source.startswith("rtsp://") or self.source.startswith("http://")):
+                        self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+                    else:
+                        self.cap = cv2.VideoCapture(self.source)
+                    self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                except Exception as e:
+                    print(f"Cam reconnect error: {e}")
                 continue
-            
-            # Flush RTSP buffer to ensure zero latency
-            grabbed = self.cap.grab()
-            if grabbed:
-                success, frame = self.cap.retrieve()
-                if success:
-                    with self.read_lock:
-                        self.grabbed = True
-                        self.frame = frame
-            else:
-                print(f"[CAM_WATCHDOG] Frame read failed for {self.source}. Reconnecting...")
+
+            # Read latest frame cleanly with zero latency
+            success, frame = self.cap.read()
+            if success and frame is not None:
                 with self.read_lock:
-                    self.grabbed = False
-                self.cap.release()
-                time.sleep(2.0)
+                    self.grabbed = True
+                    self.frame = frame
+                time.sleep(0.01)  # Prevent CPU tight-loop thread starvation
+            else:
+                time.sleep(0.1)
 
     def read(self):
         with self.read_lock:
             if self.frame is None:
                 return False, None
-            return self.grabbed, self.frame.copy()
+            return self.grabbed, self.frame
 
     def isOpened(self):
         return self.cap.isOpened() if self.cap else False
@@ -547,7 +543,7 @@ def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severi
         print(f"❌ Failed to send alert to cloud: {e}")
 
 def generate_video_stream():
-    """YOLO-annotated stream for dashboard (slightly delayed due to inference)"""
+    """Ultra low-latency MJPEG stream for dashboard"""
     global output_frame, lock
     encode_params = [cv2.IMWRITE_JPEG_QUALITY, 50]
     
@@ -555,21 +551,22 @@ def generate_video_stream():
         frame_to_send = None
         with lock:
             if output_frame is not None:
-                frame_to_send = output_frame.copy()
+                frame_to_send = output_frame
                 
         if frame_to_send is None:
-            time.sleep(0.05)
+            time.sleep(0.02)
             continue
             
         success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
         if not success:
+            time.sleep(0.02)
             continue
                  
         yield(b'--frame\r\n'
               b'Content-Type: image/jpeg\r\n'
-              b'Cache-Control: no-store, no-cache\r\n'
+              b'Cache-Control: no-store, no-cache, must-revalidate, max-age=0\r\n'
               b'\r\n' + bytearray(encoded_image) + b'\r\n')
-        time.sleep(0.04)  # ~25 fps max, prevents buffering
+        time.sleep(0.03)  # ~33 FPS max, zero buffer accumulation
 
 def generate_raw_stream():
     """Zero-delay raw stream (no YOLO) for calibration/draw_zone page"""
