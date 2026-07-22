@@ -6,11 +6,20 @@ const authMiddleware = require("../middleware/authMiddleware");
 router.get("/", authMiddleware, async (req, res) => {
     try {
         const mongoose = require("mongoose");
-        const userId = mongoose.Types.ObjectId.isValid(req.user.id)
+        const userObjId = mongoose.Types.ObjectId.isValid(req.user.id)
             ? new mongoose.Types.ObjectId(req.user.id)
             : null;
 
-        const records = await Detection.find({ userId }).sort({ timestamp: -1 }).lean();
+        const query = {
+            $or: [
+                { userId: req.user.id },
+                ...(userObjId ? [{ userId: userObjId }] : []),
+                { userId: null },
+                { userId: { $exists: false } }
+            ]
+        };
+
+        const records = await Detection.find(query).sort({ timestamp: -1 }).limit(200).lean();
         
         // Map the fields for history.html
         const formatted = records.map(doc => {
@@ -36,7 +45,7 @@ router.get("/", authMiddleware, async (req, res) => {
                 Date: `${day}-${month}-${year}`,
                 Time: `${hours}:${minutes}:${seconds}`,
                 Photo: doc.photo_base64 || "",
-                EmailStatus: doc.email_status || "not_triggered"
+                EmailStatus: doc.email_status || "sent"
             };
         }).filter(Boolean);
         
@@ -51,9 +60,16 @@ router.get("/", authMiddleware, async (req, res) => {
 router.get("/data", authMiddleware, async (req, res) => {
     try {
         const mongoose = require("mongoose");
-        const userId = mongoose.Types.ObjectId.isValid(req.user.id)
+        const userObjId = mongoose.Types.ObjectId.isValid(req.user.id)
             ? new mongoose.Types.ObjectId(req.user.id)
             : null;
+
+        const userMatchList = [
+            { userId: req.user.id },
+            ...(userObjId ? [{ userId: userObjId }] : []),
+            { userId: null },
+            { userId: { $exists: false } }
+        ];
 
         const { type, date } = req.query;
 
@@ -61,35 +77,20 @@ router.get("/data", authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: "Missing type or date" });
         }
 
-        let queryDate;
         let startDate, endDate;
+        const offset = 5.5 * 60 * 60 * 1000;
 
         if (type === "day") {
-            // Date format: YYYY-MM-DD
-            // Correctly handle IST Timezone (+05:30)
-            // Construct start/end times in UTC but aligned to IST day boundaries
-            // Date string "YYYY-MM-DD" -> IST Midnight is target
-
-            const offset = 5.5 * 60 * 60 * 1000; // +5:30 in ms
-
-            // Start of day in IST (presuming 'date' is YYYY-MM-DD)
-            // We want 00:00:00 IST on that day.
-            // new Date(date) creates UTC midnight. 
-            // 00:00 UTC is 05:30 IST. 
-            // We want 00:00 IST, which is 18:30 UTC previous day.
-            // So we take UTC Midnight and subtract 5 hours 30 mins.
-
             const utcMidnight = new Date(date);
             startDate = new Date(utcMidnight.getTime() - offset);
             endDate = new Date(startDate.getTime() + (24 * 60 * 60 * 1000) - 1);
 
-            // Aggregate by HOUR (0-23) in IST
             const data = await Detection.aggregate([
                 {
                     $match: {
                         timestamp: { $gte: startDate, $lte: endDate },
                         status: "DANGER",
-                        userId: userId
+                        $or: userMatchList
                     }
                 },
                 {
