@@ -385,8 +385,8 @@ def detect_objects():
         time.sleep(0.5)
 
     frame_counter = 0
-    last_annotated = None  # Keep last YOLO result to overlay on skipped frames
-        
+    last_detected_boxes = []  # Cache last detected bounding boxes for smooth 30FPS streaming
+
     while True:
         success, frame = camera.read()
         if not success or frame is None:
@@ -394,7 +394,7 @@ def detect_objects():
             time.sleep(0.5)
             continue
 
-        # Resize frame for low-lag streaming (smaller = much faster network transfer)
+        # Resize frame for low-lag streaming
         frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
         frame_counter += 1
         height, width = frame.shape[:2]
@@ -403,26 +403,11 @@ def detect_objects():
         with raw_lock:
             raw_frame = frame.copy()
 
-        # Only run YOLO every FRAME_SKIP frames to reduce CPU load
-        if frame_counter % FRAME_SKIP != 0:
-            if last_annotated is not None:
-                with lock:
-                    output_frame = last_annotated.copy()
-            continue
-
-        # Run YOLO detection with higher resolution (imgsz=480) and higher sensitivity (conf=0.25)
-        results = model(frame, stream=True, conf=0.25, imgsz=480)
-
-        person_detected = False
-        forklift_detected = False
-        highest_conf = 0.0
-
         # Load current zones
         with zone_lock:
             dz = DANGER_ZONE.copy()
             wz = WARNING_ZONE.copy()
 
-        # Convert normalized (0-1000) zone coords to pixel coords
         def norm_to_px(zone, w, h):
             x1 = int((zone["x"] / 1000) * w)
             y1 = int((zone["y"] / 1000) * h)
@@ -433,11 +418,25 @@ def detect_objects():
         dz_x1, dz_y1, dz_x2, dz_y2 = norm_to_px(dz, width, height)
         wz_x1, wz_y1, wz_x2, wz_y2 = norm_to_px(wz, width, height)
 
-        # Draw zones: Warning (yellow), Danger (red)
+        # Draw zones: Warning (yellow), Danger (red) on live frame
         cv2.rectangle(frame, (wz_x1, wz_y1), (wz_x2, wz_y2), (0, 255, 255), 2)
         cv2.putText(frame, 'WARNING ZONE', (wz_x1 + 4, wz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
         cv2.rectangle(frame, (dz_x1, dz_y1), (dz_x2, dz_y2), (0, 0, 255), 2)
         cv2.putText(frame, 'DANGER ZONE', (dz_x1 + 4, dz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1)
+
+        # On skipped frames, overlay cached boxes onto fresh live frame (0 stutter/glitch)
+        if frame_counter % FRAME_SKIP != 0:
+            for b in last_detected_boxes:
+                cv2.rectangle(frame, (b['x1'], b['y1']), (b['x2'], b['y2']), b['color'], 2)
+                cv2.putText(frame, f"{b['name']} {b['conf']:.2f} | {b['label']}", (b['x1'], max(b['y1'] - 8, 12)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, b['color'], 1)
+            with lock:
+                output_frame = frame.copy()
+            continue
+
+        # Run YOLO detection on this frame
+        results = model(frame, stream=True, conf=0.25, imgsz=480)
+        current_boxes = []
         person_detected = False
         forklift_detected = False
         highest_conf = 0.0
@@ -485,6 +484,7 @@ def detect_objects():
                     cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
                     cv2.putText(frame, f'Person {conf:.2f} | {zone_label}', (x1, max(y1 - 8, 12)),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, box_color, 1)
+                    current_boxes.append({'name': 'Person', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2, 'color': box_color, 'label': zone_label, 'conf': conf})
 
                 elif is_forklift:
                     forklift_detected = True
@@ -492,6 +492,8 @@ def detect_objects():
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(frame, f'Forklift {conf:.2f}', (x1, y1 - 10), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 0, 0), 2)
+
+        last_detected_boxes = current_boxes
 
         # Handle Alerting System & Email Alerts on DANGER or WARNING breach
         current_time = time.time()
