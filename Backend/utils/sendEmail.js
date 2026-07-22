@@ -1,10 +1,13 @@
 const { Resend } = require("resend");
 
-const apiKey = process.env.RESEND_API_KEY || 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr';
-const resend = new Resend(apiKey);
+const getResendClient = () => {
+  const apiKey = process.env.RESEND_API_KEY || "re_fallback_key";
+  return new Resend(apiKey);
+};
 
 const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", userName = "System User", imageBase64 = null, recipientEmail = null) => {
   console.log(`📧 sendAlertEmail triggering for: ${userName}`);
+  const resend = getResendClient();
 
   const attachments = [];
   if (imageBase64) {
@@ -99,6 +102,7 @@ const sendAlertEmail = async (message, userEmail = "no-reply@yourdomain.com", us
 
 const sendResetPasswordEmail = async (recipientEmail, code) => {
   console.log(`📧 Sending Reset Password Email to: ${recipientEmail}`);
+  const resend = getResendClient();
   try {
     const { data, error } = await resend.emails.send({
       from: 'AI Safety System <notifications@codevortex.in>',
