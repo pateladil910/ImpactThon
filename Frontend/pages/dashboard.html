@@ -508,7 +508,21 @@
         </div>
       </div>
 
-      <!-- ================= CAMERA MANAGER PANEL ================= -->
+      <!-- 🧠 AI SAFETY INSIGHTS PANEL -->
+      <div class="box" id="ai-insights-panel" style="min-height: 200px; display: flex; flex-direction: column; width: 100%; margin-bottom: 40px; padding: 22px;">
+        <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 18px;">
+          <span>🧠 AI Safety Pattern Insights</span>
+          <span id="ai-insights-badge" style="font-size: 11px; padding: 4px 10px; border-radius: 20px; background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.25); color: var(--primary-neon); font-family: 'Space Grotesk', sans-serif;">30-day analysis</span>
+        </div>
+        <div id="ai-insights-summary" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.6; padding: 12px; background: rgba(6,182,212,0.04); border: 1px solid rgba(6,182,212,0.1); border-radius: 8px;">
+          Loading AI analysis...
+        </div>
+        <div id="ai-insights-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+          <!-- Insight cards rendered by JS -->
+        </div>
+      </div>
+
+
       <div class="section-heading">Sensor Node Registry</div>
       <div class="box camera-manager-panel" style="padding: 25px; min-height: 350px;">
         <div class="box-title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(6, 182, 212, 0.15); padding-bottom: 12px; margin-bottom: 20px;">
@@ -1612,6 +1626,7 @@
     let lastSafety = null;
     let lastAction = null;
     let totalDangerIntrusions = 0;
+    let countLoadedFromDB = false;  // ensures DB count only sets baseline once
 
     async function loadInitialIntrusionCount() {
       try {
@@ -1632,7 +1647,19 @@
           const year = istNow.getUTCFullYear();
           const todayStr = `${day}-${month}-${year}`;
 
-          totalDangerIntrusions = data.filter(doc => doc.Status === "DANGER" && doc.Date === todayStr).length;
+          const dbCount = data.filter(doc => doc.Status === "DANGER" && doc.Date === todayStr).length;
+
+          if (!countLoadedFromDB) {
+            // First load: set baseline from DB (handles page refresh correctly)
+            totalDangerIntrusions = dbCount;
+            countLoadedFromDB = true;
+          } else {
+            // Subsequent polls: only update if DB count is HIGHER than our in-memory count
+            // (catches events we may have missed, never decreases the count)
+            if (dbCount > totalDangerIntrusions) {
+              totalDangerIntrusions = dbCount;
+            }
+          }
         }
       } catch (err) {
         console.warn("Failed to load initial intrusion count:", err);
@@ -1827,6 +1854,59 @@
         });
       }
     });
+
+    // ==========================================
+    // 🧠 AI SAFETY INSIGHTS LOADER
+    // ==========================================
+    async function loadAIInsights() {
+      const token = localStorage.getItem("token") || "";
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/analytics/ai-insights`, {
+          headers: { "Authorization": `Bearer ${token}`, "Cache-Control": "no-cache" }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const summaryEl = document.getElementById("ai-insights-summary");
+        const gridEl = document.getElementById("ai-insights-grid");
+        if (!summaryEl || !gridEl) return;
+
+        summaryEl.textContent = data.summary || "No data yet.";
+
+        if (!data.insights || data.insights.length === 0) {
+          gridEl.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; padding: 16px;">Not enough detection data yet. Run the system for a day to see AI insights.</div>`;
+          return;
+        }
+
+        const severityColors = {
+          high:   { bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.25)",   text: "#ef4444" },
+          medium: { bg: "rgba(245,158,11,0.08)",  border: "rgba(245,158,11,0.25)",  text: "#f59e0b" },
+          low:    { bg: "rgba(16,185,129,0.08)",  border: "rgba(16,185,129,0.25)",  text: "#10b981" }
+        };
+
+        gridEl.innerHTML = data.insights.map(ins => {
+          const c = severityColors[ins.severity] || severityColors.low;
+          return `
+            <div style="background: ${c.bg}; border: 1px solid ${c.border}; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="font-size: 22px;">${ins.icon}</div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">${ins.title}</div>
+              <div style="font-size: 16px; font-weight: 700; color: ${c.text};">${ins.value}</div>
+              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">${ins.detail}</div>
+            </div>`;
+        }).join("");
+
+      } catch (e) {
+        console.warn("AI Insights load error:", e);
+      }
+    }
+
+    // Load AI insights on page open and refresh every 5 minutes
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(loadAIInsights, 1500); // slight delay so main dashboard loads first
+      setInterval(loadAIInsights, 5 * 60 * 1000);
+    });
+
   </script>
 
   <!-- Secure Supabase Session Verification -->

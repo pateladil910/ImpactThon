@@ -404,6 +404,44 @@ class ThreadedCamera:
                 self.machine_state = "STOP" if new_state == "DANGER" else "RUN"
                 self.current_confidence = ai_confidence
                 print(f"[DEBUG_ZONE] Current State: {self.safety_state} | Warning Zone Color: {'Orange' if (warning_in_frame or danger_in_frame) else 'Yellow'} | Machine Zone Color: {'Red' if danger_in_frame else 'Yellow'}")
+
+                # ── LIGHTWEIGHT DB INSERT: Save every new DANGER event to history ──
+                # This runs on EVERY new SAFE→DANGER transition (not gated by email cooldown)
+                # Ensures history/count is accurate even without email
+                if state_changed and self.safety_state == "DANGER":
+                    def _save_detection_event(safety_state, confidence, h_count, source, recipient):
+                        try:
+                            from db import history_collection, db
+                            local_user_id = None
+                            if recipient:
+                                try:
+                                    user_doc = db["users"].find_one({"email": recipient})
+                                    if user_doc:
+                                        local_user_id = user_doc["_id"]
+                                except Exception:
+                                    pass
+                            history_collection.insert_one({
+                                "event": "Human detected inside danger zone",
+                                "status": safety_state,
+                                "timestamp": datetime.utcnow(),
+                                "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
+                                "photo_base64": "",          # no photo here — email-triggered insert has photo
+                                "confidence": confidence,
+                                "human_count": h_count,
+                                "camera_id": str(source),
+                                "email_status": "no_email",
+                                "userId": local_user_id
+                            })
+                            print(f"[HISTORY] Danger event saved to DB (no photo). Count: {h_count}")
+                        except Exception as db_err:
+                            print(f"[HISTORY] DB insert error: {db_err}")
+                    import threading as _t
+                    _t.Thread(
+                        target=_save_detection_event,
+                        args=(self.safety_state, ai_confidence, human_count, self.source,
+                              getattr(self, 'recipient_email', None)),
+                        daemon=True
+                    ).start()
                 
                 # Estimate rolling FPS
                 if not hasattr(self, '_fps_start_time'):

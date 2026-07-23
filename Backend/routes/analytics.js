@@ -336,4 +336,138 @@ router.post("/clear_history", authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/analytics/count/today — today's danger count for persistent human count HUD
+router.get("/count/today", authMiddleware, async (req, res) => {
+    try {
+        const mongoose = require("mongoose");
+        const userObjId = mongoose.Types.ObjectId.isValid(req.user.id)
+            ? new mongoose.Types.ObjectId(req.user.id) : null;
+
+        // IST today boundaries
+        const now = new Date();
+        const offset = 5.5 * 60 * 60 * 1000;
+        const istNow = new Date(now.getTime() + offset);
+        const startOfDayIST = new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate()));
+        const startUTC = new Date(startOfDayIST.getTime() - offset);
+        const endUTC = new Date(startUTC.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+        const count = await Detection.countDocuments({
+            status: "DANGER",
+            timestamp: { $gte: startUTC, $lte: endUTC },
+            $or: [
+                { userId: req.user.id },
+                ...(userObjId ? [{ userId: userObjId }] : []),
+                { userId: null },
+                { userId: { $exists: false } }
+            ]
+        });
+
+        return res.status(200).json({ success: true, count });
+    } catch (err) {
+        console.error("Count Today Error:", err);
+        return res.status(500).json({ success: false, count: 0 });
+    }
+});
+
+// GET /api/analytics/ai-insights — AI analysis of detection patterns
+router.get("/ai-insights", authMiddleware, async (req, res) => {
+    try {
+        const mongoose = require("mongoose");
+        const userObjId = mongoose.Types.ObjectId.isValid(req.user.id)
+            ? new mongoose.Types.ObjectId(req.user.id) : null;
+
+        const userMatch = [
+            { userId: req.user.id },
+            ...(userObjId ? [{ userId: userObjId }] : []),
+            { userId: null }, { userId: { $exists: false } }
+        ];
+
+        // Last 30 days of DANGER data
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+        const records = await Detection.find({
+            status: "DANGER",
+            timestamp: { $gte: thirtyDaysAgo },
+            $or: userMatch
+        }).lean();
+
+        if (records.length === 0) {
+            return res.json({ success: true, insights: [], summary: "No detection data in the last 30 days. System is running clean." });
+        }
+
+        // Compute hourly distribution (IST)
+        const offset = 5.5 * 60 * 60 * 1000;
+        const hourBuckets = new Array(24).fill(0);
+        const dayBuckets = { Mon:0, Tue:0, Wed:0, Thu:0, Fri:0, Sat:0, Sun:0 };
+        const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+        records.forEach(r => {
+            const ist = new Date(r.timestamp.getTime() + offset);
+            hourBuckets[ist.getUTCHours()]++;
+            dayBuckets[dayNames[ist.getUTCDay()]]++;
+        });
+
+        const peakHour = hourBuckets.indexOf(Math.max(...hourBuckets));
+        const peakDay = Object.entries(dayBuckets).sort((a,b) => b[1]-a[1])[0];
+        const safeHour = hourBuckets.indexOf(Math.min(...hourBuckets.filter(v => v > 0)));
+
+        // Today vs yesterday
+        const todayStart = new Date(Date.now() - (Date.now() % (24*60*60*1000)));
+        const yestStart  = new Date(todayStart.getTime() - 24*60*60*1000);
+        const todayCount = records.filter(r => r.timestamp >= todayStart).length;
+        const yestCount  = records.filter(r => r.timestamp >= yestStart && r.timestamp < todayStart).length;
+        const trend = todayCount > yestCount ? "📈 Higher than yesterday" : todayCount < yestCount ? "📉 Lower than yesterday" : "➡️ Same as yesterday";
+
+        const insights = [
+            {
+                icon: "🕐",
+                title: "Peak Danger Hour",
+                value: `${peakHour}:00 – ${peakHour+1}:00`,
+                detail: `Most intrusions (${hourBuckets[peakHour]}) happen at this hour. Consider extra supervision.`,
+                severity: hourBuckets[peakHour] > 5 ? "high" : "medium"
+            },
+            {
+                icon: "📅",
+                title: "Highest Risk Day",
+                value: peakDay[0],
+                detail: `${peakDay[1]} intrusions recorded on ${peakDay[0]}s this month.`,
+                severity: peakDay[1] > 10 ? "high" : "medium"
+            },
+            {
+                icon: "📊",
+                title: "Today vs Yesterday",
+                value: trend,
+                detail: `Today: ${todayCount} events. Yesterday: ${yestCount} events.`,
+                severity: todayCount > yestCount ? "high" : "low"
+            },
+            {
+                icon: "✅",
+                title: "Safest Hour",
+                value: safeHour >= 0 ? `${safeHour}:00 – ${safeHour+1}:00` : "All hours active",
+                detail: "Fewest intrusions recorded at this time. Good window for maintenance.",
+                severity: "low"
+            },
+            {
+                icon: "🔢",
+                title: "Total Events (30 Days)",
+                value: `${records.length} intrusions`,
+                detail: `Average ${(records.length / 30).toFixed(1)} per day over the last month.`,
+                severity: records.length > 100 ? "high" : records.length > 30 ? "medium" : "low"
+            }
+        ];
+
+        const summaryParts = [
+            `⚠️ Peak risk at ${peakHour}:00.`,
+            `📅 ${peakDay[0]} is your highest-risk day.`,
+            `${trend}.`,
+            `${records.length} total events in 30 days.`
+        ];
+
+        return res.json({ success: true, insights, summary: summaryParts.join(" "), totalEvents: records.length });
+    } catch (err) {
+        console.error("AI Insights Error:", err);
+        return res.status(500).json({ success: false, insights: [], summary: "Unable to compute insights." });
+    }
+});
+
 module.exports = router;
