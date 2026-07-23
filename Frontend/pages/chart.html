@@ -406,16 +406,16 @@
               <!-- Date navigation: ← date picker → + Today button -->
               <div id="day-nav" style="display:flex; align-items:center; gap:6px;">
                 <button onclick="shiftDate(-1)" title="Previous Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.22)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">‹</button>
-                <input type="date" id="dateFilter" class="date-input" onchange="fetchData()">
-                <button onclick="shiftDate(1)" title="Next Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.22)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">›</button>
+                <input type="date" id="dateFilter" class="date-input" onchange="fetchData(); updateNextBtnState();">
+                <button id="nextDayBtn" onclick="shiftDate(1)" title="Next Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.22)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">›</button>
                 <button onclick="goToToday()" title="Jump to Today" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 12px; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.22)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">Today</button>
               </div>
 
               <!-- Month navigation: ← month picker → -->
               <div id="month-nav" style="display:none; align-items:center; gap:6px;">
                 <button onclick="shiftMonth(-1)" title="Previous Month" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer;">‹</button>
-                <input type="month" id="monthFilter" class="date-input" onchange="fetchData()">
-                <button onclick="shiftMonth(1)" title="Next Month" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer;">›</button>
+                <input type="month" id="monthFilter" class="date-input" onchange="fetchData(); updateNextBtnState();">
+                <button id="nextMonthBtn" onclick="shiftMonth(1)" title="Next Month" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer; transition:all 0.2s;">›</button>
               </div>
             </div>
 
@@ -672,15 +672,85 @@
       fetchData();
     }
 
+    // Future-date warning toast
+    function showFutureWarning() {
+      let toast = document.getElementById('future-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'future-toast';
+        toast.style.cssText = [
+          'position:fixed', 'top:80px', 'left:50%', 'transform:translateX(-50%)',
+          'background:linear-gradient(135deg,#1e293b,#0f172a)',
+          'border:1.5px solid rgba(245,158,11,0.6)',
+          'color:#f59e0b', 'padding:12px 24px', 'border-radius:10px',
+          'font-family:\'Space Grotesk\',sans-serif', 'font-size:13px',
+          'font-weight:700', 'letter-spacing:0.5px', 'z-index:9999',
+          'box-shadow:0 4px 24px rgba(245,158,11,0.25)',
+          'display:flex', 'align-items:center', 'gap:8px',
+          'pointer-events:none', 'transition:opacity 0.4s'
+        ].join(';');
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = '⚠️ No future data available — you are already on today\'s date!';
+      toast.style.opacity = '1';
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+    }
+
+    // Update disabled state of › next buttons based on current selection
+    function updateNextBtnState() {
+      const type = document.querySelector('input[name="filterType"]:checked').value;
+
+      if (type === 'day') {
+        const input = document.getElementById('dateFilter');
+        const btn   = document.getElementById('nextDayBtn');
+        if (!btn || !input.value) return;
+        const today    = new Date(); today.setHours(0,0,0,0);
+        const selected = new Date(input.value + 'T00:00:00'); selected.setHours(0,0,0,0);
+        const isToday  = selected.getTime() >= today.getTime();
+        btn.disabled = isToday;
+        btn.style.opacity  = isToday ? '0.35' : '1';
+        btn.style.cursor   = isToday ? 'not-allowed' : 'pointer';
+        btn.onmouseover    = isToday ? null : function(){ this.style.background='rgba(6,182,212,0.22)'; };
+        btn.onmouseout     = isToday ? null : function(){ this.style.background='rgba(6,182,212,0.1)'; };
+      } else {
+        const input = document.getElementById('monthFilter');
+        const btn   = document.getElementById('nextMonthBtn');
+        if (!btn || !input.value) return;
+        const now   = new Date();
+        const [y,m] = input.value.split('-').map(Number);
+        const isCurrent = (y === now.getFullYear() && m === now.getMonth() + 1) ||
+                          (y > now.getFullYear()) ||
+                          (y === now.getFullYear() && m > now.getMonth() + 1);
+        btn.disabled = isCurrent;
+        btn.style.opacity = isCurrent ? '0.35' : '1';
+        btn.style.cursor  = isCurrent ? 'not-allowed' : 'pointer';
+        btn.onmouseover   = isCurrent ? null : function(){ this.style.background='rgba(6,182,212,0.22)'; };
+        btn.onmouseout    = isCurrent ? null : function(){ this.style.background='rgba(6,182,212,0.1)'; };
+      }
+    }
+
     // Navigate day by +1 or -1
     function shiftDate(delta) {
       const input = document.getElementById("dateFilter");
       const current = input.value ? new Date(input.value + "T00:00:00") : new Date();
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      if (delta > 0) {
+        // Block moving to future
+        current.setHours(0,0,0,0);
+        if (current.getTime() >= today.getTime()) {
+          showFutureWarning();
+          return;
+        }
+      }
+
       current.setDate(current.getDate() + delta);
-      // Don't allow navigating to the future
-      if (current > new Date()) { current.setTime(new Date().getTime()); }
+      // Safety clamp
+      if (current > today) current.setTime(today.getTime());
       input.valueAsDate = current;
       fetchData();
+      updateNextBtnState();
     }
 
     // Navigate month by +1 or -1
@@ -688,12 +758,25 @@
       const input = document.getElementById("monthFilter");
       if (!input.value) return;
       const [y, m] = input.value.split("-").map(Number);
-      const d = new Date(y, m - 1 + delta, 1);
-      // Don't go to future months
       const now = new Date();
-      if (d > now) d.setTime(new Date(now.getFullYear(), now.getMonth(), 1).getTime());
+
+      if (delta > 0) {
+        // Block moving to future month
+        const isCurrentOrFuture = (y > now.getFullYear()) ||
+          (y === now.getFullYear() && m >= now.getMonth() + 1);
+        if (isCurrentOrFuture) {
+          showFutureWarning();
+          return;
+        }
+      }
+
+      const d = new Date(y, m - 1 + delta, 1);
+      // Safety clamp
+      const maxMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      if (d > maxMonth) d.setTime(maxMonth.getTime());
       input.value = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
       fetchData();
+      updateNextBtnState();
     }
 
     // Jump back to today
@@ -785,6 +868,7 @@
     window.onload = function () {
       document.getElementById("dateFilter").valueAsDate = new Date();
       toggleFilterType();
+      updateNextBtnState();           // Grey out › immediately since we start on today
       setInterval(fetchData, 10000); // 10s auto-refresh for chart data
     };
   </script>
