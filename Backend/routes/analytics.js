@@ -304,7 +304,7 @@ router.post("/digest", authMiddleware, async (req, res) => {
         `;
         
         const { Resend } = require("resend");
-        const resendInstance = new Resend('re_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr');
+        const resendInstance = new Resend(process.env.RESEND_API_KEY || "");
         
         await resendInstance.emails.send({
             from: 'AI Safety System <notifications@codevortex.in>',

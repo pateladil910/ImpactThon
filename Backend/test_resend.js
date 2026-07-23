@@ -1,7 +1,7 @@
 const { Resend } = require("resend");
 
 // Use the key defined in utils/sendEmail.js or process.env
-const apiKey = process.env.RESEND_API_KEY || 're_5Y834Z7x_UAwoJVHEWhyJPJjxWKcnUtGr';
+const apiKey = process.env.RESEND_API_KEY || "";
 console.log("Testing Resend API Key:", apiKey.substring(0, 10) + "...");
 
 const resend = new Resend(apiKey);

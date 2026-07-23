@@ -1,7 +1,7 @@
 const { Resend } = require("resend");
 
 const getResendClient = () => {
-  const apiKey = process.env.RESEND_API_KEY || "re_fallback_key";
+  const apiKey = process.env.RESEND_API_KEY || "";
   return new Resend(apiKey);
 };
 
