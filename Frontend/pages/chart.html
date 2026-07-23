@@ -381,8 +381,12 @@
     <main class="main">
       <div class="analytics-container">
 
-        <div class="analytics-title">
+        <div class="analytics-title" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
           📊 Neural Threat Analytics
+          <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:3px 10px; border-radius:20px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#10b981; font-family:'Space Grotesk',sans-serif; font-weight:700; -webkit-text-fill-color:#10b981;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse 1.5s infinite;"></span> LIVE
+          </span>
+          <span id="chart-last-updated" style="font-size:11px; color:#64748b; font-family:'Space Grotesk',sans-serif; -webkit-text-fill-color:#64748b; font-weight:400;"></span>
         </div>
 
         <div class="chart-card">
@@ -691,6 +695,15 @@
 
         if (result.success) {
           updateChart(result.labels, result.data);
+          // Update "last updated" timestamp
+          const el = document.getElementById('chart-last-updated');
+          if (el) {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2,'0');
+            const m = String(now.getMinutes()).padStart(2,'0');
+            const s = String(now.getSeconds()).padStart(2,'0');
+            el.textContent = `Updated at ${h}:${m}:${s}`;
+          }
         } else {
           console.error("Failed to fetch data:", result.message);
           updateChart([], []);
@@ -737,7 +750,7 @@
     window.onload = function () {
       document.getElementById("dateFilter").valueAsDate = new Date();
       toggleFilterType();
-      setInterval(fetchData, 5000);
+      setInterval(fetchData, 10000); // 10s auto-refresh for chart data
     };
   </script>
 

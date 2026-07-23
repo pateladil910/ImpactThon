@@ -349,7 +349,13 @@
       <div class="history-container">
 
         <div class="history-header">
-          <h2>📜 Operator Detection History</h2>
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <h2 style="margin:0;">📜 Operator Detection History</h2>
+            <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:3px 10px; border-radius:20px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#10b981; font-family:'Space Grotesk',sans-serif; font-weight:700;">
+              <span style="width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse 1.5s infinite;"></span> LIVE
+            </span>
+            <span id="history-last-updated" style="font-size:11px; color:#64748b; font-family:'Space Grotesk',sans-serif;">Loading...</span>
+          </div>
 
           <div class="header-actions">
             <a href="chart.html" class="action-btn">
@@ -562,6 +568,16 @@
       };
     }
 
+    let _lastHistoryRefresh = null;
+
+    function _updateLastRefreshed() {
+      const el = document.getElementById('history-last-updated');
+      if (!el || !_lastHistoryRefresh) return;
+      const secs = Math.round((Date.now() - _lastHistoryRefresh) / 1000);
+      el.textContent = secs <= 1 ? 'Updated just now' : `Updated ${secs}s ago`;
+    }
+    setInterval(_updateLastRefreshed, 1000);
+
     async function loadHistory() {
       const tbody = document.getElementById("historyBody");
 
@@ -636,6 +652,8 @@
           </tr>
         `;
       }
+      _lastHistoryRefresh = Date.now();
+      _updateLastRefreshed();
     }
 
     /* Live Local Clock */
@@ -669,7 +687,7 @@
       window.location.href = `${API_BASE_URL}/api/history/download?token=${encodeURIComponent(token)}`;
     }
 
-    setInterval(loadHistory, 5000);
+    setInterval(loadHistory, 2000);  // 2s live refresh
     setInterval(updateLiveTime, 1000);
 
     loadHistory();
