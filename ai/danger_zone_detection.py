@@ -407,9 +407,19 @@ class ThreadedCamera:
 
                 # ── LIGHTWEIGHT DB INSERT: Save every new DANGER event to history ──
                 # This runs on EVERY new SAFE→DANGER transition (not gated by email cooldown)
-                # Ensures history/count is accurate even without email
+                # Ensures history/count is accurate and every record has a photo
                 if state_changed and self.safety_state == "DANGER":
-                    def _save_detection_event(safety_state, confidence, h_count, source, recipient):
+                    # Capture snapshot NOW (in main thread) before frame changes
+                    _snap_b64 = ""
+                    try:
+                        import base64
+                        _snap_frame = frame.copy()
+                        _, _buf = cv2.imencode(".jpg", _snap_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+                        _snap_b64 = base64.b64encode(_buf).decode("utf-8")
+                    except Exception:
+                        pass
+
+                    def _save_detection_event(safety_state, confidence, h_count, source, recipient, snap_b64):
                         try:
                             from db import history_collection, db
                             local_user_id = None
@@ -425,21 +435,21 @@ class ThreadedCamera:
                                 "status": safety_state,
                                 "timestamp": datetime.utcnow(),
                                 "timestamp_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
-                                "photo_base64": "",          # no photo here — email-triggered insert has photo
+                                "photo_base64": snap_b64,
                                 "confidence": confidence,
                                 "human_count": h_count,
                                 "camera_id": str(source),
                                 "email_status": "no_email",
                                 "userId": local_user_id
                             })
-                            print(f"[HISTORY] Danger event saved to DB (no photo). Count: {h_count}")
+                            print(f"[HISTORY] Danger event saved to DB (with photo: {bool(snap_b64)}). Count: {h_count}")
                         except Exception as db_err:
                             print(f"[HISTORY] DB insert error: {db_err}")
                     import threading as _t
                     _t.Thread(
                         target=_save_detection_event,
                         args=(self.safety_state, ai_confidence, human_count, self.source,
-                              getattr(self, 'recipient_email', None)),
+                              getattr(self, 'recipient_email', None), _snap_b64),
                         daemon=True
                     ).start()
                 
