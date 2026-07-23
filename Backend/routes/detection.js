@@ -8,6 +8,7 @@ router.post("/", async (req, res) => {
   try {
     const {
       danger,
+      warning,
       confidence,
       image,
       cameraStreamUrl,
@@ -18,6 +19,36 @@ router.post("/", async (req, res) => {
       userId,
       recipient_email
     } = req.body;
+
+    // ── Handle WARNING zone: log to history, NO email ──────────────────────
+    if (warning === true && danger !== true) {
+      let resolvedUserId = userId || null;
+      const User = require("../models/User");
+      if (resolvedUserId) {
+        try {
+          const userDoc = await User.findById(resolvedUserId);
+          if (userDoc) resolvedUserId = userDoc._id;
+        } catch (e) { /* ignore */ }
+      }
+
+      try {
+        await Detection.create({
+          status:        "WARNING",
+          message:       "Human detected in Warning Zone",
+          event:         "Human approaching restricted area",
+          timestamp:     new Date(),
+          timestamp_ist: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+          photo_base64:  "",
+          email_status:  "not_triggered",
+          userId:        resolvedUserId
+        });
+        console.log(`[DETECTION] WARNING event saved to history | userId: ${resolvedUserId}`);
+      } catch (dbErr) {
+        console.error("[DETECTION] WARNING DB Save Error:", dbErr.message);
+      }
+
+      return res.status(200).json({ success: true, message: "Warning logged", warning: true });
+    }
 
     if (danger === true) {
       // 1. Resolve camera owner via userId or stream URL
@@ -119,7 +150,7 @@ router.post("/", async (req, res) => {
         console.error("[DETECTION] Incident Save Error:", incError.message);
       }
 
-      // 4. Send alert email with photo snapshot attached
+      // 4. Send alert email with photo snapshot attached (DANGER only)
       if (emailTarget) {
         try {
           await sendAlertEmail(

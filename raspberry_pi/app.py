@@ -470,17 +470,28 @@ def yolo_worker():
                 current_stats["zone"] = zone_status
                 current_stats["action"] = "DANGER" if zone_status == "DANGER" else "RUN"
 
-            # Fire alert if breach detected
+            # --- Alert firing logic ---
             current_time = time.time()
-            if zone_status in ("DANGER", "WARNING") and (current_time - last_detection_time > DETECTION_COOLDOWN):
+
+            if zone_status == "DANGER" and (current_time - last_detection_time > DETECTION_COOLDOWN):
+                # DANGER: Send full alert with photo → triggers email to user
                 last_detection_time = current_time
-                breach_type = "ZONE_INTRUSION" if zone_status == "DANGER" else "WARNING_PROXIMITY"
-                print(f"\U0001f6a8 {zone_status} breach detected!")
+                print("\U0001f6a8 DANGER ZONE BREACH detected! Sending alert + email...")
                 _, buf = cv2.imencode('.jpg', frame_to_infer)
                 jpg_b64 = base64.b64encode(buf).decode('utf-8')
                 threading.Thread(
                     target=send_alert_to_backend,
-                    args=(highest_conf, jpg_b64, breach_type, zone_status, "Local Edge Camera CH1"),
+                    args=(highest_conf, jpg_b64, "ZONE_INTRUSION", "DANGER", "Local Edge Camera CH1"),
+                    daemon=True
+                ).start()
+
+            elif zone_status == "WARNING" and (current_time - last_detection_time > DETECTION_COOLDOWN):
+                # WARNING: Send lightweight ping → logs to history, triggers dashboard sound, NO email
+                last_detection_time = current_time
+                print("\u26a0\ufe0f  WARNING ZONE detected! Triggering dashboard sound alert (no email)...")
+                threading.Thread(
+                    target=send_warning_to_backend,
+                    args=(highest_conf, "WARNING_PROXIMITY", "WARNING", "Local Edge Camera CH1"),
                     daemon=True
                 ).start()
 
@@ -563,6 +574,31 @@ def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severi
             print(f"⚠️ Backend returned status {res.status_code}: {res.text}")
     except Exception as e:
         print(f"❌ Failed to send alert to cloud: {e}")
+
+def send_warning_to_backend(confidence, breach_type="WARNING_PROXIMITY", severity="WARNING", camera_name="Edge Node"):
+    """Send lightweight WARNING ping to backend.
+    Logs to history and triggers dashboard sound — but NO photo and NO email."""
+    try:
+        conf_val = int(confidence * 100) if confidence <= 1.0 else int(confidence)
+        payload = {
+            "danger": False,          # <-- False = backend skips email entirely
+            "warning": True,          # signal to frontend/history it's a WARNING event
+            "confidence": conf_val,
+            "userId": GLOBAL_USER_ID,
+            "cameraStreamUrl": camera_url or "rtsp://192.168.1.64:554/Streaming/Channels/101",
+            "cameraName": camera_name,
+            "factory": "Factory A",
+            "breachType": breach_type,
+            "severity": severity
+        }
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=8)
+        if res.status_code == 200:
+            print("⚠️  WARNING ping sent to cloud (sound alert triggered, no email).")
+        else:
+            print(f"⚠️ Backend returned status {res.status_code}: {res.text}")
+    except Exception as e:
+        print(f"❌ Failed to send warning ping to cloud: {e}")
 
 def generate_video_stream():
     """Ultra low-latency MJPEG stream for dashboard"""
