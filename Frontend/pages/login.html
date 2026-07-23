@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Industrial Safety Shield | Real-time Machine Surveillance</title>
     <link rel="stylesheet" href="../css/auth.css">
+    <!-- Google Identity Services (GIS) SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <!-- Instant OAuth Return Loading Guard -->
+    <script>
+        if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('token') || window.location.hash.includes('error'))) {
+            document.write('<style>.auth-container { display: none !important; }</style>');
+            document.addEventListener('DOMContentLoaded', () => {
+                const container = document.querySelector('.auth-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 50px 20px;">
+                            <div style="margin: 0 auto 25px auto; width: 55px; height: 55px; border: 4px solid rgba(6,182,212,0.15); border-top: 4px solid #06b6d4; border-radius: 50%; animation: spin 0.9s infinite linear;"></div>
+                            <h2 style="font-family: 'Space Grotesk', sans-serif; color: #06b6d4; font-size: 22px; margin-bottom: 12px; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(6,182,212,0.4);">AUTHENTICATING GOOGLE UPLINK...</h2>
+                            <p style="color: #64748b; font-size: 14px; font-family: 'Outfit', sans-serif;">Establishing encrypted satellite session parameters. Please wait...</p>
+                        </div>
+                    `;
+                    container.style.setProperty('display', 'block', 'important');
+                }
+            });
+        }
+    </script>
 </head>
 <body>
 
@@ -106,6 +128,58 @@
         </button>
     </form>
     
+    <!-- Custom CSS Overrides for Re-balanced Full Width Social Button -->
+    <style>
+        .social-btn-full:hover {
+            background: rgba(6, 182, 212, 0.12) !important;
+            border-color: rgba(6, 182, 212, 0.45) !important;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+            transform: translateY(-2px);
+        }
+        .social-btn-full:hover #googleBtnIcon {
+            transform: scale(1.1);
+        }
+        .social-btn-full:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    </style>
+
+    <!-- Premium Social Sign Up Integrations -->
+    <div class="social-separator">
+        <span>or continue with</span>
+    </div>
+    <div class="social-login-single" style="margin-bottom: 20px; width: 100%;">
+        <button type="button" class="social-btn-full" id="googleAuthBtn" title="Sign in with Google" onclick="triggerGoogleOAuth()" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px;
+            background: rgba(8, 14, 27, 0.55);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 12px;
+            cursor: pointer;
+            color: #ffffff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        ">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="googleBtnIcon" style="width: 20px; height: 20px; flex-shrink: 0; transition: transform 0.25s ease;">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.77c-.98.66-2.23 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+            </svg>
+            <span id="googleBtnText" style="letter-spacing: 0.5px;">Sign in with Google</span>
+            <div class="social-btn-loader" id="googleBtnLoader" style="display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.25); border-top-color: #ffffff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+        </button>
+    </div>
+
     <p class="switch-auth">
         Don't have an account? 
         <a href="signup.html">Create Account</a>
@@ -273,27 +347,220 @@
     setTimeout(checkInputs, 1200);
 </script>
 
-<!-- Asynchronous Active Session Verification -->
-<script>
-    if (localStorage.getItem("isLoggedIn") === "true") {
-        window.location.replace("index.html");
-    }
-</script>
+<!-- High-Tech Cyber Toast Alert Element (for dynamic HUD feedback) -->
+<div class="cyber-toast" id="oauthCyberToast">
+    <div class="cyber-toast-bar"></div>
+    <span id="oauthToastText">SECURE LINK ESTABLISHED</span>
+</div>
 
-<!-- Asynchronous Active Session Verification -->
+<style>
+    /* Dynamic Cyber-Toast HUD notification */
+    .cyber-toast {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: rgba(8, 14, 27, 0.95);
+        border: 1px solid var(--primary-neon);
+        box-shadow: 0 0 25px rgba(6, 182, 212, 0.45);
+        padding: 16px 24px;
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transform: translateY(100px) scale(0.9);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+    }
+    .cyber-toast.active {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    .cyber-toast.error-toast {
+        border-color: var(--danger-red) !important;
+        box-shadow: 0 0 25px rgba(239, 68, 68, 0.45) !important;
+    }
+    .cyber-toast.error-toast .cyber-toast-bar {
+        background: var(--danger-red) !important;
+        box-shadow: 0 0 10px var(--danger-red) !important;
+    }
+    .cyber-toast-bar {
+        width: 4px;
+        height: 24px;
+        background: var(--primary-neon);
+        box-shadow: 0 0 10px var(--primary-neon);
+        border-radius: 2px;
+    }
+
+    /* Loading spinner animation */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<!-- Supabase Google OAuth - Complete Working Implementation -->
 <script type="module">
-    import { getSession } from '../js/supabase.js';
-    getSession().then((session) => {
-        if (session && session.user && localStorage.getItem("isLoggedIn") === "true") {
-            const user = session.user;
-            localStorage.setItem("isLoggedIn", "true");
-            localStorage.setItem("username", user.email);
-            localStorage.setItem("displayName", user.user_metadata?.full_name || "");
-            localStorage.setItem("profilePhoto", user.user_metadata?.avatar_url || "");
-            localStorage.setItem("uid", user.id);
-            window.location.replace("index.html");
+    import { supabase } from '../js/supabase.js';
+
+    const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+      ? "http://localhost:5000"
+      : "https://impactthon-wjut.onrender.com";
+
+    // -------------------------------------------------------
+    // 1. On page load: check if already logged in or handle OAuth redirect
+    // -------------------------------------------------------
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+        window.location.replace('index.html');
+    }
+
+    async function checkSupabaseSession() {
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (session && session.user) {
+                const user = session.user;
+                console.log('Supabase active session:', user.email);
+
+                // Ensure loading screen is active
+                const container = document.querySelector('.auth-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 50px 20px;">
+                            <div style="margin: 0 auto 25px auto; width: 55px; height: 55px; border: 4px solid rgba(6,182,212,0.15); border-top: 4px solid #06b6d4; border-radius: 50%; animation: spin 0.9s infinite linear;"></div>
+                            <h2 style="font-family: 'Space Grotesk', sans-serif; color: #06b6d4; font-size: 22px; margin-bottom: 12px; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(6,182,212,0.4);">AUTHENTICATING USER...</h2>
+                            <p style="color: #64748b; font-size: 14px; font-family: 'Outfit', sans-serif;">Establishing a secure encrypted connection. Please wait...</p>
+                        </div>
+                    `;
+                }
+
+                // Sync with backend
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/auth/social-signup`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            name: user.user_metadata?.full_name || user.email.split('@')[0],
+                            email: user.email,
+                            provider: 'google',
+                            roleSelection: 'viewer'
+                        })
+                    });
+                    const data = await res.json();
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('username', user.email);
+                    localStorage.setItem('displayName', user.user_metadata?.full_name || '');
+                    localStorage.setItem('profilePhoto', user.user_metadata?.avatar_url || '');
+                    localStorage.setItem('uid', user.id);
+                    localStorage.setItem('userRole', data.role || 'viewer');
+                } catch (backendErr) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('username', user.email);
+                    localStorage.setItem('displayName', user.user_metadata?.full_name || '');
+                    localStorage.setItem('profilePhoto', user.user_metadata?.avatar_url || '');
+                    localStorage.setItem('uid', user.id);
+                    localStorage.setItem('userRole', 'viewer');
+                }
+
+                setTimeout(() => window.location.replace('index.html'), 800);
+            }
+        } catch (err) {
+            console.error("Supabase session check error:", err);
         }
-    }).catch(() => {});
+    }
+    checkSupabaseSession();
+
+    // Listen for auth state changes (e.g. hash token exchange)
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+            checkSupabaseSession();
+        }
+    });
+
+    // -------------------------------------------------------
+    // 2. Google OAuth Button Handler
+    // -------------------------------------------------------
+    window.triggerGoogleOAuth = async function() {
+        const btn = document.getElementById('googleAuthBtn');
+        const text = document.getElementById('googleBtnText');
+        const loader = document.getElementById('googleBtnLoader');
+        const icon = document.getElementById('googleBtnIcon');
+
+        // 1. Transition UI immediately to disabled & loading state
+        if (btn) {
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+        }
+        if (icon) icon.style.display = 'none';
+        if (loader) loader.style.display = 'block';
+        if (text) text.textContent = 'Connecting...';
+        showCyberToast('LAUNCHING SUPABASE OAUTH GATEWAY...');
+
+        try {
+            // 2. Trigger Auth flow after UI transition
+            const currentUrl = window.location.href.split('?')[0].split('#')[0];
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: currentUrl
+                }
+            });
+            if (error) throw error;
+        } catch (error) {
+            console.error('Supabase Google OAuth Error:', error);
+            showCyberToast(error.message || 'AUTHENTICATION ERROR', true);
+            
+            // Reset UI state on error
+            if (btn) {
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+            }
+            if (icon) icon.style.display = 'block';
+            if (loader) loader.style.display = 'none';
+            if (text) text.textContent = 'Sign in with Google';
+        }
+    };
+
+    // Helper to reset Google auth button to its original state
+    function resetGoogleButton() {
+        const btn = document.getElementById('googleAuthBtn');
+        const text = document.getElementById('googleBtnText');
+        const loader = document.getElementById('googleBtnLoader');
+        const icon = document.getElementById('googleBtnIcon');
+
+        if (btn) {
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+        }
+        if (icon) {
+            icon.style.display = 'block';
+            icon.style.margin = '0';
+        }
+        if (loader) loader.style.display = 'none';
+        if (text) text.textContent = 'Sign in with Google';
+    }
+
+    // Reset button state on load/pageshow (handles back-button cache states)
+    window.addEventListener('pageshow', resetGoogleButton);
+
+    // -------------------------------------------------------
+    // 3. Cyber Toast helper
+    // -------------------------------------------------------
+    function showCyberToast(text, isError = false) {
+        const toast = document.getElementById('oauthCyberToast');
+        const toastText = document.getElementById('oauthToastText');
+        if (!toast || !toastText) return;
+        toastText.textContent = text;
+        toast.classList.toggle('error-toast', isError);
+        toast.classList.add('active');
+        setTimeout(() => toast.classList.remove('active'), 4000);
+    }
 </script>
 
 <!-- Existing Auth Module Integration -->
