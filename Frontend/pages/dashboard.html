@@ -1631,39 +1631,21 @@
     async function loadInitialIntrusionCount() {
       try {
         const token = localStorage.getItem("token") || "";
-        const res = await fetch(`${API_BASE_URL}/api/history?t=${Date.now()}`, {
-          headers: {
-            "Authorization": token ? `Bearer ${token}` : "",
-            "Cache-Control": "no-cache"
-          }
+        if (!token) return;
+        // Use the dedicated fast count endpoint — returns today's DANGER count directly from DB
+        const res = await fetch(`${API_BASE_URL}/api/analytics/count/today`, {
+          headers: { "Authorization": `Bearer ${token}`, "Cache-Control": "no-cache" }
         });
-        if (res.status === 200) {
-          const responseData = await res.json();
-          const data = Array.isArray(responseData) ? responseData : (responseData.records || []);
-          // Filter to count only TODAY'S DANGER intrusions (resets to 0 every day at midnight)
-          const now = new Date();
-          const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-          const day = String(istNow.getUTCDate()).padStart(2, '0');
-          const month = String(istNow.getUTCMonth() + 1).padStart(2, '0');
-          const year = istNow.getUTCFullYear();
-          const todayStr = `${day}-${month}-${year}`;
-
-          const dbCount = data.filter(doc => doc.Status === "DANGER" && doc.Date === todayStr).length;
-
-          if (!countLoadedFromDB) {
-            // First load: set baseline from DB (handles page refresh correctly)
-            totalDangerIntrusions = dbCount;
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && typeof json.count === "number") {
+            // DB is always the single source of truth — always update the display
+            totalDangerIntrusions = json.count;
             countLoadedFromDB = true;
-          } else {
-            // Subsequent polls: only update if DB count is HIGHER than our in-memory count
-            // (catches events we may have missed, never decreases the count)
-            if (dbCount > totalDangerIntrusions) {
-              totalDangerIntrusions = dbCount;
-            }
           }
         }
       } catch (err) {
-        console.warn("Failed to load initial intrusion count:", err);
+        console.warn("Failed to load intrusion count from DB:", err);
       }
       updateHumanCountUI();
     }
@@ -1724,7 +1706,7 @@
         // UPGRADED STATE UPDATER WITH BODY OVERLAYS & TRANSITIONS
         if (currentSafetyState !== lastSafety) {
           if (currentSafetyState === "DANGER") {
-            totalDangerIntrusions++;
+            // DB poll (every 3s) is the source of truth for the count — no in-memory increment needed
             updateHumanCountUI();
 
             safetyStatus.innerText = "DANGER";
