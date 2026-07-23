@@ -89,7 +89,7 @@ router.get("/data", authMiddleware, async (req, res) => {
                 {
                     $match: {
                         timestamp: { $gte: startDate, $lte: endDate },
-                        status: "DANGER",
+                        status: { $in: ["DANGER", "WARNING"] },
                         $or: userMatchList
                     }
                 },
@@ -149,7 +149,7 @@ router.get("/data", authMiddleware, async (req, res) => {
                 {
                     $match: {
                         timestamp: { $gte: startDate, $lte: endDate },
-                        status: "DANGER",
+                        status: { $in: ["DANGER", "WARNING"] },
                         $or: userMatchList
                     }
                 },

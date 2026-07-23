@@ -150,6 +150,20 @@
       text-shadow: 0 0 5px rgba(239, 68, 68, 0.25);
     }
 
+    .badge-warning {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #f59e0b;
+      font-weight: 600;
+      font-size: 12px;
+      text-shadow: 0 0 5px rgba(245, 158, 11, 0.25);
+    }
+
     .download-btn {
       display: inline-flex;
       align-items: center;
@@ -625,7 +639,11 @@
               <td><b>${index + 1}</b></td>
               <td>${item.Event}</td>
               <td>
-                <span class="${item.Status === 'DANGER' ? 'badge-danger' : 'badge-safe'}">
+                <span class="${
+                  item.Status === 'DANGER'  ? 'badge-danger' :
+                  item.Status === 'WARNING' ? 'badge-warning' :
+                  'badge-safe'
+                }">
                   <span class="status-dot" style="background-color: currentColor; box-shadow: 0 0 6px currentColor;"></span>
                   ${item.Status}
                 </span>
