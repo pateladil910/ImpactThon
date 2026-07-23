@@ -1638,7 +1638,8 @@
           }
         });
         if (res.status === 200) {
-          const data = await res.json();
+          const responseData = await res.json();
+          const data = Array.isArray(responseData) ? responseData : (responseData.records || []);
           // Filter to count only TODAY'S DANGER intrusions (resets to 0 every day at midnight)
           const now = new Date();
           const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));

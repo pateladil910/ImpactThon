@@ -604,7 +604,8 @@
           throw new Error("History API not available");
         }
 
-        const data = await res.json();
+        const responseData = await res.json();
+        const data = Array.isArray(responseData) ? responseData : (responseData.records || []);
         tbody.innerHTML = "";
 
         if (data.length === 0) {

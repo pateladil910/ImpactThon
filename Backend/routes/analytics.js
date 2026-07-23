@@ -19,7 +19,7 @@ router.get("/", authMiddleware, async (req, res) => {
             ]
         };
 
-        const records = await Detection.find(query).sort({ timestamp: -1 }).limit(200).lean();
+        const records = await Detection.find(query).sort({ timestamp: -1 }).limit(500).lean();
         
         // Map the fields for history.html
         const formatted = records.map(doc => {
@@ -49,7 +49,7 @@ router.get("/", authMiddleware, async (req, res) => {
             };
         }).filter(Boolean);
         
-        return res.status(200).json(formatted);
+        return res.status(200).json({ records: formatted, total: formatted.length });
     } catch (err) {
         console.error("Fetch History Error:", err);
         return res.status(500).json({ success: false, message: "Failed to fetch history" });
