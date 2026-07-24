@@ -605,6 +605,9 @@ def detect_objects():
                 latest_encoded_jpeg = bytes(buf)
                 frame_sequence += 1
 
+        # Smooth 24 FPS cinematic frame pacing (1 frame every 41ms)
+        time.sleep(0.041)
+
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
         conf_val = int(confidence * 100) if confidence <= 1.0 else int(confidence)
