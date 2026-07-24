@@ -714,6 +714,11 @@
 
         const responseData = await res.json();
         window._rawHistoryData = Array.isArray(responseData) ? responseData : (responseData.records || []);
+        
+        const inputEl = document.getElementById("historyDateFilter");
+        if (inputEl) inputEl.max = formatDateStr(new Date());
+        updateHistoryNextBtnState();
+
         renderHistoryTable();
       } catch (err) {
         if (!window._rawHistoryData || window._rawHistoryData.length === 0) {
@@ -724,41 +729,114 @@
       _updateLastRefreshed();
     }
 
+    function showFutureWarning() {
+      let toast = document.getElementById('future-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'future-toast';
+        toast.style.cssText = [
+          'position:fixed', 'top:80px', 'left:50%', 'transform:translateX(-50%)',
+          'background:linear-gradient(135deg,#1e293b,#0f172a)',
+          'border:1.5px solid rgba(245,158,11,0.6)',
+          'color:#f59e0b', 'padding:12px 24px', 'border-radius:10px',
+          'font-family:\'Space Grotesk\',sans-serif', 'font-size:13px',
+          'font-weight:700', 'letter-spacing:0.5px', 'z-index:9999',
+          'box-shadow:0 4px 24px rgba(245,158,11,0.25)',
+          'display:flex', 'align-items:center', 'gap:8px',
+          'pointer-events:none', 'transition:opacity 0.4s'
+        ].join(';');
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = '⚠️ No future data available — you are already on today\'s date!';
+      toast.style.opacity = '1';
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+    }
+
+    function formatDateStr(d) {
+      if (!d || isNaN(d.getTime())) d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function updateHistoryNextBtnState() {
+      const input = document.getElementById("historyDateFilter");
+      const btn = document.getElementById("nextHistoryBtn");
+      if (!input || !btn) return;
+      
+      const today = new Date(); today.setHours(0,0,0,0);
+      let selected = today;
+      if (input.value) {
+        const parts = input.value.split('-').map(Number);
+        selected = parts[0] > 1000 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(parts[2], parts[1] - 1, parts[0]);
+      }
+      selected.setHours(0,0,0,0);
+
+      const isTodayOrFuture = selected.getTime() >= today.getTime();
+      btn.disabled = isTodayOrFuture;
+      btn.style.opacity = isTodayOrFuture ? '0.35' : '1';
+      btn.style.cursor = isTodayOrFuture ? 'not-allowed' : 'pointer';
+    }
+
     function applyHistoryDateFilter() {
       const input = document.getElementById("historyDateFilter");
-      if (input) window._activeDateFilter = input.value;
+      if (!input) return;
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      if (input.value) {
+        const parts = input.value.split('-').map(Number);
+        const selected = parts[0] > 1000 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(parts[2], parts[1] - 1, parts[0]);
+        selected.setHours(0,0,0,0);
+
+        if (selected.getTime() > today.getTime()) {
+          input.value = formatDateStr(today);
+          showFutureWarning();
+        }
+      }
+      window._activeDateFilter = input.value;
       renderHistoryTable();
+      updateHistoryNextBtnState();
     }
 
     function shiftHistoryDate(delta) {
       const input = document.getElementById("historyDateFilter");
       if (!input) return;
-      let current;
+
+      const today = new Date(); today.setHours(0,0,0,0);
+      let current = today;
+
       if (input.value) {
-        const parts = input.value.split("-").map(Number);
-        current = new Date(parts[0], parts[1] - 1, parts[2]);
-      } else {
-        current = new Date();
+        const parts = input.value.split('-').map(Number);
+        current = parts[0] > 1000 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(parts[2], parts[1] - 1, parts[0]);
       }
+      current.setHours(0,0,0,0);
+
+      if (delta > 0 && current.getTime() >= today.getTime()) {
+        showFutureWarning();
+        return;
+      }
+
       current.setDate(current.getDate() + delta);
-      const y = current.getFullYear();
-      const m = String(current.getMonth() + 1).padStart(2, '0');
-      const day = String(current.getDate()).padStart(2, '0');
-      input.value = `${y}-${m}-${day}`;
+      if (current.getTime() > today.getTime()) {
+        current = today;
+        showFutureWarning();
+      }
+
+      input.value = formatDateStr(current);
       window._activeDateFilter = input.value;
       renderHistoryTable();
+      updateHistoryNextBtnState();
     }
 
     function goToHistoryToday() {
       const input = document.getElementById("historyDateFilter");
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const todayStr = `${y}-${m}-${day}`;
+      const todayStr = formatDateStr(new Date());
       if (input) input.value = todayStr;
       window._activeDateFilter = todayStr;
       renderHistoryTable();
+      updateHistoryNextBtnState();
     }
 
     function showAllHistoryLogs() {
@@ -766,6 +844,7 @@
       if (input) input.value = "";
       window._activeDateFilter = "";
       renderHistoryTable();
+      updateHistoryNextBtnState();
     }
 
     function downloadExcel() {
