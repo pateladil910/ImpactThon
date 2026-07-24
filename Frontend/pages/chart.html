@@ -406,15 +406,15 @@
               <!-- Date navigation: ← date picker → + Today button -->
               <div id="day-nav" style="display:flex; align-items:center; gap:6px;">
                 <button onclick="shiftDate(-1)" title="Previous Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.22)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">‹</button>
-                <input type="date" id="dateFilter" class="date-input" onchange="fetchData(); updateNextBtnState();">
-                <button id="nextDayBtn" onclick="shiftDate(1)" title="Next Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer; opacity:1; transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.22)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">›</button>
+                <input type="date" id="dateFilter" class="date-input" onchange="handleDateChange()">
+                <button id="nextDayBtn" onclick="shiftDate(1)" title="Next Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.22)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">›</button>
                 <button onclick="goToToday()" title="Jump to Today" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 12px; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.22)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">Today</button>
               </div>
 
               <!-- Month navigation: ← month picker → -->
               <div id="month-nav" style="display:none; align-items:center; gap:6px;">
                 <button onclick="shiftMonth(-1)" title="Previous Month" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer;">‹</button>
-                <input type="month" id="monthFilter" class="date-input" onchange="fetchData(); updateNextBtnState();">
+                <input type="month" id="monthFilter" class="date-input" onchange="handleMonthChange()">
                 <button id="nextMonthBtn" onclick="shiftMonth(1)" title="Next Month" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 11px; font-size:14px; cursor:pointer; transition:all 0.2s;">›</button>
               </div>
             </div>
@@ -705,14 +705,6 @@
       toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
     }
 
-    function formatDateInput(d) {
-      if (!d || isNaN(d.getTime())) d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    }
-
     // Update disabled state of › next buttons based on current selection
     function updateNextBtnState() {
       const type = document.querySelector('input[name="filterType"]:checked').value;
@@ -721,20 +713,29 @@
         const input = document.getElementById('dateFilter');
         const btn   = document.getElementById('nextDayBtn');
         if (!btn || !input.value) return;
-        btn.disabled = false;
-        btn.style.opacity  = '1';
-        btn.style.cursor   = 'pointer';
-        btn.onmouseover    = function(){ this.style.background='rgba(6,182,212,0.22)'; };
-        btn.onmouseout     = function(){ this.style.background='rgba(6,182,212,0.1)'; };
+        const selected = parseInputDate(input.value);
+        const today = new Date();
+        selected.setHours(0,0,0,0);
+        today.setHours(0,0,0,0);
+
+        const isToday = selected.getTime() >= today.getTime();
+        btn.disabled = isToday;
+        btn.style.opacity  = isToday ? '0.35' : '1';
+        btn.style.cursor   = isToday ? 'not-allowed' : 'pointer';
+        btn.onmouseover    = isToday ? null : function(){ this.style.background='rgba(6,182,212,0.22)'; };
+        btn.onmouseout     = isToday ? null : function(){ this.style.background='rgba(6,182,212,0.1)'; };
       } else {
         const input = document.getElementById('monthFilter');
         const btn   = document.getElementById('nextMonthBtn');
         if (!btn || !input.value) return;
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.cursor  = 'pointer';
-        btn.onmouseover   = function(){ this.style.background='rgba(6,182,212,0.22)'; };
-        btn.onmouseout    = function(){ this.style.background='rgba(6,182,212,0.1)'; };
+        const now   = new Date();
+        const [y,m] = input.value.split('-').map(Number);
+        const isCurrent = (y === now.getFullYear() && m >= now.getMonth() + 1) || (y > now.getFullYear());
+        btn.disabled = isCurrent;
+        btn.style.opacity = isCurrent ? '0.35' : '1';
+        btn.style.cursor  = isCurrent ? 'not-allowed' : 'pointer';
+        btn.onmouseover   = isCurrent ? null : function(){ this.style.background='rgba(6,182,212,0.22)'; };
+        btn.onmouseout    = isCurrent ? null : function(){ this.style.background='rgba(6,182,212,0.1)'; };
       }
     }
 
@@ -758,7 +759,20 @@
     function shiftDate(delta) {
       const input = document.getElementById("dateFilter");
       let current = parseInputDate(input.value);
+      const today = new Date();
+      current.setHours(0,0,0,0);
+      today.setHours(0,0,0,0);
+
+      if (delta > 0 && current.getTime() >= today.getTime()) {
+        showFutureWarning();
+        return;
+      }
+
       current.setDate(current.getDate() + delta);
+      if (current.getTime() > today.getTime()) {
+        current = today;
+        showFutureWarning();
+      }
       input.value = formatDateInput(current);
       fetchData();
       updateNextBtnState();
@@ -769,8 +783,48 @@
       const input = document.getElementById("monthFilter");
       if (!input.value) return;
       const [y, m] = input.value.split("-").map(Number);
+      const now = new Date();
+
+      if (delta > 0 && ((y > now.getFullYear()) || (y === now.getFullYear() && m >= now.getMonth() + 1))) {
+        showFutureWarning();
+        return;
+      }
+
       const d = new Date(y, m - 1 + delta, 1);
+      const maxMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      if (d > maxMonth) {
+        d.setTime(maxMonth.getTime());
+        showFutureWarning();
+      }
       input.value = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+      fetchData();
+      updateNextBtnState();
+    }
+
+    function handleDateChange() {
+      const input = document.getElementById("dateFilter");
+      let selected = parseInputDate(input.value);
+      const today = new Date();
+      selected.setHours(0,0,0,0);
+      today.setHours(0,0,0,0);
+
+      if (selected.getTime() > today.getTime()) {
+        input.value = formatDateInput(today);
+        showFutureWarning();
+      }
+      fetchData();
+      updateNextBtnState();
+    }
+
+    function handleMonthChange() {
+      const input = document.getElementById("monthFilter");
+      if (!input.value) return;
+      const [y, m] = input.value.split("-").map(Number);
+      const now = new Date();
+      if ((y > now.getFullYear()) || (y === now.getFullYear() && m > now.getMonth() + 1)) {
+        input.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        showFutureWarning();
+      }
       fetchData();
       updateNextBtnState();
     }
@@ -863,7 +917,21 @@
     }
 
     window.onload = function () {
-      document.getElementById("dateFilter").value = formatDateInput(new Date());
+      const now = new Date();
+      const todayStr = formatDateInput(now);
+      const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const dateEl = document.getElementById("dateFilter");
+      const monthEl = document.getElementById("monthFilter");
+
+      if (dateEl) {
+        dateEl.value = todayStr;
+        dateEl.max = todayStr;
+      }
+      if (monthEl) {
+        monthEl.value = monthStr;
+        monthEl.max = monthStr;
+      }
+
       toggleFilterType();
       updateNextBtnState();
       setInterval(fetchData, 10000); // 10s auto-refresh for chart data
