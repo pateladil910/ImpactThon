@@ -43,7 +43,7 @@ system_status_lock = threading.Lock()
 
 ENTER_THRESHOLD = 1            # Instant trigger: 1 frame breach = DANGER
 EXIT_THRESHOLD = 6             # Fast clearing when area is empty
-FRAME_SKIP = 3                 # YOLO every 3rd frame - smooth video, fast detection, no lag on Pi
+FRAME_SKIP = 2                 # YOLO every 2nd frame — best speed/accuracy balance on Pi
 EMAIL_ALERT_INTERVAL = float(os.environ.get("EMAIL_ALERT_INTERVAL", 180.0))  # 1 email per 3 min cooldown
 
 # ==========================================
@@ -78,6 +78,10 @@ class ThreadedCamera:
         self.grabbed = False
         self.raw_frame = None
         self.processed_frame = None
+        # display_frame = latest raw frame, always up to date at camera FPS
+        # This is what generate_frames shows — never waits for YOLO
+        self.display_frame = None
+        self.display_lock = threading.Lock()
         self.started = False
         
         # Concurrency & Watchdog attributes
@@ -227,6 +231,10 @@ class ThreadedCamera:
                 with self.read_lock:
                     self.grabbed = grabbed
                     self.raw_frame = frame
+                # Always keep display_frame fresh at full camera FPS
+                # Inference thread overlays its drawings on top asynchronously
+                with self.display_lock:
+                    self.display_frame = frame.copy()
                 if not hasattr(self, '_capture_count'):
                     self._capture_count = 0
                 self._capture_count += 1
@@ -709,9 +717,12 @@ class ThreadedCamera:
                 banner_text = "SYSTEM STOPPED" if self.safety_state == "DANGER" else "SYSTEM RUNNING"
                 cv2.putText(frame, banner_text, (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.1, banner_color, 3)
                 
-                # Save processed frame securely
+                # Save processed frame (for fallback read()) and also
+                # push annotated frame into display_frame so stream shows overlays
                 with self.read_lock:
                     self.processed_frame = frame
+                with self.display_lock:
+                    self.display_frame = frame.copy()
                     
                 frame_count += 1
                 if frame_count > 1_000_000:
@@ -720,9 +731,7 @@ class ThreadedCamera:
                 import traceback
                 print(f"[CRITICAL_ERROR] Exception in update_inference loop: {loop_ex}")
                 traceback.print_exc()
-                
-            # Throttle loop to 10ms sleep
-            time.sleep(0.01)
+                # No sleep here — run inference as fast as the Pi allows
 
     def read(self):
         with self.read_lock:
@@ -812,36 +821,52 @@ def generate_frames(source="rtsp://admin:Codevortex%4012@192.168.1.64:554/Stream
     print(f"[DEBUG] [GENERATOR] generate_frames generator function started for source: {source}")
     cam = camera_pool.acquire_camera(source)
     frame_count = 0
+    # JPEG encode params — quality 65 = good image, ~2x faster than default 95
+    ENCODE_PARAMS = [cv2.IMWRITE_JPEG_QUALITY, 65]
+    # Target stream FPS cap (no point sending faster than browser can display)
+    STREAM_INTERVAL = 1.0 / 25.0   # 25 fps max to browser
+    last_yield_time = 0.0
     
     try:
         while True:
-            grabbed, frame = cam.read()
-            
+            now = time.time()
+
+            # Read from display_frame directly — always latest camera frame,
+            # updated at full capture FPS independently of YOLO inference speed
+            with cam.display_lock:
+                disp = cam.display_frame
+                grabbed = cam.grabbed
+            cam.last_access = now
+
             # Offline/Broken stream watchdog fallback
-            if not grabbed or frame is None:
+            if not grabbed or disp is None:
                 if frame_count <= 50 or frame_count % 30 == 0:
-                    print(f"[DEBUG] [GENERATOR] Stream '{source}' offline or frame is None. frame_count={frame_count}, grabbed={grabbed}, frame_is_none={frame is None}")
-                    print(f"[WARNING] Stream '{source}' offline/connecting. Rendering offline screen.")
+                    print(f"[WARNING] Stream '{source}' offline/connecting. frame_count={frame_count}")
                 
                 error_frame = np.zeros((480, 640, 3), dtype=np.uint8)
-                cv2.putText(error_frame, "⚠️ SENSOR OFFLINE: RECONNECTING...", (60, 240),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-                _, buffer = cv2.imencode(".jpg", error_frame)
+                cv2.putText(error_frame, "SENSOR OFFLINE: RECONNECTING...", (40, 240),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+                _, buffer = cv2.imencode(".jpg", error_frame, ENCODE_PARAMS)
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-                
                 time.sleep(1.0)
                 frame_count += 1
                 continue
-                
-            ret, jpeg = cv2.imencode('.jpg', frame)
+            
+            # Throttle to STREAM_INTERVAL so we don't send duplicate frames
+            elapsed = now - last_yield_time
+            if elapsed < STREAM_INTERVAL:
+                time.sleep(STREAM_INTERVAL - elapsed)
+                continue
+
+            ret, jpeg = cv2.imencode('.jpg', disp, ENCODE_PARAMS)
             if not ret:
                 continue
-                
+
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
-            
-            time.sleep(0.01) # Throttle output stream
+
+            last_yield_time = time.time()
             frame_count += 1
             if frame_count > 1_000_000:
                 frame_count = 0
