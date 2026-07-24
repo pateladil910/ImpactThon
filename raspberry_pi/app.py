@@ -1,4 +1,4 @@
-﻿# app.py - Raspberry Pi AI Surveillance Streamer
+# app.py - Raspberry Pi AI Surveillance Streamer
 import cv2
 import time
 import requests
@@ -139,6 +139,10 @@ _cached_boxes = []      # Latest YOLO bounding boxes (updated async)
 _boxes_lock = threading.Lock()
 _cached_zone_status = "SAFE"
 _cached_stats = {"humanCount": 0, "confidence": 0.0, "zone_status": "SAFE"}
+
+latest_encoded_jpeg = None
+frame_sequence = 0
+jpeg_lock = threading.Lock()
 
 # Real-time detection stats (shown on dashboard)
 current_stats = {
@@ -564,9 +568,16 @@ def detect_objects():
             cv2.putText(frame, f"{b['name']} {b['conf']:.2f} | {b['label']}",
                         (b['x1'], max(b['y1'] - 8, 12)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, b['color'], 1)
 
-        # Publish annotated frame ΓÇö no copy() needed since we recreate frame every loop
+        # Publish annotated frame
         with lock:
             output_frame = frame
+
+        # Pre-encode JPEG ONCE per frame (0% extra CPU overhead for Flask stream generators)
+        ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 40])
+        if ok:
+            with jpeg_lock:
+                latest_encoded_jpeg = bytes(buf)
+                frame_sequence += 1
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
@@ -617,35 +628,32 @@ def send_warning_to_backend(confidence, breach_type="WARNING_PROXIMITY", severit
         print(f"Γ¥î Failed to send warning ping to cloud: {e}")
 
 def generate_video_stream():
-    """Ultra low-latency MJPEG stream for dashboard"""
-    global output_frame, lock
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 45]
-    
+    """Ultra low-latency MJPEG stream for dashboard — zero CPU encoding overhead"""
+    global latest_encoded_jpeg, frame_sequence, jpeg_lock
+    last_sent = -1
+
     while True:
-        frame_to_send = None
-        with lock:
-            if output_frame is not None:
-                frame_to_send = output_frame
-                
-        if frame_to_send is None:
-            time.sleep(0.01)
-            continue
-            
-        success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
-        if not success:
-            time.sleep(0.01)
+        current_jpeg = None
+        current_seq = -1
+        with jpeg_lock:
+            if latest_encoded_jpeg is not None:
+                current_jpeg = latest_encoded_jpeg
+                current_seq = frame_sequence
+
+        if current_jpeg is None or current_seq <= last_sent:
+            time.sleep(0.005)
             continue
 
-        jpg_bytes = bytearray(encoded_image)
-                 
-        yield(b'--frame\r\n'
-              b'Content-Type: image/jpeg\r\n'
-              b'Content-Length: ' + str(len(jpg_bytes)).encode() + b'\r\n'
-              b'Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0\r\n'
-              b'Pragma: no-cache\r\n'
-              b'Expires: 0\r\n'
-              b'\r\n' + jpg_bytes + b'\r\n')
-        time.sleep(0.02)  # ~50 FPS max transmission speed
+        last_sent = current_seq
+
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n'
+               b'Content-Length: ' + str(len(current_jpeg)).encode() + b'\r\n'
+               b'Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0\r\n'
+               b'Pragma: no-cache\r\n'
+               b'Expires: 0\r\n'
+               b'\r\n' + current_jpeg + b'\r\n')
+        time.sleep(0.005)
 
 def generate_raw_stream():
     """Zero-delay raw stream (no YOLO) for calibration/draw_zone page"""
