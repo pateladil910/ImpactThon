@@ -1,14 +1,17 @@
 # app.py - Raspberry Pi AI Surveillance Streamer
+import os
+# Tell FFmpeg: RTSP transport TCP with no-buffer low-delay flags BEFORE import cv2
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;0|reorder_queue_size;0|buffer_size;1024"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 import cv2
 import time
 import requests
 import base64
 import threading
 import argparse
-import os
-import os
-# Tell FFmpeg: RTSP transport TCP with no-buffer low-delay flags
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;0"
 
 import torch
 # Allow PyTorch YOLO to use multiple CPU threads for maximum inference speed
@@ -88,7 +91,12 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
-            ret, frame = self.cap.read()
+            # Drain queued RTSP buffer packets to guarantee zero 5-second accumulation
+            for _ in range(5):
+                if not self.cap.grab():
+                    break
+
+            ret, frame = self.cap.retrieve()
             if ret and frame is not None:
                 _fail_count = 0
                 with self.read_lock:
