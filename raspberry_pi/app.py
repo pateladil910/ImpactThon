@@ -91,7 +91,10 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
+            t0_cap = time.perf_counter()
             ret, frame = self.cap.read()
+            t_cap = (time.perf_counter() - t0_cap) * 1000.0
+
             if ret and frame is not None:
                 _fail_count = 0
                 if frame.shape[1] != STREAM_WIDTH or frame.shape[0] != STREAM_HEIGHT:
@@ -99,6 +102,8 @@ class ThreadedCamera:
                 with self.read_lock:
                     self.grabbed = True
                     self.frame = frame
+                with perf_lock:
+                    perf_metrics["rtsp_capture_ms"] = round(t_cap, 1)
             else:
                 _fail_count += 1
                 if _fail_count >= MAX_FAILS:
@@ -150,6 +155,19 @@ _cached_boxes = []      # Latest YOLO bounding boxes (updated async)
 _boxes_lock = threading.Lock()
 _cached_zone_status = "SAFE"
 _cached_stats = {"humanCount": 0, "confidence": 0.0, "zone_status": "SAFE"}
+
+# High-precision pipeline latency telemetry
+perf_metrics = {
+    "rtsp_capture_ms": 0.0,
+    "yolo_inference_ms": 0.0,
+    "overlay_render_ms": 0.0,
+    "jpeg_encode_ms": 0.0,
+    "flask_stream_ms": 0.0,
+    "total_pipeline_ms": 0.0,
+    "last_log_time": 0.0
+}
+perf_lock = threading.Lock()
+frame_timestamp = time.time()
 
 # Real-time detection stats (shown on dashboard)
 current_stats = {
@@ -445,7 +463,11 @@ def yolo_worker():
             dz_x1, dz_y1, dz_x2, dz_y2 = _norm_to_px(dz, w, h)
             wz_x1, wz_y1, wz_x2, wz_y2 = _norm_to_px(wz, w, h)
 
+            t0_yolo = time.perf_counter()
             results = model(frame_to_infer, stream=True, conf=0.20, imgsz=320)
+            t_yolo = (time.perf_counter() - t0_yolo) * 1000.0
+            with perf_lock:
+                perf_metrics["yolo_inference_ms"] = round(t_yolo, 1)
             boxes = []
             person_detected = False
             highest_conf = 0.0
@@ -575,6 +597,9 @@ def detect_objects():
         with raw_lock:
             raw_frame = frame
 
+        t_capture_time = time.time()
+        t0_overlay = time.perf_counter()
+
         # Draw zone overlays
         with zone_lock:
             dz = DANGER_ZONE.copy()
@@ -593,17 +618,35 @@ def detect_objects():
             cv2.rectangle(frame, (b['x1'], b['y1']), (b['x2'], b['y2']), b['color'], 2)
             cv2.putText(frame, f"{b['name']} {b['conf']:.2f} | {b['label']}",
                         (b['x1'], max(b['y1'] - 8, 12)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, b['color'], 1)
+        t_overlay = (time.perf_counter() - t0_overlay) * 1000.0
 
         # Publish annotated frame
         with lock:
             output_frame = frame
 
         # Pre-encode JPEG ONCE per frame (0% extra CPU overhead for multi-client Flask streams)
+        t0_encode = time.perf_counter()
         ok, buf = cv2.imencode(".jpg", frame, encode_params)
+        t_encode = (time.perf_counter() - t0_encode) * 1000.0
+
         if ok:
             with jpeg_lock:
+                global latest_encoded_jpeg, frame_sequence, frame_timestamp
                 latest_encoded_jpeg = bytes(buf)
                 frame_sequence += 1
+                frame_timestamp = t_capture_time
+
+        with perf_lock:
+            perf_metrics["overlay_render_ms"] = round(t_overlay, 1)
+            perf_metrics["jpeg_encode_ms"] = round(t_encode, 1)
+
+        # Print telemetry metrics log once per second
+        now = time.time()
+        if now - perf_metrics["last_log_time"] >= 1.0:
+            perf_metrics["last_log_time"] = now
+            with perf_lock:
+                m = perf_metrics.copy()
+            print(f"⏱️ [STREAM METRICS] RTSP Capture: {m['rtsp_capture_ms']}ms | YOLO (Async): {m['yolo_inference_ms']}ms | Overlay: {m['overlay_render_ms']}ms | JPEG Encode: {m['jpeg_encode_ms']}ms | Flask Yield: {m['flask_stream_ms']}ms | Total Pipeline: {m['total_pipeline_ms']}ms")
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
@@ -671,6 +714,10 @@ def generate_video_stream():
             continue
 
         last_sent_seq = current_seq
+        t_yield = (time.time() - frame_timestamp) * 1000.0
+        with perf_lock:
+            perf_metrics["flask_stream_ms"] = round(max(t_yield, 0.0), 1)
+            perf_metrics["total_pipeline_ms"] = round(perf_metrics["rtsp_capture_ms"] + perf_metrics["jpeg_encode_ms"] + max(t_yield, 0.0), 1)
 
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n'
