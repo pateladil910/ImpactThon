@@ -381,6 +381,17 @@
           </div>
         </div>
 
+        <!-- DATE FILTER CONTROLS FOR HISTORY LOGS -->
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; flex-wrap:wrap; background:rgba(2,6,23,0.65); padding:14px 20px; border-radius:16px; border:1px solid rgba(6,182,212,0.2);">
+          <span style="font-size:12px; font-weight:800; font-family:'Space Grotesk',sans-serif; color:var(--primary-neon); text-transform:uppercase; letter-spacing:0.8px;">📅 Filter By Day:</span>
+          <button onclick="shiftHistoryDate(-1)" title="Previous Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer;">‹</button>
+          <input type="date" id="historyDateFilter" class="date-input" onchange="applyHistoryDateFilter()" style="background:rgba(15,23,42,0.9); border:1px solid rgba(6,182,212,0.3); color:#06b6d4; padding:6px 14px; border-radius:8px; font-family:'Space Grotesk',sans-serif; font-weight:700; outline:none;">
+          <button id="nextHistoryBtn" onclick="shiftHistoryDate(1)" title="Next Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer;">›</button>
+          <button onclick="goToHistoryToday()" title="Jump to Today" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.3); color:var(--primary-neon); border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer;">Today</button>
+          <button onclick="showAllHistoryLogs()" title="Show All Records" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer;">All Logs</button>
+          <span id="history-filter-badge" style="font-size:11px; color:#94a3b8; font-family:'Space Grotesk',sans-serif; margin-left:auto;">Showing all records</span>
+        </div>
+
         <div class="table-box">
           <table>
             <thead>
@@ -597,6 +608,93 @@
 
       // Show skeleton immediately before the API call
       if (tbody.innerHTML.trim() === '' || tbody.querySelector('.skeleton-row')) {
+    window._rawHistoryData = [];
+    window._activeDateFilter = "";
+
+    function openPhotoModal(rawPhoto, dateStr, timeStr, statusStr) {
+      const modal = document.getElementById("image-modal");
+      const modalImg = document.getElementById("modal-photo-img");
+      const modalInfo = document.getElementById("modal-photo-info");
+
+      if (!modal || !modalImg) return;
+      const imgSrc = rawPhoto.startsWith("data:") ? rawPhoto : `data:image/jpeg;base64,${rawPhoto}`;
+      modalImg.src = imgSrc;
+      if (modalInfo) {
+        modalInfo.textContent = `Captured: ${dateStr || ''} at ${timeStr || ''} • Status: ${statusStr || 'DANGER'}`;
+      }
+      modal.style.display = "flex";
+      setTimeout(() => { modal.style.opacity = "1"; }, 10);
+    }
+
+    function closePhotoModal() {
+      const modal = document.getElementById("image-modal");
+      if (!modal) return;
+      modal.style.opacity = "0";
+      setTimeout(() => { modal.style.display = "none"; }, 300);
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById("historyBody");
+      if (!tbody) return;
+
+      let filtered = window._rawHistoryData || [];
+      const filterVal = window._activeDateFilter;
+
+      if (filterVal) {
+        filtered = filtered.filter(item => {
+          if (!item.Date) return false;
+          const parts = item.Date.split("-").map(Number);
+          let docDateStr = item.Date;
+          if (parts.length === 3 && parts[0] <= 31 && parts[2] > 1000) {
+            docDateStr = `${parts[2]}-${String(parts[1]).padStart(2,'0')}-${String(parts[0]).padStart(2,'0')}`;
+          }
+          return docDateStr === filterVal;
+        });
+      }
+
+      const badge = document.getElementById("history-filter-badge");
+      if (badge) {
+        badge.textContent = filterVal ? `Filtered: ${filterVal} (${filtered.length} logs)` : `Showing all logs (${window._rawHistoryData.length} total)`;
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; opacity:0.7; padding: 30px;">No detection logs found for ${filterVal || 'the selected filter'}</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((item, index) => `
+        <tr>
+          <td><b>${index + 1}</b></td>
+          <td>${item.Event}</td>
+          <td>
+            <span class="${
+              item.Status === 'DANGER'  ? 'badge-danger' :
+              item.Status === 'WARNING' ? 'badge-warning' :
+              'badge-safe'
+            }">
+              <span class="status-dot" style="background-color: currentColor; box-shadow: 0 0 6px currentColor;"></span>
+              ${item.Status}
+            </span>
+            ${(item.EmailStatus && item.EmailStatus !== 'not_triggered') ? `
+              <div style="font-size: 9px; margin-top: 5px; color: ${item.EmailStatus === 'sent' ? 'var(--safe-green)' : (item.EmailStatus === 'failed' ? 'var(--danger-red)' : 'var(--warning-yellow)')}; opacity: 0.8; font-family: 'Fira Code', monospace; font-weight: bold; letter-spacing: 0.5px;">
+                📬 ${item.EmailStatus.toUpperCase()}
+              </div>
+            ` : ''}
+          </td>
+          <td>${item.Date}</td>
+          <td>${item.Time}</td>
+          <td>
+            ${item.Photo ? `<img src="data:image/jpeg;base64,${item.Photo}" style="width:75px; height:auto; border-radius:8px; cursor:pointer; border:1px solid rgba(6,182,212,0.3); transition:transform 0.2s;" onclick="openPhotoModal('${item.Photo}', '${item.Date}', '${item.Time}', '${item.Status}')" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'" />` : '--'}
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function loadHistory() {
+      const tbody = document.getElementById("historyBody");
+      if (!tbody) return;
+
+      if (!window._rawHistoryData || window._rawHistoryData.length === 0) {
         tbody.innerHTML = [1,2,3,4,5].map(() => `
           <tr class="skeleton-row">
             <td><div class="skel"></div></td>
@@ -613,66 +711,90 @@
           headers: getAuthHeaders()
         });
 
-
-        if (!res.ok) {
-          throw new Error("History API not available");
-        }
+        if (!res.ok) throw new Error("History API error");
 
         const responseData = await res.json();
-        const data = Array.isArray(responseData) ? responseData : (responseData.records || []);
-        tbody.innerHTML = "";
-
-        if (data.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" style="text-align:center; opacity:0.7; padding: 30px;">
-                No detection history available in the system
-              </td>
-            </tr>
-          `;
-          return;
-        }
-
-        data.forEach((item, index) => {
-          tbody.innerHTML += `
-            <tr>
-              <td><b>${index + 1}</b></td>
-              <td>${item.Event}</td>
-              <td>
-                <span class="${
-                  item.Status === 'DANGER'  ? 'badge-danger' :
-                  item.Status === 'WARNING' ? 'badge-warning' :
-                  'badge-safe'
-                }">
-                  <span class="status-dot" style="background-color: currentColor; box-shadow: 0 0 6px currentColor;"></span>
-                  ${item.Status}
-                </span>
-                ${(item.EmailStatus && item.EmailStatus !== 'not_triggered') ? `
-                  <div style="font-size: 9px; margin-top: 5px; color: ${item.EmailStatus === 'sent' ? 'var(--safe-green)' : (item.EmailStatus === 'failed' ? 'var(--danger-red)' : 'var(--warning-yellow)')}; opacity: 0.8; font-family: 'Fira Code', monospace; font-weight: bold; letter-spacing: 0.5px;">
-                    📬 ${item.EmailStatus.toUpperCase()}
-                  </div>
-                ` : ''}
-              </td>
-              <td>${item.Date}</td>
-              <td>${item.Time}</td>
-              <td>
-                ${item.Photo ? `<img src="data:image/jpeg;base64,${item.Photo}" style="width: 80px; height: auto; border-radius: 8px; cursor: pointer; border: 1px solid rgba(6,182,212,0.3); transition: transform 0.2s;" onclick="window.open(this.src)" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" />` : '--'}
-              </td>
-            </tr>
-          `;
-        });
-
+        window._rawHistoryData = Array.isArray(responseData) ? responseData : (responseData.records || []);
+        renderHistoryTable();
       } catch (err) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" style="text-align:center; opacity:0.6; padding: 30px;">
-              Detection history service is temporarily unavailable.
-            </td>
-          </tr>
-        `;
+        if (!window._rawHistoryData || window._rawHistoryData.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; opacity:0.6; padding: 30px;">Detection history service is temporarily unavailable.</td></tr>`;
+        }
       }
       _lastHistoryRefresh = Date.now();
       _updateLastRefreshed();
+    }
+
+    function applyHistoryDateFilter() {
+      const input = document.getElementById("historyDateFilter");
+      if (input) window._activeDateFilter = input.value;
+      renderHistoryTable();
+    }
+
+    function shiftHistoryDate(delta) {
+      const input = document.getElementById("historyDateFilter");
+      if (!input) return;
+      let current;
+      if (input.value) {
+        const parts = input.value.split("-").map(Number);
+        current = new Date(parts[0], parts[1] - 1, parts[2]);
+      } else {
+        current = new Date();
+      }
+      current.setDate(current.getDate() + delta);
+      const y = current.getFullYear();
+      const m = String(current.getMonth() + 1).padStart(2, '0');
+      const day = String(current.getDate()).padStart(2, '0');
+      input.value = `${y}-${m}-${day}`;
+      window._activeDateFilter = input.value;
+      renderHistoryTable();
+    }
+
+    function goToHistoryToday() {
+      const input = document.getElementById("historyDateFilter");
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const todayStr = `${y}-${m}-${day}`;
+      if (input) input.value = todayStr;
+      window._activeDateFilter = todayStr;
+      renderHistoryTable();
+    }
+
+    function showAllHistoryLogs() {
+      const input = document.getElementById("historyDateFilter");
+      if (input) input.value = "";
+      window._activeDateFilter = "";
+      renderHistoryTable();
+    }
+
+    function downloadExcel() {
+      if (!window._rawHistoryData || window._rawHistoryData.length === 0) {
+        alert("No detection history records available to download.");
+        return;
+      }
+
+      let csv = "ID,Detection Event,Safety Status,Email Status,Date,Time\n";
+      window._rawHistoryData.forEach((item, idx) => {
+        const ev = (item.Event || "Detection Event").replace(/"/g, '""');
+        const st = item.Status || "DANGER";
+        const em = item.EmailStatus || "--";
+        const dt = item.Date || "";
+        const tm = item.Time || "";
+        csv += `"${idx + 1}","${ev}","${st}","${em}","${dt}","${tm}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const currentFilter = window._activeDateFilter || "All_Logs";
+      a.download = `Detection_Logs_Report_${currentFilter}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
     /* Live Local Clock */
@@ -700,13 +822,7 @@
         .catch(err => console.error(err));
     }
 
-    function downloadExcel() {
-      // Append token as query param since window.location.href can't send headers
-      const token = localStorage.getItem("token") || "";
-      window.location.href = `${API_BASE_URL}/api/history/download?token=${encodeURIComponent(token)}`;
-    }
-
-    setInterval(loadHistory, 2000);  // 2s live refresh
+    setInterval(loadHistory, 3000);  // 3s live refresh
     setInterval(updateLiveTime, 1000);
 
     loadHistory();
@@ -762,6 +878,16 @@
 
   <!-- Auth and Mobile Menu Handler -->
 
+
+  <!-- 🖼️ IN-PAGE PHOTO POPUP MODAL -->
+  <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(2,6,23,0.85); backdrop-filter:blur(12px); z-index:99999; justify-content:center; align-items:center; opacity:0; transition:opacity 0.3s ease;" onclick="if(event.target === this) closePhotoModal();">
+    <div style="position:relative; max-width:90vw; max-height:85vh; background:rgba(15,23,42,0.95); border:1.5px solid rgba(6,182,212,0.4); border-radius:20px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,0.7); display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <button onclick="closePhotoModal()" style="position:absolute; top:14px; right:18px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:50%; width:34px; height:34px; font-weight:bold; cursor:pointer; font-size:16px; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">✕</button>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:800; color:var(--primary-neon); display:flex; align-items:center; gap:8px;">📷 Threat Capture Snapshot</div>
+      <img id="modal-photo-img" src="" style="max-width:82vw; max-height:65vh; border-radius:12px; border:1px solid rgba(6,182,212,0.25); object-fit:contain; box-shadow:0 8px 30px rgba(0,0,0,0.5);" />
+      <div id="modal-photo-info" style="font-size:12px; color:#cbd5e1; font-family:'Space Grotesk',sans-serif; font-weight:600; background:rgba(6,182,212,0.08); padding:8px 16px; border-radius:10px; border:1px solid rgba(6,182,212,0.15);"></div>
+    </div>
+  </div>
 
 </body>
 

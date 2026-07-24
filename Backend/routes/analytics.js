@@ -245,37 +245,38 @@ router.get("/data", optionalAuthMiddleware, async (req, res) => {
 
     // NEW ROUTE: Download Excel — scoped to logged-in user
     // Accepts token via Authorization header OR ?token= query param (needed for window.location.href downloads)
-router.get("/download", async (req, res) => {
+router.get("/download", optionalAuthMiddleware, async (req, res) => {
     try {
-        const jwt = require("jsonwebtoken");
-        // Try Authorization header first, then fall back to ?token query param
-        let token = null;
-        const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith("Bearer ")) {
-            token = authHeader.split(" ")[1];
-        } else if (req.query.token) {
-            token = req.query.token;
-        }
-        if (!token) return res.status(401).json({ msg: "No token, authorization denied" });
-
-        let decoded;
-        try { decoded = jwt.verify(token, "secretkey"); }
-        catch (e) { return res.status(401).json({ msg: "Token is not valid" }); }
-
         const mongoose = require("mongoose");
-        const userId = mongoose.Types.ObjectId.isValid(decoded.id)
-            ? new mongoose.Types.ObjectId(decoded.id)
-            : null;
-        const detections = await Detection.find({ status: "DANGER", userId }).sort({ timestamp: -1 });
+        const userIdVal = req.user ? req.user.id : null;
+        const userObjId = (userIdVal && mongoose.Types.ObjectId.isValid(userIdVal))
+            ? new mongoose.Types.ObjectId(userIdVal) : null;
 
-        // If you don't have an excel library installed yet, you can send a CSV for now
-        let csv = "ID,Date,Time,Status\n";
-        detections.forEach((d) => {
-            csv += `${d._id},${d.timestamp.toLocaleDateString()},${d.timestamp.toLocaleTimeString()},${d.status}\n`;
+        const userMatchList = (userIdVal || userObjId) ? [
+            ...(userIdVal ? [{ userId: userIdVal }] : []),
+            ...(userObjId ? [{ userId: userObjId }] : []),
+            { userId: null },
+            { userId: { $exists: false } }
+        ] : [
+            { status: { $exists: true } }
+        ];
+
+        const detections = await Detection.find({
+            status: { $exists: true },
+            $or: userMatchList
+        }).sort({ createdAt: -1 }).limit(500);
+
+        let csv = "ID,Event,Status,EmailStatus,Timestamp\n";
+        detections.forEach((d, idx) => {
+            const ev = (d.breachType || "Human detected inside danger zone").replace(/"/g, '""');
+            const st = d.status || "DANGER";
+            const em = d.emailStatus || "--";
+            const ts = d.timestamp ? new Date(d.timestamp).toLocaleString("en-IN") : new Date(d.createdAt).toLocaleString("en-IN");
+            csv += `"${idx + 1}","${ev}","${st}","${em}","${ts}"\n`;
         });
 
         res.setHeader("Content-Type", "text/csv");
-        res.attachment("history_report.csv");
+        res.attachment("detection_history_report.csv");
         return res.status(200).send(csv);
     } catch (err) {
         console.error("Download Error:", err);
