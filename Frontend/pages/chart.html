@@ -789,8 +789,17 @@
     // Navigate month by +1 or -1
     function shiftMonth(delta) {
       const input = document.getElementById("monthFilter");
-      if (!input.value) return;
-      const [y, m] = input.value.split("-").map(Number);
+      if (!input) return;
+
+      let y, m;
+      if (input.value && input.value.includes("-")) {
+        [y, m] = input.value.split("-").map(Number);
+      } else {
+        const now = new Date();
+        y = now.getFullYear();
+        m = now.getMonth() + 1;
+      }
+
       const now = new Date();
 
       if (delta > 0 && ((y > now.getFullYear()) || (y === now.getFullYear() && m >= now.getMonth() + 1))) {
@@ -811,6 +820,7 @@
 
     function handleDateChange() {
       const input = document.getElementById("dateFilter");
+      if (!input) return;
       let selected = parseInputDate(input.value);
       const today = new Date();
       selected.setHours(0,0,0,0);
