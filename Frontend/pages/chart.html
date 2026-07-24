@@ -758,6 +758,8 @@
     // Navigate day by +1 or -1
     function shiftDate(delta) {
       const input = document.getElementById("dateFilter");
+      if (!input) return;
+
       let current = parseInputDate(input.value);
       const today = new Date();
       current.setHours(0,0,0,0);
@@ -773,7 +775,13 @@
         current = today;
         showFutureWarning();
       }
-      input.value = formatDateInput(current);
+      
+      const formatted = formatDateInput(current);
+      input.value = formatted;
+      try {
+        input.valueAsDate = new Date(Date.UTC(current.getFullYear(), current.getMonth(), current.getDate()));
+      } catch (e) {}
+
       fetchData();
       updateNextBtnState();
     }
