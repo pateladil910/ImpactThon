@@ -45,11 +45,23 @@ router.get("/", optionalAuthMiddleware, async (req, res) => {
         
         // Map the fields for history.html
         const formatted = records.map(doc => {
-            const timestamp = doc.timestamp;
-            if (!timestamp) return null;
+            let tDate;
+            if (doc.timestamp instanceof Date) {
+                tDate = doc.timestamp;
+            } else if (doc.timestamp) {
+                tDate = new Date(doc.timestamp);
+            } else if (doc.createdAt) {
+                tDate = new Date(doc.createdAt);
+            } else {
+                tDate = new Date();
+            }
+
+            if (isNaN(tDate.getTime())) {
+                tDate = new Date();
+            }
             
             // Format to IST (GMT+5:30)
-            const istDate = new Date(timestamp.getTime() + (5.5 * 60 * 60 * 1000));
+            const istDate = new Date(tDate.getTime() + (5.5 * 60 * 60 * 1000));
             
             // Format date to DD-MM-YYYY
             const day = String(istDate.getUTCDate()).padStart(2, '0');
@@ -62,11 +74,11 @@ router.get("/", optionalAuthMiddleware, async (req, res) => {
             const seconds = String(istDate.getUTCSeconds()).padStart(2, '0');
             
             return {
-                Event: doc.event || "Machine proximity breach",
+                Event: doc.event || doc.message || "Machine proximity breach",
                 Status: doc.status || "DANGER",
                 Date: `${day}-${month}-${year}`,
                 Time: `${hours}:${minutes}:${seconds}`,
-                Photo: doc.photo_base64 || "",
+                Photo: doc.photo_base64 || doc.snapshotUrl || "",
                 EmailStatus: doc.email_status || "sent"
             };
         }).filter(Boolean);
