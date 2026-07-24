@@ -1707,8 +1707,10 @@
         // UPGRADED STATE UPDATER WITH BODY OVERLAYS & TRANSITIONS
         if (currentSafetyState !== lastSafety) {
           if (currentSafetyState === "DANGER") {
-            // DB poll (every 3s) is the source of truth for the count — no in-memory increment needed
+            // Increment total danger intrusions count instantly on DANGER breach entry
+            totalDangerIntrusions += 1;
             updateHumanCountUI();
+            fetchIntrusionCountFromDB();
 
             safetyStatus.innerText = "DANGER";
             safetyDesc.innerText = "Operator safety boundary breached!";

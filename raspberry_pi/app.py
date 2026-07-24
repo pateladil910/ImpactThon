@@ -456,6 +456,7 @@ def yolo_worker():
             highest_conf = 0.0
             zone_status = "SAFE"
 
+            person_count = 0
             for r in results:
                 for box in r.boxes:
                     cls_idx = int(box.cls[0])
@@ -466,6 +467,7 @@ def yolo_worker():
 
                     if is_person:
                         person_detected = True
+                        person_count += 1
                         if conf > highest_conf:
                             highest_conf = conf
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -489,7 +491,7 @@ def yolo_worker():
                 _cached_zone_status = zone_status
 
             with stats_lock:
-                current_stats["humanCount"] = 1 if person_detected else 0
+                current_stats["humanCount"] = person_count
                 current_stats["confidence"] = round(highest_conf * 100, 1)
                 current_stats["safety"] = zone_status
                 current_stats["zone"] = zone_status
