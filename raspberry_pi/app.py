@@ -1,22 +1,20 @@
-# app.py - Raspberry Pi AI Surveillance Streamer
-import os
-# Tell FFmpeg: RTSP transport TCP with no-buffer low-delay flags BEFORE import cv2
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;0|reorder_queue_size;0|buffer_size;1024"
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-
+﻿# app.py - Raspberry Pi AI Surveillance Streamer
 import cv2
 import time
 import requests
 import base64
 import threading
 import argparse
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|max_delay;0|flags;low_delay"
 
 import torch
-# Allow PyTorch YOLO to use multiple CPU threads for maximum inference speed
-if hasattr(torch, 'set_num_threads'):
-    torch.set_num_threads(4)
+torch.set_num_threads(1)
 
 import sys
 import json
@@ -48,13 +46,12 @@ GLOBAL_USER_ID = None
 
 class ThreadedCamera:
     """Dedicated background thread that continuously grabs the LATEST frame from RTSP.
-    Flushes queued stale frames in a loop before retrieving to guarantee zero-latency streaming."""
+    Uses grab()+retrieve() to drain the buffer every cycle ΓÇö guarantees 0ms latency."""
     def __init__(self, source):
         self.source = source
         self.cap = self._open(source)
         self.grabbed = False
         self.frame = None
-        self.frame_id = 0
         self.started = False
         self.read_lock = threading.Lock()
         self.thread = None
@@ -65,8 +62,8 @@ class ThreadedCamera:
         else:
             cap = cv2.VideoCapture(source)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 2000)
-        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 1000)
+        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
         return cap
 
     def start(self):
@@ -78,53 +75,38 @@ class ThreadedCamera:
         return self
 
     def update(self):
-        """Zero-latency capture loop: continuously grabs fresh RTSP frames at full camera rate."""
-        _fail_count = 0
-        MAX_FAILS = 30
-
         while self.started:
             if not self.cap or not self.cap.isOpened():
-                time.sleep(1.0)
+                time.sleep(2.0)
                 try:
                     self.cap = self._open(self.source)
                 except Exception as e:
                     print(f"Cam reconnect error: {e}")
-                _fail_count = 0
                 continue
 
-            t0_cap = time.perf_counter()
-            ret, frame = self.cap.read()
-            t_cap = (time.perf_counter() - t0_cap) * 1000.0
-
-            if ret and frame is not None:
-                _fail_count = 0
-                if frame.shape[1] != STREAM_WIDTH or frame.shape[0] != STREAM_HEIGHT:
-                    frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
-                with self.read_lock:
-                    self.grabbed = True
-                    self.frame = frame
-                    self.frame_id += 1
-                with perf_lock:
-                    perf_metrics["rtsp_capture_ms"] = round(t_cap, 1)
+            # KEY FIX: grab() without sleep ΓÇö drains RTSP network buffer instantly
+            # This ensures we always hold the LATEST real-time frame, never a stale one
+            grabbed = self.cap.grab()
+            if grabbed:
+                ret, frame = self.cap.retrieve()
+                if ret and frame is not None:
+                    with self.read_lock:
+                        self.grabbed = True
+                        self.frame = frame
             else:
-                _fail_count += 1
-                if _fail_count >= MAX_FAILS:
-                    print("[CAM] Consecutive read failures — reconnecting...")
-                    if self.cap:
-                        self.cap.release()
-                    time.sleep(1.5)
-                    try:
-                        self.cap = self._open(self.source)
-                    except Exception as e:
-                        print(f"Cam reconnect error: {e}")
-                    _fail_count = 0
-                time.sleep(0.005)
+                print("[CAM] Frame grab failed ΓÇö reconnecting...")
+                self.cap.release()
+                time.sleep(2.0)
+                try:
+                    self.cap = self._open(self.source)
+                except Exception as e:
+                    print(f"Cam reconnect error: {e}")
 
     def read(self):
         with self.read_lock:
             if self.frame is None:
-                return False, None, 0
-            return self.grabbed, self.frame.copy(), self.frame_id
+                return False, None
+            return self.grabbed, self.frame.copy()
 
     def isOpened(self):
         return self.cap.isOpened() if self.cap else False
@@ -157,19 +139,6 @@ _cached_boxes = []      # Latest YOLO bounding boxes (updated async)
 _boxes_lock = threading.Lock()
 _cached_zone_status = "SAFE"
 _cached_stats = {"humanCount": 0, "confidence": 0.0, "zone_status": "SAFE"}
-
-# High-precision pipeline latency telemetry
-perf_metrics = {
-    "rtsp_capture_ms": 0.0,
-    "yolo_inference_ms": 0.0,
-    "overlay_render_ms": 0.0,
-    "jpeg_encode_ms": 0.0,
-    "flask_stream_ms": 0.0,
-    "total_pipeline_ms": 0.0,
-    "last_log_time": 0.0
-}
-perf_lock = threading.Lock()
-frame_timestamp = time.time()
 
 # Real-time detection stats (shown on dashboard)
 current_stats = {
@@ -224,15 +193,15 @@ def save_zones_to_file():
     try:
         with open(ZONES_FILE, 'w') as f:
             json.dump(data, f)
-        print(f"💾 Zones saved: DZ={data['dangerZone']} WZ={data['warningZone']}")
+        print(f"≡ƒÆ╛ Zones saved: DZ={data['dangerZone']} WZ={data['warningZone']}")
     except Exception as e:
-        print(f"⚠️ Could not save zones: {e}")
+        print(f"ΓÜá∩╕Å Could not save zones: {e}")
 
 def load_zones_from_file():
     """Load zones from zones.json if it exists (called at startup)"""
     global DANGER_ZONE, WARNING_ZONE
     if not os.path.exists(ZONES_FILE):
-        print("📂 No saved zones file found, using defaults")
+        print("≡ƒôé No saved zones file found, using defaults")
         return
     try:
         with open(ZONES_FILE, 'r') as f:
@@ -242,12 +211,12 @@ def load_zones_from_file():
         with zone_lock:
             if dz:
                 DANGER_ZONE = dz
-                print(f"📂 Danger zone loaded from file: {DANGER_ZONE}")
+                print(f"≡ƒôé Danger zone loaded from file: {DANGER_ZONE}")
             if wz:
                 WARNING_ZONE = wz
-                print(f"📂 Warning zone loaded from file: {WARNING_ZONE}")
+                print(f"≡ƒôé Warning zone loaded from file: {WARNING_ZONE}")
     except Exception as e:
-        print(f"⚠️ Could not load zones from file: {e}")
+        print(f"ΓÜá∩╕Å Could not load zones from file: {e}")
 
 def fetch_zones_from_db():
     """Load saved zone coordinates from backend database"""
@@ -266,12 +235,12 @@ def fetch_zones_from_db():
             with zone_lock:
                 if dz:
                     DANGER_ZONE = dz
-                    print(f"✅ Danger zone loaded: {DANGER_ZONE}")
+                    print(f"Γ£à Danger zone loaded: {DANGER_ZONE}")
                 if wz:
                     WARNING_ZONE = wz
-                    print(f"✅ Warning zone loaded: {WARNING_ZONE}")
+                    print(f"Γ£à Warning zone loaded: {WARNING_ZONE}")
     except Exception as e:
-        print(f"⚠️ Could not fetch zones: {e}")
+        print(f"ΓÜá∩╕Å Could not fetch zones: {e}")
 
 def zone_refresh_worker():
     """Refresh zones from DB every 30 seconds"""
@@ -286,6 +255,11 @@ def construct_camera_source(url, username=None, password=None):
         return url
     if isinstance(url, str) and url.isdigit():
         return int(url)
+
+    # Auto-switch Hikvision/Dahua 1080p Main Stream (Channels/101) to Sub-Stream (Channels/102) for 0ms CPU latency
+    if "Channels/101" in url:
+        url = url.replace("Channels/101", "Channels/102")
+        print("ΓÜí Auto-switched camera to Sub-Stream (Channels/102) for 60 FPS zero-latency web streaming!")
 
     from urllib.parse import quote, unquote
         
@@ -327,20 +301,20 @@ def load_or_create_config():
                 config = json.load(f)
                 token = config.get("token")
                 user_id = config.get("userId")
-                print("💾 Found saved login session.")
+                print("≡ƒÆ╛ Found saved login session.")
         except Exception as e:
             print("Error loading config.json, prompting login.")
             
     # If not found, prompt user for login or use background fallback
     if not token or not user_id:
         if not sys.stdin.isatty():
-            print("⚠️ Background daemon running without TTY. Using offline service fallback credentials.")
+            print("ΓÜá∩╕Å Background daemon running without TTY. Using offline service fallback credentials.")
             token = "offline-system-token"
             user_id = "system"
             camera_url = "rtsp://admin:Codevortex%4012@192.168.1.64:554/Streaming/Channels/101"
             return token, user_id, camera_url, None, None
             
-        print("\n🔑 --- AI Safety Shield Edge Agent Login ---")
+        print("\n≡ƒöæ --- AI Safety Shield Edge Agent Login ---")
         email = input("Email: ")
         password = getpass.getpass("Password: ")
         
@@ -352,7 +326,7 @@ def load_or_create_config():
             }, timeout=10)
             
             if login_res.status_code != 200:
-                print("❌ Invalid email or password. Access denied.")
+                print("Γ¥î Invalid email or password. Access denied.")
                 sys.exit(1)
                 
             auth_data = login_res.json()
@@ -360,10 +334,10 @@ def load_or_create_config():
             user_id = auth_data.get("user", {}).get("id")
             
             if not token or not user_id:
-                print("❌ Failed to parse session token. Access denied.")
+                print("Γ¥î Failed to parse session token. Access denied.")
                 sys.exit(1)
                 
-            print(f"👋 Welcome, {auth_data.get('user', {}).get('name', 'Operator')}!")
+            print(f"≡ƒæï Welcome, {auth_data.get('user', {}).get('name', 'Operator')}!")
             
             # Save configuration locally for next start
             with open(CONFIG_FILE, 'w') as f:
@@ -371,31 +345,31 @@ def load_or_create_config():
                     "token": token,
                     "userId": user_id
                 }, f)
-            print("💾 Login session saved locally.")
+            print("≡ƒÆ╛ Login session saved locally.")
             
         except Exception as e:
-            print(f"❌ Authentication Error: {e}")
+            print(f"Γ¥î Authentication Error: {e}")
             sys.exit(1)
             
     # 2. If --camera flag is given, skip the cloud fetch entirely (works offline)
     if args.camera is not None:
-        print("📡 [OFFLINE MODE] Using --camera flag. Skipping cloud camera fetch.")
+        print("≡ƒôí [OFFLINE MODE] Using --camera flag. Skipping cloud camera fetch.")
         return token, user_id, args.camera, None, None
 
     # 3. Fetch camera config from cloud (with retry for sleeping Render server)
-    print("📡 Fetching active camera configuration from cloud...")
+    print("≡ƒôí Fetching active camera configuration from cloud...")
     for attempt in range(3):
         try:
             headers = {"Authorization": f"Bearer {token}"}
             cam_res = requests.get("https://codevortex.in/api/camera/latest", headers=headers, timeout=15)
 
             if cam_res.status_code == 401:
-                print("❌ Saved session expired. Please delete config.json and restart.")
+                print("Γ¥î Saved session expired. Please delete config.json and restart.")
                 sys.exit(1)
 
             if cam_res.status_code == 404:
-                print("\n⚠️  [NO CAMERA] You have not configured a camera yet.")
-                print("👉 Keeping Edge Server ONLINE so you can configure it via the web page.")
+                print("\nΓÜá∩╕Å  [NO CAMERA] You have not configured a camera yet.")
+                print("≡ƒæë Keeping Edge Server ONLINE so you can configure it via the web page.")
                 return token, user_id, None, None, None
 
             cam_data = cam_res.json()
@@ -404,17 +378,17 @@ def load_or_create_config():
             username = camera_info.get("username")
             password = camera_info.get("password")
 
-            print(f"✅ Active Camera Stream loaded: {cam_url}")
+            print(f"Γ£à Active Camera Stream loaded: {cam_url}")
             return token, user_id, cam_url, username, password
 
         except Exception as e:
-            print(f"⚠️  Cloud fetch attempt {attempt+1}/3 failed: {e}")
+            print(f"ΓÜá∩╕Å  Cloud fetch attempt {attempt+1}/3 failed: {e}")
             if attempt < 2:
                 print("   Retrying in 5 seconds (server may be waking up)...")
                 time.sleep(5)
 
     # All retries failed - start in idle mode
-    print("⚠️  Could not reach cloud. Starting in IDLE mode (no camera).")
+    print("ΓÜá∩╕Å  Could not reach cloud. Starting in IDLE mode (no camera).")
     return token, user_id, None, None, None
 
 def _norm_to_px(zone, w, h):
@@ -427,22 +401,19 @@ def _norm_to_px(zone, w, h):
 
 def yolo_worker():
     """Runs YOLO inference asynchronously on a separate thread.
-    Reads the latest raw frame, runs detection, and updates _cached_boxes and current_stats instantaneously."""
+    Reads the latest raw frame, runs detection, and updates _cached_boxes.
+    NEVER touches output_frame ΓÇö so it can NEVER block video streaming."""
     global _cached_boxes, _cached_zone_status, _cached_stats, last_detection_time
-
-    danger_counter = 0
-    safe_counter = 0
-    current_safety_state = "SAFE"
 
     while True:
         # Wait for a fresh frame
         frame_to_infer = None
         with _latest_raw_lock:
             if _latest_raw_frame is not None:
-                frame_to_infer = _latest_raw_frame
+                frame_to_infer = _latest_raw_frame.copy()
 
         if frame_to_infer is None:
-            time.sleep(0.02)
+            time.sleep(0.05)
             continue
 
         try:
@@ -454,16 +425,11 @@ def yolo_worker():
             dz_x1, dz_y1, dz_x2, dz_y2 = _norm_to_px(dz, w, h)
             wz_x1, wz_y1, wz_x2, wz_y2 = _norm_to_px(wz, w, h)
 
-            t0_yolo = time.perf_counter()
-            results = model(frame_to_infer, stream=True, conf=0.20, imgsz=320)
-            t_yolo = (time.perf_counter() - t0_yolo) * 1000.0
-            with perf_lock:
-                perf_metrics["yolo_inference_ms"] = round(t_yolo, 1)
+            results = model(frame_to_infer, stream=True, conf=0.25, imgsz=320)
             boxes = []
             person_detected = False
             highest_conf = 0.0
-            frame_has_danger = False
-            frame_has_warning = False
+            zone_status = "SAFE"
 
             for r in results:
                 for box in r.boxes:
@@ -480,58 +446,37 @@ def yolo_worker():
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         in_danger  = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
                         in_warning = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
-
                         if in_danger:
-                            frame_has_danger = True
-                            color, label = (0, 0, 255), "DANGER ZONE BREACH"
-                        elif in_warning:
-                            frame_has_warning = True
-                            color, label = (0, 255, 255), "WARNING ZONE"
+                            color, label, zone_status = (0, 0, 255), "DANGER ZONE BREACH", "DANGER"
+                        elif in_warning and zone_status != "DANGER":
+                            color, label, zone_status = (0, 255, 255), "WARNING ZONE", "WARNING"
                         else:
                             color, label = (0, 255, 0), "Safe Zone"
-
-                        boxes.append({
-                            'name': 'Person', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
-                            'color': color, 'label': label, 'conf': conf
-                        })
+                        boxes.append({'name': 'Person', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                                      'color': color, 'label': label, 'conf': conf})
                     elif is_forklift:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        boxes.append({
-                            'name': 'Forklift', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
-                            'color': (255, 0, 0), 'label': 'Forklift', 'conf': conf
-                        })
-
-            # Instant ON (1 frame) / Fast OFF (3 frames) state machine
-            if frame_has_danger:
-                danger_counter += 1
-                safe_counter = 0
-                current_safety_state = "DANGER"
-            elif frame_has_warning:
-                current_safety_state = "WARNING" if current_safety_state != "DANGER" else "DANGER"
-                safe_counter = 0
-            else:
-                safe_counter += 1
-                if safe_counter >= 3:
-                    danger_counter = 0
-                    current_safety_state = "SAFE"
+                        boxes.append({'name': 'Forklift', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                                      'color': (255, 0, 0), 'label': 'Forklift', 'conf': conf})
 
             with _boxes_lock:
                 _cached_boxes = boxes
-                _cached_zone_status = current_safety_state
+                _cached_zone_status = zone_status
 
             with stats_lock:
                 current_stats["humanCount"] = 1 if person_detected else 0
                 current_stats["confidence"] = round(highest_conf * 100, 1)
-                current_stats["safety"] = current_safety_state
-                current_stats["zone"] = current_safety_state
-                current_stats["action"] = "STOP" if current_safety_state == "DANGER" else "RUN"
+                current_stats["safety"] = zone_status
+                current_stats["zone"] = zone_status
+                current_stats["action"] = "DANGER" if zone_status == "DANGER" else "RUN"
 
-            # Alert firing logic
+            # --- Alert firing logic ---
             current_time = time.time()
 
-            if current_safety_state == "DANGER" and (current_time - last_detection_time > DETECTION_COOLDOWN):
+            if zone_status == "DANGER" and (current_time - last_detection_time > DETECTION_COOLDOWN):
+                # DANGER: Send full alert with photo ΓåÆ triggers email to user
                 last_detection_time = current_time
-                print("🚨 DANGER ZONE BREACH detected! Sending alert + email...")
+                print("\U0001f6a8 DANGER ZONE BREACH detected! Sending alert + email...")
                 _, buf = cv2.imencode('.jpg', frame_to_infer)
                 jpg_b64 = base64.b64encode(buf).decode('utf-8')
                 threading.Thread(
@@ -540,9 +485,10 @@ def yolo_worker():
                     daemon=True
                 ).start()
 
-            elif current_safety_state == "WARNING" and (current_time - last_detection_time > DETECTION_COOLDOWN):
+            elif zone_status == "WARNING" and (current_time - last_detection_time > DETECTION_COOLDOWN):
+                # WARNING: Send lightweight ping ΓåÆ logs to history, triggers dashboard sound, NO email
                 last_detection_time = current_time
-                print("⚠️ WARNING ZONE detected!")
+                print("\u26a0\ufe0f  WARNING ZONE detected! Triggering dashboard sound alert (no email)...")
                 threading.Thread(
                     target=send_warning_to_backend,
                     args=(highest_conf, "WARNING_PROXIMITY", "WARNING", "Local Edge Camera CH1"),
@@ -552,18 +498,14 @@ def yolo_worker():
         except Exception as e:
             print(f"[YOLO] Error: {e}")
 
-        time.sleep(0.02)   # ~20 Hz inference — faster detection response
+        time.sleep(0.1)   # ~10 Hz inference ΓÇö gives CPU plenty of room
 
-
-latest_encoded_jpeg = None
-frame_sequence = 0
-jpeg_lock = threading.Lock()
 
 def detect_objects():
     """30 FPS camera streaming thread.
-    Reads fresh frames, draws zone overlays + cached YOLO boxes, publishes to output_frame and latest_encoded_jpeg.
+    Reads fresh frames, draws zone overlays + cached YOLO boxes, publishes to output_frame.
     YOLO inference runs in a separate thread (yolo_worker) and NEVER blocks this loop."""
-    global output_frame, raw_frame, latest_encoded_jpeg, frame_sequence
+    global output_frame, raw_frame
 
     while camera is None or not camera.isOpened():
         time.sleep(0.5)
@@ -571,27 +513,21 @@ def detect_objects():
     # Start async YOLO worker
     threading.Thread(target=yolo_worker, daemon=True).start()
 
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 40]
-    last_processed_frame_id = -1
-
     while True:
-        success, frame, f_id = camera.read()
-        if not success or frame is None or f_id <= last_processed_frame_id:
-            time.sleep(0.003)
+        success, frame = camera.read()
+        if not success or frame is None:
+            time.sleep(0.033)
             continue
-        last_processed_frame_id = f_id
 
+        frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
         h, w = frame.shape[:2]
 
         # Share raw frame with YOLO worker (non-blocking)
         with _latest_raw_lock:
             global _latest_raw_frame
-            _latest_raw_frame = frame
+            _latest_raw_frame = frame.copy()
         with raw_lock:
-            raw_frame = frame
-
-        t_capture_time = time.time()
-        t0_overlay = time.perf_counter()
+            raw_frame = frame.copy()
 
         # Draw zone overlays
         with zone_lock:
@@ -604,42 +540,17 @@ def detect_objects():
         cv2.rectangle(frame, (dz_x1, dz_y1), (dz_x2, dz_y2), (0, 0, 255), 2)
         cv2.putText(frame, 'DANGER ZONE', (dz_x1 + 4, dz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1)
 
-        # Overlay latest YOLO boxes (from async worker — never stale more than 50ms)
+        # Overlay latest YOLO boxes (from async worker ΓÇö never stale more than 100ms)
         with _boxes_lock:
             boxes_snapshot = list(_cached_boxes)
         for b in boxes_snapshot:
             cv2.rectangle(frame, (b['x1'], b['y1']), (b['x2'], b['y2']), b['color'], 2)
             cv2.putText(frame, f"{b['name']} {b['conf']:.2f} | {b['label']}",
                         (b['x1'], max(b['y1'] - 8, 12)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, b['color'], 1)
-        t_overlay = (time.perf_counter() - t0_overlay) * 1000.0
 
-        # Publish annotated frame
+        # Publish annotated frame ΓÇö no copy() needed since we recreate frame every loop
         with lock:
             output_frame = frame
-
-        # Pre-encode JPEG ONCE per frame (0% extra CPU overhead for multi-client Flask streams)
-        t0_encode = time.perf_counter()
-        ok, buf = cv2.imencode(".jpg", frame, encode_params)
-        t_encode = (time.perf_counter() - t0_encode) * 1000.0
-
-        if ok:
-            with jpeg_lock:
-                global latest_encoded_jpeg, frame_sequence, frame_timestamp
-                latest_encoded_jpeg = bytes(buf)
-                frame_sequence += 1
-                frame_timestamp = t_capture_time
-
-        with perf_lock:
-            perf_metrics["overlay_render_ms"] = round(t_overlay, 1)
-            perf_metrics["jpeg_encode_ms"] = round(t_encode, 1)
-
-        # Print telemetry metrics log once per second
-        now = time.time()
-        if now - perf_metrics["last_log_time"] >= 1.0:
-            perf_metrics["last_log_time"] = now
-            with perf_lock:
-                m = perf_metrics.copy()
-            print(f"⏱️ [STREAM METRICS] RTSP Capture: {m['rtsp_capture_ms']}ms | YOLO (Async): {m['yolo_inference_ms']}ms | Overlay: {m['overlay_render_ms']}ms | JPEG Encode: {m['jpeg_encode_ms']}ms | Flask Yield: {m['flask_stream_ms']}ms | Total Pipeline: {m['total_pipeline_ms']}ms")
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
@@ -658,15 +569,15 @@ def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severi
         headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
         res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=8)
         if res.status_code == 200:
-            print(f"✅ Alert successfully synced to cloud logs & dispatched email to user.")
+            print(f"Γ£à Alert successfully synced to cloud logs & dispatched email to user.")
         else:
-            print(f"⚠️ Backend returned status {res.status_code}: {res.text}")
+            print(f"ΓÜá∩╕Å Backend returned status {res.status_code}: {res.text}")
     except Exception as e:
-        print(f"❌ Failed to send alert to cloud: {e}")
+        print(f"Γ¥î Failed to send alert to cloud: {e}")
 
 def send_warning_to_backend(confidence, breach_type="WARNING_PROXIMITY", severity="WARNING", camera_name="Edge Node"):
     """Send lightweight WARNING ping to backend.
-    Logs to history and triggers dashboard sound — but NO photo and NO email."""
+    Logs to history and triggers dashboard sound ΓÇö but NO photo and NO email."""
     try:
         conf_val = int(confidence * 100) if confidence <= 1.0 else int(confidence)
         payload = {
@@ -683,44 +594,42 @@ def send_warning_to_backend(confidence, breach_type="WARNING_PROXIMITY", severit
         headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
         res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=8)
         if res.status_code == 200:
-            print("⚠️  WARNING ping sent to cloud (sound alert triggered, no email).")
+            print("ΓÜá∩╕Å  WARNING ping sent to cloud (sound alert triggered, no email).")
         else:
-            print(f"⚠️ Backend returned status {res.status_code}: {res.text}")
+            print(f"ΓÜá∩╕Å Backend returned status {res.status_code}: {res.text}")
     except Exception as e:
-        print(f"❌ Failed to send warning ping to cloud: {e}")
+        print(f"Γ¥î Failed to send warning ping to cloud: {e}")
 
 def generate_video_stream():
-    """Ultra low-latency continuous MJPEG live stream for dashboard."""
-    global latest_encoded_jpeg, frame_sequence, jpeg_lock
-    last_sent_seq = -1
-
+    """Ultra low-latency MJPEG stream for dashboard"""
+    global output_frame, lock
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 45]
+    
     while True:
-        current_jpeg = None
-        current_seq = -1
-        with jpeg_lock:
-            if latest_encoded_jpeg is not None:
-                current_jpeg = latest_encoded_jpeg
-                current_seq = frame_sequence
-
-        if current_jpeg is None or current_seq <= last_sent_seq:
-            time.sleep(0.002)
+        frame_to_send = None
+        with lock:
+            if output_frame is not None:
+                frame_to_send = output_frame
+                
+        if frame_to_send is None:
+            time.sleep(0.01)
+            continue
+            
+        success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
+        if not success:
+            time.sleep(0.01)
             continue
 
-        last_sent_seq = current_seq
-        t_yield = (time.time() - frame_timestamp) * 1000.0
-        with perf_lock:
-            perf_metrics["flask_stream_ms"] = round(max(t_yield, 0.0), 1)
-            perf_metrics["total_pipeline_ms"] = round(perf_metrics["rtsp_capture_ms"] + perf_metrics["jpeg_encode_ms"] + max(t_yield, 0.0), 1)
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n'
-               b'Content-Length: ' + str(len(current_jpeg)).encode() + b'\r\n'
-               b'Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0\r\n'
-               b'Pragma: no-cache\r\n'
-               b'Expires: 0\r\n'
-               b'\r\n' + current_jpeg + b'\r\n')
-        time.sleep(0.04)  # 24 FPS video stream pace (~40ms per frame)
-
+        jpg_bytes = bytearray(encoded_image)
+                 
+        yield(b'--frame\r\n'
+              b'Content-Type: image/jpeg\r\n'
+              b'Content-Length: ' + str(len(jpg_bytes)).encode() + b'\r\n'
+              b'Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0\r\n'
+              b'Pragma: no-cache\r\n'
+              b'Expires: 0\r\n'
+              b'\r\n' + jpg_bytes + b'\r\n')
+        time.sleep(0.02)  # ~50 FPS max transmission speed
 
 def generate_raw_stream():
     """Zero-delay raw stream (no YOLO) for calibration/draw_zone page"""
@@ -978,48 +887,13 @@ def test_camera():
 
 @app.route("/video_feed")
 def video_feed():
-    """YOLO-annotated MJPEG stream — all buffering disabled"""
-    resp = Response(
-        generate_video_stream(),
-        mimetype="multipart/x-mixed-replace; boundary=frame"
-    )
-    # Disable ALL levels of buffering
-    resp.headers['X-Accel-Buffering'] = 'no'        # nginx: no buffering
-    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
-    resp.headers['Pragma'] = 'no-cache'
-    resp.headers['Expires'] = '0'
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    return resp
-
-@app.route("/snapshot")
-def snapshot():
-    """Single JPEG snapshot — used by canvas-based frontend for zero-buffer polling."""
-    global output_frame, lock
-    with lock:
-        frame = output_frame.copy() if output_frame is not None else None
-    if frame is None:
-        return Response(b'', status=503)
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 60]
-    success, buf = cv2.imencode('.jpg', frame, encode_params)
-    if not success:
-        return Response(b'', status=503)
-    resp = Response(bytes(buf), mimetype='image/jpeg')
-    resp.headers['Cache-Control'] = 'no-store, no-cache'
-    resp.headers['X-Accel-Buffering'] = 'no'
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    return resp
+    """YOLO-annotated MJPEG stream for dashboard"""
+    return Response(generate_video_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/raw_feed")
 def raw_feed():
-    """Zero-delay raw MJPEG stream for calibration page — all buffering disabled"""
-    resp = Response(
-        generate_raw_stream(),
-        mimetype="multipart/x-mixed-replace; boundary=frame"
-    )
-    resp.headers['X-Accel-Buffering'] = 'no'
-    resp.headers['Cache-Control'] = 'no-store, no-cache'
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    return resp
+    """Zero-delay raw MJPEG stream for calibration page"""
+    return Response(generate_raw_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/status", methods=["GET", "OPTIONS"])
 @app.route("/api/stats", methods=["GET", "OPTIONS"])
@@ -1080,7 +954,7 @@ def update_zones():
 
     # POST logic
     data = request.get_json(force=True, silent=True) or {}
-    print(f"📩 Received zone update: {data}")
+    print(f"≡ƒô⌐ Received zone update: {data}")
 
     dz_raw = data.get("danger") or data.get("dangerZone")
     wz_raw = data.get("warning") or data.get("warningZone")
@@ -1090,11 +964,11 @@ def update_zones():
     with zone_lock:
         if dz:
             DANGER_ZONE = dz
-            print(f"✅ Danger zone updated: {DANGER_ZONE}")
+            print(f"Γ£à Danger zone updated: {DANGER_ZONE}")
             updated = True
         if wz:
             WARNING_ZONE = wz
-            print(f"✅ Warning zone updated: {WARNING_ZONE}")
+            print(f"Γ£à Warning zone updated: {WARNING_ZONE}")
             updated = True
     if updated:
         save_zones_to_file()  # persist immediately so it survives restarts
@@ -1127,7 +1001,7 @@ if __name__ == "__main__":
     # Initialize camera if source is available (Dynamic input: Webcam OR IP Camera/RTSP)
     if camera_url:
         cam_source = construct_camera_source(camera_url, username, password)
-        print(f"📡 Connecting to camera source: {camera_url}")
+        print(f"≡ƒôí Connecting to camera source: {camera_url}")
         camera = ThreadedCamera(cam_source).start()
         
         # Optimize resolution for better FPS
@@ -1135,7 +1009,7 @@ if __name__ == "__main__":
         camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         
         if not camera.isOpened():
-            print(f"❌ ERROR: Could not open camera source {camera_url}")
+            print(f"Γ¥î ERROR: Could not open camera source {camera_url}")
             camera = None
         
         if camera:
@@ -1154,7 +1028,7 @@ if __name__ == "__main__":
             zt.daemon = True
             zt.start()
     else:
-        print("⚠️ [NO CAMERA] Idle mode active. Flask server is online to accept setup requests.")
+        print("ΓÜá∩╕Å [NO CAMERA] Idle mode active. Flask server is online to accept setup requests.")
     
     # 6. Start Hardware Serial Interlock Daemon (Syncs Cloud Status with local Arduino/ESP32 Motor Relay)
     try:
@@ -1165,5 +1039,5 @@ if __name__ == "__main__":
         print(f"Hardware sync daemon init notice: {e}")
 
     # 7. Start Flask server
-    print("🚀 Starting AI Edge Agent Stream on port 5000...")
+    print("≡ƒÜÇ Starting AI Edge Agent Stream on port 5000...")
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
