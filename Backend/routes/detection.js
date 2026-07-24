@@ -1,7 +1,57 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Detection = require("../models/Detection");
+const User = require("../models/User");
+const Camera = require("../models/Camera");
+const Incident = require("../models/Incident");
 const sendAlertEmail = require("../utils/sendEmail");
+
+async function resolveValidUser(userIdInput, cameraStreamUrl) {
+  let targetUser = null;
+
+  // 1. Try finding user by provided userId string if it's a valid ObjectId
+  if (userIdInput && mongoose.Types.ObjectId.isValid(userIdInput)) {
+    try {
+      targetUser = await User.findById(userIdInput);
+    } catch (e) { /* ignore */ }
+  }
+
+  // 2. Try resolving via cameraStreamUrl if not resolved yet
+  if (!targetUser && cameraStreamUrl) {
+    try {
+      const allCameras = await Camera.find({});
+      const normalizeUrl = (u) => {
+        if (!u) return "";
+        let clean = u.toLowerCase().trim();
+        clean = clean.replace(/^(rtsp|rtmp|http|https):\/\//, "");
+        if (clean.includes("@")) clean = clean.substring(clean.lastIndexOf("@") + 1);
+        if (clean.endsWith("/")) clean = clean.slice(0, -1);
+        return clean;
+      };
+      const inputNorm = normalizeUrl(cameraStreamUrl);
+      let matchedCam = allCameras.find(c => normalizeUrl(c.url) === inputNorm);
+      if (!matchedCam && inputNorm) {
+        matchedCam = allCameras.find(c => {
+          const nu = normalizeUrl(c.url);
+          return nu && (inputNorm.includes(nu) || nu.includes(inputNorm));
+        });
+      }
+      if (matchedCam && matchedCam.userId) {
+        targetUser = await User.findById(matchedCam.userId);
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  // 3. Fallback: Return the first active user in the database so history/analytics are NEVER orphaned
+  if (!targetUser) {
+    try {
+      targetUser = await User.findOne({}).sort({ createdAt: 1 });
+    } catch (e) { /* ignore */ }
+  }
+
+  return targetUser;
+}
 
 // AI / Detection API
 router.post("/", async (req, res) => {
@@ -20,17 +70,11 @@ router.post("/", async (req, res) => {
       recipient_email
     } = req.body;
 
+    const userDoc = await resolveValidUser(userId, cameraStreamUrl);
+    const resolvedUserId = userDoc ? userDoc._id : null;
+
     // ── Handle WARNING zone: log to history, NO email ──────────────────────
     if (warning === true && danger !== true) {
-      let resolvedUserId = userId || null;
-      const User = require("../models/User");
-      if (resolvedUserId) {
-        try {
-          const userDoc = await User.findById(resolvedUserId);
-          if (userDoc) resolvedUserId = userDoc._id;
-        } catch (e) { /* ignore */ }
-      }
-
       try {
         await Detection.create({
           status:        "WARNING",
@@ -51,66 +95,10 @@ router.post("/", async (req, res) => {
     }
 
     if (danger === true) {
-      // 1. Resolve camera owner via userId or stream URL
-      let resolvedUserId = userId || null;
-      let targetEmail    = recipient_email || null;
-      let targetName     = "System Detection";
+      const emailTarget = recipient_email || (userDoc ? userDoc.email : null) || process.env.ADMIN_EMAIL || "adilp4534@gmail.com";
+      const targetName  = userDoc ? (userDoc.name || userDoc.email) : "System Detection";
 
-      const User = require("../models/User");
-      const Camera = require("../models/Camera");
-
-      // Try resolving via cameraStreamUrl if provided
-      if (cameraStreamUrl) {
-        try {
-          const allCameras = await Camera.find({});
-          const normalizeUrl = (u) => {
-            if (!u) return "";
-            let clean = u.toLowerCase().trim();
-            clean = clean.replace(/^(rtsp|rtmp|http|https):\/\//, "");
-            if (clean.includes("@")) {
-              clean = clean.substring(clean.lastIndexOf("@") + 1);
-            }
-            if (clean.endsWith("/")) {
-              clean = clean.slice(0, -1);
-            }
-            return clean;
-          };
-
-          const normalizedInput = normalizeUrl(cameraStreamUrl);
-          let matchedCam = allCameras.find(c => normalizeUrl(c.url) === normalizedInput);
-          if (!matchedCam && normalizedInput) {
-            matchedCam = allCameras.find(c => {
-              const nu = normalizeUrl(c.url);
-              return nu && (normalizedInput.includes(nu) || nu.includes(normalizedInput));
-            });
-          }
-
-          if (matchedCam && matchedCam.userId) {
-            resolvedUserId = matchedCam.userId;
-            console.log(`[DETECTION] Camera matched by stream URL → userId: ${resolvedUserId}`);
-          }
-        } catch (lookupErr) {
-          console.error("[DETECTION] Camera lookup error:", lookupErr.message);
-        }
-      }
-
-      // If we have resolvedUserId, fetch owner's email
-      if (resolvedUserId) {
-        try {
-          const userDoc = await User.findById(resolvedUserId);
-          if (userDoc) {
-            targetEmail = userDoc.email;
-            targetName  = userDoc.name || userDoc.email;
-            console.log(`[DETECTION] Camera owner resolved → ${targetEmail}`);
-          }
-        } catch (uErr) {
-          console.error("[DETECTION] User lookup error:", uErr.message);
-        }
-      }
-
-      const emailTarget = targetEmail || recipient_email || process.env.ADMIN_EMAIL || "adilp4534@gmail.com";
-
-      // 2. Save to Detection History (scoped to owner)
+      // 1. Save to Detection History (scoped to owner)
       try {
         await Detection.create({
           status:        "DANGER",
@@ -126,12 +114,11 @@ router.post("/", async (req, res) => {
         });
         console.log(`[DETECTION] Danger saved to history | userId: ${resolvedUserId}`);
       } catch (dbError) {
-        console.error("[DETECTION] DB Save Error:", dbError);
+        console.error("[DETECTION] DB Save Error:", dbError.message);
       }
 
-      // 3. Save to Incident Log
+      // 2. Save to Incident Log
       try {
-        const Incident = require("../models/Incident");
         await Incident.create({
           userId:      resolvedUserId,
           type:        breachType === "NO_HELMET"      ? "PPE: Helmet Violation" :
@@ -150,7 +137,7 @@ router.post("/", async (req, res) => {
         console.error("[DETECTION] Incident Save Error:", incError.message);
       }
 
-      // 4. Send alert email with photo snapshot attached (DANGER only)
+      // 3. Send alert email with photo snapshot attached (DANGER only)
       if (emailTarget) {
         try {
           await sendAlertEmail(
