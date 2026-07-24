@@ -406,29 +406,45 @@ router.get("/count/today", optionalAuthMiddleware, async (req, res) => {
         const userObjId = (userIdVal && mongoose.Types.ObjectId.isValid(userIdVal))
             ? new mongoose.Types.ObjectId(userIdVal) : null;
 
-        // IST today boundaries
+        // IST today boundaries (00:00:00.000 to 23:59:59.999 IST)
         const now = new Date();
         const offset = 5.5 * 60 * 60 * 1000;
         const istNow = new Date(now.getTime() + offset);
-        const startOfDayIST = new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate()));
-        const startUTC = new Date(startOfDayIST.getTime() - offset);
-        const endUTC = new Date(startUTC.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-        const matchQuery = {
-            status: { $in: ["DANGER", "DANGER ZONE BREACH", "PROXIMITY"] },
-            timestamp: { $gte: startUTC, $lte: endUTC }
-        };
+        const y = istNow.getUTCFullYear();
+        const m = istNow.getUTCMonth();
+        const d = istNow.getUTCDate();
 
-        if (userIdVal || userObjId) {
-            matchQuery.$or = [
-                ...(userIdVal ? [{ userId: userIdVal }] : []),
-                ...(userObjId ? [{ userId: userObjId }] : []),
-                { userId: null },
-                { userId: { $exists: false } }
-            ];
-        }
+        const startISTMs = new Date(Date.UTC(y, m, d)).getTime() - offset;
+        const endISTMs = startISTMs + 24 * 60 * 60 * 1000 - 1;
 
-        const count = await Detection.countDocuments(matchQuery);
+        const userMatchList = (userIdVal || userObjId) ? [
+            ...(userIdVal ? [{ userId: userIdVal }] : []),
+            ...(userObjId ? [{ userId: userObjId }] : []),
+            { userId: null },
+            { userId: { $exists: false } }
+        ] : [
+            { status: { $exists: true } }
+        ];
+
+        const docs = await Detection.find({
+            status: { $in: ["DANGER", "DANGER ZONE BREACH", "PROXIMITY", "danger", "Danger"] },
+            $or: userMatchList
+        }).select("timestamp createdAt status").lean();
+
+        let count = 0;
+        docs.forEach(doc => {
+            let docDate = null;
+            if (doc.timestamp) docDate = new Date(doc.timestamp);
+            else if (doc.createdAt) docDate = new Date(doc.createdAt);
+
+            if (docDate && !isNaN(docDate.getTime())) {
+                const docTime = docDate.getTime();
+                if (docTime >= startISTMs && docTime <= endISTMs) {
+                    count++;
+                }
+            }
+        });
 
         return res.status(200).json({ success: true, count });
     } catch (err) {

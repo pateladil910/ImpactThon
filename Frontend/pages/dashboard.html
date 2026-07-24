@@ -1632,15 +1632,14 @@
     async function loadInitialIntrusionCount() {
       try {
         const token = localStorage.getItem("token") || "";
-        if (!token) return;
-        // Use the dedicated fast count endpoint — returns today's DANGER count directly from DB
-        const res = await fetch(`${API_BASE_URL}/api/analytics/count/today`, {
-          headers: { "Authorization": `Bearer ${token}`, "Cache-Control": "no-cache" }
-        });
+        const headers = { "Cache-Control": "no-cache" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        // Fetch today's DANGER intrusion count directly from DB
+        const res = await fetch(`${API_BASE_URL}/api/analytics/count/today`, { headers });
         if (res.ok) {
           const json = await res.json();
           if (json.success && typeof json.count === "number") {
-            // DB is always the single source of truth — always update the display
             totalDangerIntrusions = json.count;
             countLoadedFromDB = true;
           }
