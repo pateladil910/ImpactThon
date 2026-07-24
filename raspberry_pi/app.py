@@ -531,13 +531,14 @@ def yolo_worker():
 
 
 latest_encoded_jpeg = None
+frame_sequence = 0
 jpeg_lock = threading.Lock()
 
 def detect_objects():
     """30 FPS camera streaming thread.
     Reads fresh frames, draws zone overlays + cached YOLO boxes, publishes to output_frame and latest_encoded_jpeg.
     YOLO inference runs in a separate thread (yolo_worker) and NEVER blocks this loop."""
-    global output_frame, raw_frame, latest_encoded_jpeg
+    global output_frame, raw_frame, latest_encoded_jpeg, frame_sequence
 
     while camera is None or not camera.isOpened():
         time.sleep(0.5)
@@ -591,6 +592,7 @@ def detect_objects():
         if ok:
             with jpeg_lock:
                 latest_encoded_jpeg = bytes(buf)
+                frame_sequence += 1
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
@@ -641,21 +643,23 @@ def send_warning_to_backend(confidence, breach_type="WARNING_PROXIMITY", severit
         print(f"❌ Failed to send warning ping to cloud: {e}")
 
 def generate_video_stream():
-    """Ultra low-latency MJPEG stream for dashboard — zero CPU overhead per connection."""
-    global latest_encoded_jpeg, jpeg_lock
-    last_sent = None
+    """Ultra low-latency continuous MJPEG live stream for dashboard."""
+    global latest_encoded_jpeg, frame_sequence, jpeg_lock
+    last_sent_seq = -1
 
     while True:
         current_jpeg = None
+        current_seq = -1
         with jpeg_lock:
             if latest_encoded_jpeg is not None:
                 current_jpeg = latest_encoded_jpeg
+                current_seq = frame_sequence
 
-        if current_jpeg is None or current_jpeg is last_sent:
+        if current_jpeg is None or current_seq <= last_sent_seq:
             time.sleep(0.005)
             continue
 
-        last_sent = current_jpeg
+        last_sent_seq = current_seq
 
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n'
@@ -664,7 +668,7 @@ def generate_video_stream():
                b'Pragma: no-cache\r\n'
                b'Expires: 0\r\n'
                b'\r\n' + current_jpeg + b'\r\n')
-        time.sleep(0.01)
+        time.sleep(0.005)
 
 
 def generate_raw_stream():
