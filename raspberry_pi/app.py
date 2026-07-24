@@ -1,17 +1,19 @@
 # app.py - Raspberry Pi AI Surveillance Streamer
+import os
+# Tell FFmpeg: RTSP transport TCP with no-buffer low-delay flags BEFORE import cv2
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|max_delay;0|flags;low_delay|reorder_queue_size;0|buffer_size;1024"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import cv2
 import time
 import requests
 import base64
 import threading
 import argparse
-import os
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|max_delay;0|flags;low_delay"
 
 import torch
 torch.set_num_threads(1)
@@ -46,12 +48,13 @@ GLOBAL_USER_ID = None
 
 class ThreadedCamera:
     """Dedicated background thread that continuously grabs the LATEST frame from RTSP.
-    Uses grab()+retrieve() to drain the buffer every cycle ΓÇö guarantees 0ms latency."""
+    Uses grab()+retrieve() packet drain loop — guarantees 0ms latency."""
     def __init__(self, source):
         self.source = source
         self.cap = self._open(source)
         self.grabbed = False
         self.frame = None
+        self.frame_id = 0
         self.started = False
         self.read_lock = threading.Lock()
         self.thread = None
@@ -62,8 +65,8 @@ class ThreadedCamera:
         else:
             cap = cv2.VideoCapture(source)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 2000)
+        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 1000)
         return cap
 
     def start(self):
@@ -77,36 +80,37 @@ class ThreadedCamera:
     def update(self):
         while self.started:
             if not self.cap or not self.cap.isOpened():
-                time.sleep(2.0)
+                time.sleep(1.0)
                 try:
                     self.cap = self._open(self.source)
                 except Exception as e:
                     print(f"Cam reconnect error: {e}")
                 continue
 
-            # KEY FIX: grab() without sleep ΓÇö drains RTSP network buffer instantly
-            # This ensures we always hold the LATEST real-time frame, never a stale one
-            grabbed = self.cap.grab()
-            if grabbed:
+            # Drain queued RTSP packets to guarantee 0ms real-time stream
+            latest_frame = None
+            for _ in range(5):
+                if not self.cap.grab():
+                    break
                 ret, frame = self.cap.retrieve()
                 if ret and frame is not None:
-                    with self.read_lock:
-                        self.grabbed = True
-                        self.frame = frame
+                    latest_frame = frame
+
+            if latest_frame is not None:
+                if latest_frame.shape[1] != STREAM_WIDTH or latest_frame.shape[0] != STREAM_HEIGHT:
+                    latest_frame = cv2.resize(latest_frame, (STREAM_WIDTH, STREAM_HEIGHT))
+                with self.read_lock:
+                    self.grabbed = True
+                    self.frame = latest_frame
+                    self.frame_id += 1
             else:
-                print("[CAM] Frame grab failed ΓÇö reconnecting...")
-                self.cap.release()
-                time.sleep(2.0)
-                try:
-                    self.cap = self._open(self.source)
-                except Exception as e:
-                    print(f"Cam reconnect error: {e}")
+                time.sleep(0.005)
 
     def read(self):
         with self.read_lock:
             if self.frame is None:
-                return False, None
-            return self.grabbed, self.frame.copy()
+                return False, None, 0
+            return self.grabbed, self.frame.copy(), self.frame_id
 
     def isOpened(self):
         return self.cap.isOpened() if self.cap else False
@@ -525,7 +529,7 @@ def detect_objects():
     """30 FPS camera streaming thread.
     Reads fresh frames, draws zone overlays + cached YOLO boxes, publishes to output_frame.
     YOLO inference runs in a separate thread (yolo_worker) and NEVER blocks this loop."""
-    global output_frame, raw_frame
+    global output_frame, raw_frame, latest_encoded_jpeg, frame_sequence, jpeg_lock
 
     while camera is None or not camera.isOpened():
         time.sleep(0.5)
@@ -533,21 +537,24 @@ def detect_objects():
     # Start async YOLO worker
     threading.Thread(target=yolo_worker, daemon=True).start()
 
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 40]
+    last_processed_frame_id = -1
+
     while True:
-        success, frame = camera.read()
-        if not success or frame is None:
-            time.sleep(0.033)
+        success, frame, f_id = camera.read()
+        if not success or frame is None or f_id <= last_processed_frame_id:
+            time.sleep(0.003)
             continue
 
-        frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
+        last_processed_frame_id = f_id
         h, w = frame.shape[:2]
 
         # Share raw frame with YOLO worker (non-blocking)
         with _latest_raw_lock:
             global _latest_raw_frame
-            _latest_raw_frame = frame.copy()
+            _latest_raw_frame = frame
         with raw_lock:
-            raw_frame = frame.copy()
+            raw_frame = frame
 
         # Draw zone overlays
         with zone_lock:
