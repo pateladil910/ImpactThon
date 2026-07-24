@@ -88,7 +88,12 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
-            ret, frame = self.cap.read()
+            # Drain queued RTSP buffer packets to guarantee zero accumulation
+            for _ in range(5):
+                if not self.cap.grab():
+                    break
+
+            ret, frame = self.cap.retrieve()
             if ret and frame is not None:
                 _fail_count = 0
                 with self.read_lock:
