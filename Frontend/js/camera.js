@@ -6,7 +6,7 @@ const SYSTEM_ACTION = document.querySelector(".box.red .box-value");
 
 const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
   ? "http://localhost:5000"
-  : "https://impactthon-wjut.onrender.com";
+  : "https://codevortex.in";
 
 async function fetchAIStatus() {
   try {

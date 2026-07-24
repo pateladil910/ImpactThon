@@ -1,6 +1,6 @@
 const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
   ? "http://localhost:5000"
-  : "https://impactthon-wjut.onrender.com";
+  : "https://codevortex.in";
 
 const AI_SERVICE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
   ? "http://localhost:10000"

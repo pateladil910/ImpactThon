@@ -44,7 +44,7 @@ if (typeof window.__authScriptLoaded === 'undefined') {
   }
 })();
 
-// const API_BASE_URL = "https://impactthon-wjut.onrender.com";
+// const API_BASE_URL = "https://codevortex.in";
 
 // document.addEventListener('DOMContentLoaded', () => {
 //   const session = localStorage.getItem('userToken'); // or whatever key you use
@@ -144,7 +144,7 @@ if (typeof window.__authScriptLoaded === 'undefined') {
 
 
 
-/*const API_BASE_URL = "https://impactthon-wjut.onrender.com";
+/*const API_BASE_URL = "https://codevortex.in";
 
 document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
@@ -255,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-if(typeof window.API_BASE_URL==='undefined'){window.API_BASE_URL=(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") ? "http://localhost:5000" : "https://impactthon-wjut.onrender.com";}
+if(typeof window.API_BASE_URL==='undefined'){window.API_BASE_URL=(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") ? "http://localhost:5000" : "https://codevortex.in";}
 var API_BASE_URL = window.API_BASE_URL;
 
 // ---------------- LOGIN ----------------
@@ -380,7 +380,7 @@ function logout() {
   fetch(
     ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
       ? "http://localhost:5000"
-      : "https://impactthon-wjut.onrender.com") + "/api/auth/logout",
+      : "https://codevortex.in") + "/api/auth/logout",
     { method: "POST", credentials: "include" }
   ).catch(function() {});
 }
