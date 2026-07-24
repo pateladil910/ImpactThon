@@ -1,7 +1,7 @@
 # app.py - Raspberry Pi AI Surveillance Streamer
 import os
-# Tell FFmpeg: RTSP transport UDP with no-buffer low-delay flags BEFORE import cv2
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp|fflags;nobuffer|flags;low_delay|max_delay;0|reorder_queue_size;0|buffer_size;1024"
+# Tell FFmpeg: RTSP transport TCP with no-buffer low-delay flags BEFORE import cv2
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;0|reorder_queue_size;0|buffer_size;1024"
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -64,8 +64,8 @@ class ThreadedCamera:
         else:
             cap = cv2.VideoCapture(source)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 2000)
+        cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 1000)
         return cap
 
     def start(self):
@@ -604,9 +604,6 @@ def detect_objects():
             with jpeg_lock:
                 latest_encoded_jpeg = bytes(buf)
                 frame_sequence += 1
-
-        # Smooth 24 FPS cinematic frame pacing (1 frame every 41ms)
-        time.sleep(0.041)
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
