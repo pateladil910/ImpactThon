@@ -1,7 +1,7 @@
 # app.py - Raspberry Pi AI Surveillance Streamer
 import os
-# Tell FFmpeg: RTSP transport TCP with no-buffer low-delay flags BEFORE import cv2
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;0|reorder_queue_size;0|buffer_size;1024"
+# Tell FFmpeg: RTSP transport UDP with no-buffer low-delay flags BEFORE import cv2
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp|fflags;nobuffer|flags;low_delay|max_delay;0|reorder_queue_size;0|buffer_size;1024"
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -91,12 +91,7 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
-            # Drain queued RTSP buffer packets to guarantee zero 5-second accumulation
-            for _ in range(5):
-                if not self.cap.grab():
-                    break
-
-            ret, frame = self.cap.retrieve()
+            ret, frame = self.cap.read()
             if ret and frame is not None:
                 _fail_count = 0
                 with self.read_lock:
@@ -270,10 +265,16 @@ def construct_camera_source(url, username=None, password=None):
     if isinstance(url, str) and url.isdigit():
         return int(url)
 
-    # Auto-switch Hikvision/Dahua 1080p Main Stream (Channels/101) to Sub-Stream (Channels/102) for 0ms CPU latency
+    # Auto-switch 1080p/4K Main Streams to lightweight Sub-Streams for 0ms CPU latency
     if "Channels/101" in url:
         url = url.replace("Channels/101", "Channels/102")
-        print("⚡ Auto-switched camera to Sub-Stream (Channels/102) for 60 FPS zero-latency web streaming!")
+        print("⚡ Auto-switched Hikvision camera to Sub-Stream (Channels/102) for 0ms latency!")
+    elif "subtype=0" in url:
+        url = url.replace("subtype=0", "subtype=1")
+        print("⚡ Auto-switched Dahua camera to Sub-Stream (subtype=1) for 0ms latency!")
+    elif "/main" in url.lower():
+        url = url.replace("/main", "/sub").replace("/MAIN", "/sub")
+        print("⚡ Auto-switched camera to Sub-Stream (/sub) for 0ms latency!")
 
     from urllib.parse import quote, unquote
         
