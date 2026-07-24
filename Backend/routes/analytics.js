@@ -122,10 +122,42 @@ router.get("/data", optionalAuthMiddleware, async (req, res) => {
         let startDate, endDate;
         const offset = 5.5 * 60 * 60 * 1000;
 
+        function parseDateQuery(dateStr) {
+            if (!dateStr) return null;
+            if (dateStr.includes("-")) {
+                const parts = dateStr.split("-").map(Number);
+                if (parts[0] > 1000) {
+                    // YYYY-MM-DD
+                    return { year: parts[0], month: parts[1] - 1, day: parts[2] };
+                } else if (parts[2] > 1000) {
+                    // DD-MM-YYYY
+                    return { year: parts[2], month: parts[1] - 1, day: parts[0] };
+                }
+            }
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return null;
+            return { year: d.getUTCFullYear(), month: d.getUTCMonth(), day: d.getUTCDate() };
+        }
+
         if (type === "day") {
-            const utcMidnight = new Date(date);
-            startDate = new Date(utcMidnight.getTime() - offset);
+            const parsed = parseDateQuery(date);
+            if (!parsed) {
+                return res.status(400).json({ success: false, message: "Invalid date format" });
+            }
+
+            const dayStartUTC = new Date(Date.UTC(parsed.year, parsed.month, parsed.day));
+            startDate = new Date(dayStartUTC.getTime() - offset);
             endDate = new Date(startDate.getTime() + (24 * 60 * 60 * 1000) - 1);
+
+            // Future Date Protection (relative to IST today)
+            const now = new Date();
+            const istNow = new Date(now.getTime() + offset);
+            const todayEndIST = new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate() + 1) - offset - 1);
+
+            if (startDate.getTime() > todayEndIST.getTime()) {
+                const labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+                return res.json({ success: true, labels, data: new Array(24).fill(0) });
+            }
 
             const data = await Detection.aggregate([
                 {
@@ -146,7 +178,9 @@ router.get("/data", optionalAuthMiddleware, async (req, res) => {
             // Fill in missing hours
             const hourlyData = new Array(24).fill(0);
             data.forEach(item => {
-                hourlyData[item._id] = item.count;
+                if (item._id >= 0 && item._id < 24) {
+                    hourlyData[item._id] = item.count;
+                }
             });
 
             return res.json({ success: true, labels: Array.from({ length: 24 }, (_, i) => `${i}:00`), data: hourlyData });

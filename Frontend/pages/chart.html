@@ -851,7 +851,9 @@
       let dateValue = "";
 
       if (type === "day") {
-        dateValue = document.getElementById("dateFilter").value;
+        const raw = document.getElementById("dateFilter").value;
+        const d = parseInputDate(raw);
+        dateValue = formatDateInput(d);
       } else {
         dateValue = document.getElementById("monthFilter").value;
       }
