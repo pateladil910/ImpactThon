@@ -1,7 +1,9 @@
 import os
-os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp'
+# UDP transport: lower latency than TCP on local network (no retransmit overhead)
+os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;udp|buffer_size;0|max_delay;0'
 import cv2
-cv2.setNumThreads(1)
+# Do NOT limit threads — let OpenCV use all Pi cores for decode/encode/YOLO
+# cv2.setNumThreads(1)  <- removed: was capping all operations to 1 core
 import numpy as np
 from ultralytics import YOLO
 import threading
@@ -228,18 +230,32 @@ class ThreadedCamera:
             
             grabbed, frame = self.cap.read()
             if grabbed:
+                # ── Buffer drain: discard stale frames so we always show NEWEST ──
+                # RTSP buffers multiple frames; without draining, display is always
+                # showing frames that are 0.5-2 seconds old
+                for _ in range(4):  # drain up to 4 stale frames
+                    ok = self.cap.grab()
+                    if not ok:
+                        break
+                # Retrieve the newest frame after draining
+                ok2, fresh = self.cap.retrieve()
+                if ok2 and fresh is not None:
+                    frame = fresh
+
+                # Resize to display resolution immediately — avoids encoding HD JPEG
+                display = cv2.resize(frame, (640, 480)) if frame.shape[:2] != (480, 640) else frame
+
                 with self.read_lock:
-                    self.grabbed = grabbed
+                    self.grabbed = True
                     self.raw_frame = frame
                 # Always keep display_frame fresh at full camera FPS
-                # Inference thread overlays its drawings on top asynchronously
                 with self.display_lock:
-                    self.display_frame = frame.copy()
+                    self.display_frame = display
                 if not hasattr(self, '_capture_count'):
                     self._capture_count = 0
                 self._capture_count += 1
                 if self._capture_count <= 50 or self._capture_count % 100 == 0:
-                    print(f"[DEBUG] [CAM_THREAD] id={id(self)} | update_capture() read #{self._capture_count} frames | shape={frame.shape}")
+                    print(f"[DEBUG] [CAM_THREAD] id={id(self)} | frame #{self._capture_count} | shape={frame.shape}")
             else:
                 print(f"[CAM_WATCHDOG] Frame read failed for {self.source}. Reconnecting...")
                 with self.read_lock:
