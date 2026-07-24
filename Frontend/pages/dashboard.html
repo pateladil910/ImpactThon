@@ -1659,8 +1659,6 @@
     }
 
     async function updateStatus() {
-      if (!activeCamera) return;
-
       // Always poll Pi Edge Agent (/api/stats) for live detection telemetry
       const edgeUrl = getResolvedEdgeUrl();
       let STATUS_URL = `${edgeUrl}/api/stats`;
@@ -1722,7 +1720,7 @@
             document.body.classList.remove("warning-mode");
             
             playWarningTone();
-            addIncidentLog(`Hazard breach detected in machine zone!`, "CRITICAL", activeCamera.cameraName);
+            addIncidentLog(`Hazard breach detected in machine zone!`, "CRITICAL", activeCamera ? activeCamera.cameraName : "Camera 01");
           } else if (currentSafetyState === "WARNING") {
             safetyStatus.innerText = "WARNING";
             safetyDesc.innerText = "Operator approaching machine zone!";
@@ -1733,7 +1731,7 @@
             document.body.classList.add("warning-mode");
             document.body.classList.remove("danger-mode");
             
-            addIncidentLog(`Operator entered warning zone!`, "WARNING", activeCamera.cameraName);
+            addIncidentLog(`Operator entered warning zone!`, "WARNING", activeCamera ? activeCamera.cameraName : "Camera 01");
           } else {
             safetyStatus.innerText = "SAFE";
             safetyDesc.innerText = "Operator clear of hazards";
