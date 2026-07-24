@@ -94,6 +94,8 @@ class ThreadedCamera:
             ret, frame = self.cap.read()
             if ret and frame is not None:
                 _fail_count = 0
+                if frame.shape[1] != STREAM_WIDTH or frame.shape[0] != STREAM_HEIGHT:
+                    frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
                 with self.read_lock:
                     self.grabbed = True
                     self.frame = frame
@@ -424,10 +426,11 @@ def yolo_worker():
     current_safety_state = "SAFE"
 
     while True:
+        # Wait for a fresh frame
         frame_to_infer = None
         with _latest_raw_lock:
             if _latest_raw_frame is not None:
-                frame_to_infer = _latest_raw_frame.copy()
+                frame_to_infer = _latest_raw_frame
 
         if frame_to_infer is None:
             time.sleep(0.02)
@@ -563,15 +566,14 @@ def detect_objects():
             time.sleep(0.005)
             continue
 
-        frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
         h, w = frame.shape[:2]
 
         # Share raw frame with YOLO worker (non-blocking)
         with _latest_raw_lock:
             global _latest_raw_frame
-            _latest_raw_frame = frame.copy()
+            _latest_raw_frame = frame
         with raw_lock:
-            raw_frame = frame.copy()
+            raw_frame = frame
 
         # Draw zone overlays
         with zone_lock:
@@ -665,7 +667,7 @@ def generate_video_stream():
                 current_seq = frame_sequence
 
         if current_jpeg is None or current_seq <= last_sent_seq:
-            time.sleep(0.005)
+            time.sleep(0.002)
             continue
 
         last_sent_seq = current_seq
@@ -677,7 +679,6 @@ def generate_video_stream():
                b'Pragma: no-cache\r\n'
                b'Expires: 0\r\n'
                b'\r\n' + current_jpeg + b'\r\n')
-        time.sleep(0.005)
 
 
 def generate_raw_stream():
