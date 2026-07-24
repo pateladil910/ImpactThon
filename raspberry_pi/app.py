@@ -919,13 +919,39 @@ def test_camera():
 
 @app.route("/video_feed")
 def video_feed():
-    """YOLO-annotated MJPEG stream for dashboard"""
-    return Response(generate_video_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    """YOLO-annotated MJPEG stream — zero Cloudflare CDN buffer lag"""
+    resp = Response(generate_video_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
+@app.route("/snapshot")
+def snapshot():
+    """Single JPEG snapshot — bypasses 100% of Cloudflare CDN buffer queues for zero-latency polling."""
+    global latest_encoded_jpeg, jpeg_lock
+    with jpeg_lock:
+        jpeg_data = latest_encoded_jpeg
+    if jpeg_data is None:
+        return Response(b'', status=503)
+    resp = Response(jpeg_data, mimetype='image/jpeg')
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 @app.route("/raw_feed")
 def raw_feed():
     """Zero-delay raw MJPEG stream for calibration page"""
-    return Response(generate_raw_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    resp = Response(generate_raw_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 @app.route("/status", methods=["GET", "OPTIONS"])
 @app.route("/api/stats", methods=["GET", "OPTIONS"])

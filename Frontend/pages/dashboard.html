@@ -1282,7 +1282,7 @@
                 <button onclick="event.stopPropagation(); window.maximizeSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: #fff; font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">FULL</button>
               </div>
 
-              <img src="${streamUrl}" alt="${cam.cameraName}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='../images/offline_placeholder.jpg'; this.style.display='none'; this.nextElementSibling.style.display='block';" />
+              <img src="${streamUrl}" alt="${cam.cameraName}" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" title="Click feed to instantly resync to real-time" onclick="this.src='${streamUrl}&_cb='+Date.now();" onerror="this.src='../images/offline_placeholder.jpg'; this.style.display='none'; this.nextElementSibling.style.display='block';" />
               <div style="display: none; text-align: center; color: var(--text-muted); pointer-events: none;">
                 <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; color: var(--danger-red);">VIDEO RECOVERY QUEUE</div>
                 <div style="font-size: 8px; margin-top: 4px; font-family: 'Fira Code', monospace; opacity: 0.6;">RECONNECTING SENSOR FEED...</div>
