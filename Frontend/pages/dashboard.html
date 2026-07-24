@@ -1705,10 +1705,9 @@
         // UPGRADED STATE UPDATER WITH BODY OVERLAYS & TRANSITIONS
         if (currentSafetyState !== lastSafety) {
           if (currentSafetyState === "DANGER") {
-            // Increment total danger intrusions count instantly on DANGER breach entry
+            // Increment total danger intrusions count ONCE on new DANGER breach entry
             totalDangerIntrusions += 1;
             updateHumanCountUI();
-            fetchIntrusionCountFromDB();
 
             safetyStatus.innerText = "DANGER";
             safetyDesc.innerText = "Operator safety boundary breached!";
@@ -1742,23 +1741,39 @@
             document.body.classList.remove("danger-mode", "warning-mode");
           }
           lastSafety = currentSafetyState;
+        } else {
+          // Guarantee UI text remains synced even on repeated polling
+          if (currentSafetyState === "DANGER") {
+            safetyStatus.innerText = "DANGER";
+            safetyDesc.innerText = "Operator safety boundary breached!";
+            safetyBox.classList.add("danger");
+            safetyBox.classList.remove("safe", "warning");
+          } else if (currentSafetyState === "WARNING") {
+            safetyStatus.innerText = "WARNING";
+            safetyDesc.innerText = "Operator approaching machine zone!";
+            safetyBox.classList.add("warning");
+            safetyBox.classList.remove("safe", "danger");
+          } else {
+            safetyStatus.innerText = "SAFE";
+            safetyDesc.innerText = "Operator clear of hazards";
+            safetyBox.classList.add("safe");
+            safetyBox.classList.remove("danger", "warning");
+          }
         }
 
         const action = currentSafetyState === "DANGER" || stopTriggered ? "STOP" : "RUN";
-        if (action !== lastAction) {
-          if (action === "STOP") {
-            actionStatus.innerText = "STOP";
-            actionDesc.innerText = "Emergency PLC interlock trip activated";
-            actionBox.classList.add("danger");
-            actionBox.classList.remove("safe");
-          } else {
-            actionStatus.innerText = "RUN";
-            actionDesc.innerText = "System running normally";
-            actionBox.classList.add("safe");
-            actionBox.classList.remove("danger");
-          }
-          lastAction = action;
+        if (action === "STOP") {
+          actionStatus.innerText = "STOP";
+          actionDesc.innerText = "Emergency PLC interlock trip activated";
+          actionBox.classList.add("danger");
+          actionBox.classList.remove("safe");
+        } else {
+          actionStatus.innerText = "RUN";
+          actionDesc.innerText = "System running normally";
+          actionBox.classList.add("safe");
+          actionBox.classList.remove("danger");
         }
+        lastAction = action;
       } catch (err) {
         console.warn("Error updating status:", err);
       }

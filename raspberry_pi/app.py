@@ -133,7 +133,9 @@ raw_frame = None      # Raw frame for zero-delay stream
 lock = threading.Lock()
 raw_lock = threading.Lock()
 last_detection_time = 0
-DETECTION_COOLDOWN = 5  # seconds between sending alerts to backend
+last_danger_time = 0
+last_warning_time = 0
+DETECTION_COOLDOWN = 15  # 15 seconds between alert emails to user
 STREAM_WIDTH = 640      # Stream resolution width
 STREAM_HEIGHT = 360     # Stream resolution height
 
@@ -454,9 +456,11 @@ def yolo_worker():
             boxes = []
             person_detected = False
             highest_conf = 0.0
-            zone_status = "SAFE"
-
+            
+            frame_has_danger = False
+            frame_has_warning = False
             person_count = 0
+
             for r in results:
                 for box in r.boxes:
                     cls_idx = int(box.cls[0])
@@ -473,18 +477,39 @@ def yolo_worker():
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         in_danger  = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
                         in_warning = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
+                        
                         if in_danger:
-                            color, label, zone_status = (0, 0, 255), "DANGER ZONE BREACH", "DANGER"
-                        elif in_warning and zone_status != "DANGER":
-                            color, label, zone_status = (0, 255, 255), "WARNING ZONE", "WARNING"
+                            frame_has_danger = True
+                            color, label = (0, 0, 255), "DANGER ZONE BREACH"
+                        elif in_warning:
+                            frame_has_warning = True
+                            color, label = (0, 255, 255), "WARNING ZONE"
                         else:
                             color, label = (0, 255, 0), "Safe Zone"
+                            
                         boxes.append({'name': 'Person', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
                                       'color': color, 'label': label, 'conf': conf})
                     elif is_forklift:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         boxes.append({'name': 'Forklift', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
                                       'color': (255, 0, 0), 'label': 'Forklift', 'conf': conf})
+
+            current_time = time.time()
+            global last_danger_time, last_warning_time, last_detection_time
+
+            # Top priority: DANGER > WARNING > SAFE (with 2.5s hysteresis hold to prevent flickering)
+            if frame_has_danger:
+                zone_status = "DANGER"
+                last_danger_time = current_time
+            elif (current_time - last_danger_time < 2.5):
+                zone_status = "DANGER"
+            elif frame_has_warning:
+                zone_status = "WARNING"
+                last_warning_time = current_time
+            elif (current_time - last_warning_time < 1.5):
+                zone_status = "WARNING"
+            else:
+                zone_status = "SAFE"
 
             with _boxes_lock:
                 _cached_boxes = boxes
@@ -495,7 +520,7 @@ def yolo_worker():
                 current_stats["confidence"] = round(highest_conf * 100, 1)
                 current_stats["safety"] = zone_status
                 current_stats["zone"] = zone_status
-                current_stats["action"] = "DANGER" if zone_status == "DANGER" else "RUN"
+                current_stats["action"] = "STOP" if zone_status == "DANGER" else "RUN"
 
             # --- Alert firing logic ---
             current_time = time.time()
