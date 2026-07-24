@@ -203,11 +203,6 @@ class ThreadedCamera:
                 cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 3000)
             return cap
 
-        # ── Initial open ──────────────────────────────────────────────────────
-        if self.cap is None:
-            self.cap = _open_cap(self.source)
-            print(f"[CAM_THREAD] Opened: {self.cap.isOpened() if self.cap else False}")
-
         while self.started:
             if not self.cap or not self.cap.isOpened():
                 print(f"[CAM_THREAD] Reconnecting to {self.source}...")
@@ -218,17 +213,21 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
-            # 🚀 BUFFER DRAIN: Flush up to 15 queued frames to discard any stale video packets
-            grabbed_any = False
-            for _ in range(15):
-                if not self.cap.grab():
-                    break
-                grabbed_any = True
+            ret, frame = self.cap.read()
+            if ret and frame is not None:
+                _fail_count = 0
+                h, w = frame.shape[:2]
+                display = cv2.resize(frame, (640, 480)) if (h, w) != (480, 640) else frame
 
-            if not grabbed_any:
+                with self.read_lock:
+                    self.grabbed = True
+                    self.raw_frame = frame
+                with self.display_lock:
+                    self.display_frame = display
+            else:
                 _fail_count += 1
                 if _fail_count >= MAX_FAILS:
-                    print(f"[CAM_WATCHDOG] {MAX_FAILS} grab failures. Reconnecting...")
+                    print(f"[CAM_WATCHDOG] {MAX_FAILS} read failures. Reconnecting...")
                     with self.read_lock:
                         self.grabbed = False
                     if self.cap:
@@ -236,29 +235,6 @@ class ThreadedCamera:
                     self.cap = None
                     _fail_count = 0
                 time.sleep(0.005)
-                continue
-
-            _fail_count = 0
-
-            # Decode ONLY the newest frame retrieved from the drained buffer
-            ok2, frame = self.cap.retrieve()
-            if not ok2 or frame is None:
-                continue
-
-            # Resize to 640×480 immediately — avoid encoding full HD JPEG
-            h, w = frame.shape[:2]
-            if (h, w) != (480, 640):
-                display = cv2.resize(frame, (640, 480))
-            else:
-                display = frame
-
-            with self.read_lock:
-                self.grabbed = True
-                self.raw_frame = frame
-            with self.display_lock:
-                self.display_frame = display
-
-            if not hasattr(self, '_capture_count'):
                 self._capture_count = 0
             self._capture_count += 1
             if self._capture_count <= 10 or self._capture_count % 150 == 0:

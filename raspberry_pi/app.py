@@ -74,7 +74,7 @@ class ThreadedCamera:
         return self
 
     def update(self):
-        """Zero-latency capture loop: continuously flushes stale RTSP buffer packets."""
+        """Zero-latency capture loop: continuously grabs fresh RTSP frames at full camera rate."""
         _fail_count = 0
         MAX_FAILS = 30
 
@@ -88,17 +88,16 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
-            # 🚀 BUFFER DRAIN: Flush up to 15 queued frames to discard any stale video packets
-            grabbed_any = False
-            for _ in range(15):
-                if not self.cap.grab():
-                    break
-                grabbed_any = True
-
-            if not grabbed_any:
+            ret, frame = self.cap.read()
+            if ret and frame is not None:
+                _fail_count = 0
+                with self.read_lock:
+                    self.grabbed = True
+                    self.frame = frame
+            else:
                 _fail_count += 1
                 if _fail_count >= MAX_FAILS:
-                    print("[CAM] Consecutive grab failures — reconnecting...")
+                    print("[CAM] Consecutive read failures — reconnecting...")
                     if self.cap:
                         self.cap.release()
                     time.sleep(1.5)
@@ -108,16 +107,6 @@ class ThreadedCamera:
                         print(f"Cam reconnect error: {e}")
                     _fail_count = 0
                 time.sleep(0.005)
-                continue
-
-            _fail_count = 0
-
-            # Decode ONLY the newest frame retrieved from the drained buffer
-            ret, frame = self.cap.retrieve()
-            if ret and frame is not None:
-                with self.read_lock:
-                    self.grabbed = True
-                    self.frame = frame
 
     def read(self):
         with self.read_lock:
