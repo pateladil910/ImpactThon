@@ -186,7 +186,10 @@ router.get("/data", optionalAuthMiddleware, async (req, res) => {
             // Shift to IST start (-5:30) -> This is end of current month
             endDate = new Date(nextMonthFirstDayUTC.getTime() - offset - 1);
 
-            // Aggregate by HOUR (0-23) for the entire MONTH in IST
+            // Calculate total days in this specific month (e.g. 28, 30, or 31)
+            const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+            // Aggregate by DAY OF MONTH (1 to daysInMonth) in IST
             const data = await Detection.aggregate([
                 {
                     $match: {
@@ -197,23 +200,23 @@ router.get("/data", optionalAuthMiddleware, async (req, res) => {
                 },
                 {
                     $group: {
-                        _id: { $hour: { date: "$timestamp", timezone: "+05:30" } },
+                        _id: { $dayOfMonth: { date: "$timestamp", timezone: "+05:30" } },
                         count: { $sum: 1 }
                     }
                 }
             ]);
 
-            // Fill in missing hours (0-23)
-            const hourlyData = new Array(24).fill(0);
+            // Fill in missing days (1 to daysInMonth)
+            const dailyData = new Array(daysInMonth).fill(0);
             data.forEach(item => {
-                if (item._id >= 0 && item._id < 24) {
-                    hourlyData[item._id] = item.count;
+                if (item._id >= 1 && item._id <= daysInMonth) {
+                    dailyData[item._id - 1] = item.count;
                 }
             });
 
-            const labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+            const labels = Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`);
 
-            return res.json({ success: true, labels, data: hourlyData });
+            return res.json({ success: true, labels, data: dailyData });
         }
 
         res.status(400).json({ success: false, message: "Invalid filter type" });
@@ -418,29 +421,36 @@ router.get("/count/today", optionalAuthMiddleware, async (req, res) => {
 });
 
 // GET /api/analytics/ai-insights — AI analysis of detection patterns
-router.get("/ai-insights", authMiddleware, async (req, res) => {
+router.get("/ai-insights", optionalAuthMiddleware, async (req, res) => {
     try {
         const mongoose = require("mongoose");
-        const userObjId = mongoose.Types.ObjectId.isValid(req.user.id)
-            ? new mongoose.Types.ObjectId(req.user.id) : null;
+        const userIdVal = req.user ? req.user.id : null;
+        const userObjId = (userIdVal && mongoose.Types.ObjectId.isValid(userIdVal))
+            ? new mongoose.Types.ObjectId(userIdVal) : null;
 
-        const userMatch = [
-            { userId: req.user.id },
+        const userMatch = (userIdVal || userObjId) ? [
+            ...(userIdVal ? [{ userId: userIdVal }] : []),
             ...(userObjId ? [{ userId: userObjId }] : []),
             { userId: null }, { userId: { $exists: false } }
+        ] : [
+            { status: { $exists: true } }
         ];
 
-        // Last 30 days of DANGER data
+        // Last 30 days of data
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
         const records = await Detection.find({
-            status: "DANGER",
+            status: { $exists: true },
             timestamp: { $gte: thirtyDaysAgo },
             $or: userMatch
         }).lean();
 
         if (records.length === 0) {
-            return res.json({ success: true, insights: [], summary: "No detection data in the last 30 days. System is running clean." });
+            return res.json({
+                success: true,
+                insights: [],
+                summary: "System active: No hazard breaches recorded in the last 30 days. Facility safety status is optimal."
+            });
         }
 
         // Compute hourly distribution (IST)
@@ -450,7 +460,9 @@ router.get("/ai-insights", authMiddleware, async (req, res) => {
         const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
         records.forEach(r => {
-            const ist = new Date(r.timestamp.getTime() + offset);
+            let tDate = r.timestamp instanceof Date ? r.timestamp : new Date(r.timestamp || r.createdAt || Date.now());
+            if (isNaN(tDate.getTime())) tDate = new Date();
+            const ist = new Date(tDate.getTime() + offset);
             hourBuckets[ist.getUTCHours()]++;
             dayBuckets[dayNames[ist.getUTCDay()]]++;
         });
@@ -459,11 +471,13 @@ router.get("/ai-insights", authMiddleware, async (req, res) => {
         const peakDay = Object.entries(dayBuckets).sort((a,b) => b[1]-a[1])[0];
         const safeHour = hourBuckets.indexOf(Math.min(...hourBuckets.filter(v => v > 0)));
 
-        // Today vs yesterday
         const todayStart = new Date(Date.now() - (Date.now() % (24*60*60*1000)));
         const yestStart  = new Date(todayStart.getTime() - 24*60*60*1000);
-        const todayCount = records.filter(r => r.timestamp >= todayStart).length;
-        const yestCount  = records.filter(r => r.timestamp >= yestStart && r.timestamp < todayStart).length;
+        const todayCount = records.filter(r => new Date(r.timestamp || r.createdAt || 0) >= todayStart).length;
+        const yestCount  = records.filter(r => {
+            const d = new Date(r.timestamp || r.createdAt || 0);
+            return d >= yestStart && d < todayStart;
+        }).length;
         const trend = todayCount > yestCount ? "📈 Higher than yesterday" : todayCount < yestCount ? "📉 Lower than yesterday" : "➡️ Same as yesterday";
 
         const insights = [

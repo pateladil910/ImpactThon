@@ -873,12 +873,11 @@
   (function() {
     async function loadChartAIInsights() {
       const token = localStorage.getItem("token") || "";
-      if (!token) return;
       const API_BASE_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
         ? "http://localhost:5000" : "https://codevortex.in";
       try {
         const res = await fetch(`${API_BASE_URL}/api/analytics/ai-insights`, {
-          headers: { "Authorization": `Bearer ${token}` }
+          headers: token ? { "Authorization": `Bearer ${token}` } : {}
         });
         if (!res.ok) return;
         const data = await res.json();
