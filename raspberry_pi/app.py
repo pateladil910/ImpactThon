@@ -10,6 +10,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import cv2
 import time
+import datetime
 import requests
 import base64
 import threading
@@ -555,6 +556,12 @@ def detect_objects():
             _latest_raw_frame = frame
         with raw_lock:
             raw_frame = frame
+
+        # Draw live date & time timestamp HUD (overrides outdated 1970 camera OSD)
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d  %H:%M:%S")
+        cv2.rectangle(frame, (4, 4), (210, 26), (2, 6, 23), -1)
+        cv2.rectangle(frame, (4, 4), (210, 26), (6, 182, 212), 1)
+        cv2.putText(frame, now_str, (10, 19), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
 
         # Draw zone overlays
         with zone_lock:
