@@ -1281,13 +1281,59 @@
                 <button onclick="event.stopPropagation(); window.togglePinSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: var(--primary-neon); font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">PIN</button>
                 <button onclick="event.stopPropagation(); window.maximizeSlot(${i})" style="background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 2px 5px; color: #fff; font-size: 8px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif;">FULL</button>
               </div>
-              
-              <img src="${streamUrl}" alt="${cam.cameraName}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='../images/offline_placeholder.jpg'; this.style.display='none'; this.nextElementSibling.style.display='block';" />
-              <div style="display: none; text-align: center; color: var(--text-muted); pointer-events: none;">
-                <div style="font-size: 14px; font-weight: bold; font-family: 'Space Grotesk', sans-serif; color: var(--danger-red);">VIDEO RECOVERY QUEUE</div>
-                <div style="font-size: 8px; margin-top: 4px; font-family: 'Fira Code', monospace; opacity: 0.6;">RECONNECTING SENSOR FEED...</div>
+
+              <!-- Canvas-based snapshot poller: eliminates ALL browser MJPEG buffering.
+                   fetch() requests one JPEG at a time with no-cache, draws it, then immediately
+                   fetches the next. Browser never accumulates a buffer. Always shows newest frame. -->
+              <canvas id="cam-canvas-${i}" style="width:100%;height:100%;object-fit:cover;display:block;"></canvas>
+              <div id="cam-offline-${i}" style="display:none;text-align:center;color:var(--text-muted);pointer-events:none;">
+                <div style="font-size:14px;font-weight:bold;font-family:'Space Grotesk',sans-serif;color:var(--danger-red);">VIDEO RECOVERY QUEUE</div>
+                <div style="font-size:8px;margin-top:4px;font-family:'Fira Code',monospace;opacity:0.6;">RECONNECTING SENSOR FEED...</div>
               </div>
             `;
+            // Start the zero-buffer canvas snapshot loop for this slot
+            (function startCanvasStream(slotIndex, snapshotBaseUrl) {
+              const canvas  = document.getElementById('cam-canvas-' + slotIndex);
+              const offline = document.getElementById('cam-offline-' + slotIndex);
+              if (!canvas) return;
+              const ctx = canvas.getContext('2d');
+              let active = true;
+              let failCount = 0;
+
+              async function fetchFrame() {
+                if (!active) return;
+                try {
+                  // Add timestamp to bust every cache layer (browser, CDN, proxy)
+                  const url = snapshotBaseUrl + '/snapshot?t=' + Date.now();
+                  const res = await fetch(url, { cache: 'no-store' });
+                  if (!res.ok) throw new Error('HTTP ' + res.status);
+                  const blob = await res.blob();
+                  const bmp  = await createImageBitmap(blob);
+                  canvas.width  = bmp.width;
+                  canvas.height = bmp.height;
+                  ctx.drawImage(bmp, 0, 0);
+                  bmp.close();
+                  canvas.style.display = 'block';
+                  if (offline) offline.style.display = 'none';
+                  failCount = 0;
+                } catch (e) {
+                  failCount++;
+                  if (failCount > 5 && offline) {
+                    canvas.style.display = 'none';
+                    offline.style.display = 'block';
+                  }
+                }
+                // Immediately request next frame — no setTimeout delay
+                if (active) requestAnimationFrame(fetchFrame);
+              }
+
+              fetchFrame();
+
+              // Stop loop if slot gets replaced
+              const obs = new MutationObserver(() => { active = false; obs.disconnect(); });
+              obs.observe(canvas.parentElement || document.body, { childList: true });
+            })(${i}, testUrl);
+
           }
           
           /* ORIGINAL PIN SLOT CLASS ASSIGNER - PRESERVED FOR EASY RESTORE

@@ -524,7 +524,7 @@ def yolo_worker():
         except Exception as e:
             print(f"[YOLO] Error: {e}")
 
-        time.sleep(0.1)   # ~10 Hz inference — gives CPU plenty of room
+        time.sleep(0.05)   # ~20 Hz inference — faster detection response
 
 
 def detect_objects():
@@ -626,35 +626,37 @@ def send_warning_to_backend(confidence, breach_type="WARNING_PROXIMITY", severit
         print(f"❌ Failed to send warning ping to cloud: {e}")
 
 def generate_video_stream():
-    """Ultra low-latency MJPEG stream for dashboard"""
+    """Ultra low-latency MJPEG stream — skips duplicate frames, disables buffering."""
     global output_frame, lock
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 45]
-    
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 50]
+    last_frame_id = id(None)
+
     while True:
         frame_to_send = None
         with lock:
             if output_frame is not None:
-                frame_to_send = output_frame
-                
+                # Only grab if frame actually changed — avoids sending duplicate JPEG
+                if id(output_frame) != last_frame_id:
+                    frame_to_send = output_frame.copy()
+                    last_frame_id = id(output_frame)
+
         if frame_to_send is None:
-            time.sleep(0.01)
-            continue
-            
-        success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
-        if not success:
-            time.sleep(0.01)
+            time.sleep(0.005)
             continue
 
-        jpg_bytes = bytearray(encoded_image)
-                 
-        yield(b'--frame\r\n'
-              b'Content-Type: image/jpeg\r\n'
-              b'Content-Length: ' + str(len(jpg_bytes)).encode() + b'\r\n'
-              b'Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0\r\n'
-              b'Pragma: no-cache\r\n'
-              b'Expires: 0\r\n'
-              b'\r\n' + jpg_bytes + b'\r\n')
-        time.sleep(0.02)  # ~50 FPS max transmission speed
+        success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
+        if not success:
+            time.sleep(0.005)
+            continue
+
+        jpg_bytes = bytes(encoded_image)
+
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n'
+               b'Content-Length: ' + str(len(jpg_bytes)).encode() + b'\r\n'
+               b'Cache-Control: no-store, no-cache\r\n'
+               b'\r\n' + jpg_bytes + b'\r\n')
+
 
 def generate_raw_stream():
     """Zero-delay raw stream (no YOLO) for calibration/draw_zone page"""
@@ -912,13 +914,48 @@ def test_camera():
 
 @app.route("/video_feed")
 def video_feed():
-    """YOLO-annotated MJPEG stream for dashboard"""
-    return Response(generate_video_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    """YOLO-annotated MJPEG stream — all buffering disabled"""
+    resp = Response(
+        generate_video_stream(),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
+    # Disable ALL levels of buffering
+    resp.headers['X-Accel-Buffering'] = 'no'        # nginx: no buffering
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
+@app.route("/snapshot")
+def snapshot():
+    """Single JPEG snapshot — used by canvas-based frontend for zero-buffer polling."""
+    global output_frame, lock
+    with lock:
+        frame = output_frame.copy() if output_frame is not None else None
+    if frame is None:
+        return Response(b'', status=503)
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 60]
+    success, buf = cv2.imencode('.jpg', frame, encode_params)
+    if not success:
+        return Response(b'', status=503)
+    resp = Response(bytes(buf), mimetype='image/jpeg')
+    resp.headers['Cache-Control'] = 'no-store, no-cache'
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 @app.route("/raw_feed")
 def raw_feed():
-    """Zero-delay raw MJPEG stream for calibration page"""
-    return Response(generate_raw_stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    """Zero-delay raw MJPEG stream for calibration page — all buffering disabled"""
+    resp = Response(
+        generate_raw_stream(),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Cache-Control'] = 'no-store, no-cache'
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 @app.route("/status", methods=["GET", "OPTIONS"])
 @app.route("/api/stats", methods=["GET", "OPTIONS"])
