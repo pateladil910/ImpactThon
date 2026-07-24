@@ -1804,7 +1804,8 @@
         });
       });
 
-      setInterval(updateStatus, 1000);
+      // Poll Pi Edge Agent every 250ms for instant zero-latency UI updates
+      setInterval(updateStatus, 250);
       setInterval(loadInitialIntrusionCount, 3000);
 
       // Disconnect Camera Button Listener

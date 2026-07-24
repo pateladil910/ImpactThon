@@ -418,19 +418,21 @@ def _norm_to_px(zone, w, h):
 
 def yolo_worker():
     """Runs YOLO inference asynchronously on a separate thread.
-    Reads the latest raw frame, runs detection, and updates _cached_boxes.
-    NEVER touches output_frame — so it can NEVER block video streaming."""
+    Reads the latest raw frame, runs detection, and updates _cached_boxes and current_stats instantaneously."""
     global _cached_boxes, _cached_zone_status, _cached_stats, last_detection_time
 
+    danger_counter = 0
+    safe_counter = 0
+    current_safety_state = "SAFE"
+
     while True:
-        # Wait for a fresh frame
         frame_to_infer = None
         with _latest_raw_lock:
             if _latest_raw_frame is not None:
                 frame_to_infer = _latest_raw_frame.copy()
 
         if frame_to_infer is None:
-            time.sleep(0.05)
+            time.sleep(0.02)
             continue
 
         try:
@@ -442,11 +444,12 @@ def yolo_worker():
             dz_x1, dz_y1, dz_x2, dz_y2 = _norm_to_px(dz, w, h)
             wz_x1, wz_y1, wz_x2, wz_y2 = _norm_to_px(wz, w, h)
 
-            results = model(frame_to_infer, stream=True, conf=0.25, imgsz=320)
+            results = model(frame_to_infer, stream=True, conf=0.20, imgsz=320)
             boxes = []
             person_detected = False
             highest_conf = 0.0
-            zone_status = "SAFE"
+            frame_has_danger = False
+            frame_has_warning = False
 
             for r in results:
                 for box in r.boxes:
@@ -463,37 +466,58 @@ def yolo_worker():
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         in_danger  = (x1 < dz_x2 and x2 > dz_x1 and y1 < dz_y2 and y2 > dz_y1)
                         in_warning = (x1 < wz_x2 and x2 > wz_x1 and y1 < wz_y2 and y2 > wz_y1)
+
                         if in_danger:
-                            color, label, zone_status = (0, 0, 255), "DANGER ZONE BREACH", "DANGER"
-                        elif in_warning and zone_status != "DANGER":
-                            color, label, zone_status = (0, 255, 255), "WARNING ZONE", "WARNING"
+                            frame_has_danger = True
+                            color, label = (0, 0, 255), "DANGER ZONE BREACH"
+                        elif in_warning:
+                            frame_has_warning = True
+                            color, label = (0, 255, 255), "WARNING ZONE"
                         else:
                             color, label = (0, 255, 0), "Safe Zone"
-                        boxes.append({'name': 'Person', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
-                                      'color': color, 'label': label, 'conf': conf})
+
+                        boxes.append({
+                            'name': 'Person', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                            'color': color, 'label': label, 'conf': conf
+                        })
                     elif is_forklift:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        boxes.append({'name': 'Forklift', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
-                                      'color': (255, 0, 0), 'label': 'Forklift', 'conf': conf})
+                        boxes.append({
+                            'name': 'Forklift', 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                            'color': (255, 0, 0), 'label': 'Forklift', 'conf': conf
+                        })
+
+            # Instant ON (1 frame) / Fast OFF (3 frames) state machine
+            if frame_has_danger:
+                danger_counter += 1
+                safe_counter = 0
+                current_safety_state = "DANGER"
+            elif frame_has_warning:
+                current_safety_state = "WARNING" if current_safety_state != "DANGER" else "DANGER"
+                safe_counter = 0
+            else:
+                safe_counter += 1
+                if safe_counter >= 3:
+                    danger_counter = 0
+                    current_safety_state = "SAFE"
 
             with _boxes_lock:
                 _cached_boxes = boxes
-                _cached_zone_status = zone_status
+                _cached_zone_status = current_safety_state
 
             with stats_lock:
                 current_stats["humanCount"] = 1 if person_detected else 0
                 current_stats["confidence"] = round(highest_conf * 100, 1)
-                current_stats["safety"] = zone_status
-                current_stats["zone"] = zone_status
-                current_stats["action"] = "DANGER" if zone_status == "DANGER" else "RUN"
+                current_stats["safety"] = current_safety_state
+                current_stats["zone"] = current_safety_state
+                current_stats["action"] = "STOP" if current_safety_state == "DANGER" else "RUN"
 
-            # --- Alert firing logic ---
+            # Alert firing logic
             current_time = time.time()
 
-            if zone_status == "DANGER" and (current_time - last_detection_time > DETECTION_COOLDOWN):
-                # DANGER: Send full alert with photo → triggers email to user
+            if current_safety_state == "DANGER" and (current_time - last_detection_time > DETECTION_COOLDOWN):
                 last_detection_time = current_time
-                print("\U0001f6a8 DANGER ZONE BREACH detected! Sending alert + email...")
+                print("🚨 DANGER ZONE BREACH detected! Sending alert + email...")
                 _, buf = cv2.imencode('.jpg', frame_to_infer)
                 jpg_b64 = base64.b64encode(buf).decode('utf-8')
                 threading.Thread(
@@ -502,10 +526,9 @@ def yolo_worker():
                     daemon=True
                 ).start()
 
-            elif zone_status == "WARNING" and (current_time - last_detection_time > DETECTION_COOLDOWN):
-                # WARNING: Send lightweight ping → logs to history, triggers dashboard sound, NO email
+            elif current_safety_state == "WARNING" and (current_time - last_detection_time > DETECTION_COOLDOWN):
                 last_detection_time = current_time
-                print("\u26a0\ufe0f  WARNING ZONE detected! Triggering dashboard sound alert (no email)...")
+                print("⚠️ WARNING ZONE detected!")
                 threading.Thread(
                     target=send_warning_to_backend,
                     args=(highest_conf, "WARNING_PROXIMITY", "WARNING", "Local Edge Camera CH1"),
@@ -515,7 +538,7 @@ def yolo_worker():
         except Exception as e:
             print(f"[YOLO] Error: {e}")
 
-        time.sleep(0.05)   # ~20 Hz inference — faster detection response
+        time.sleep(0.02)   # ~20 Hz inference — faster detection response
 
 
 def detect_objects():
