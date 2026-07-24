@@ -697,6 +697,14 @@
       toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
     }
 
+    function formatDateInput(d) {
+      if (!d || isNaN(d.getTime())) d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
     // Update disabled state of › next buttons based on current selection
     function updateNextBtnState() {
       const type = document.querySelector('input[name="filterType"]:checked').value;
@@ -705,50 +713,35 @@
         const input = document.getElementById('dateFilter');
         const btn   = document.getElementById('nextDayBtn');
         if (!btn || !input.value) return;
-        const today    = new Date(); today.setHours(0,0,0,0);
-        const selected = new Date(input.value + 'T00:00:00'); selected.setHours(0,0,0,0);
-        const isToday  = selected.getTime() >= today.getTime();
-        btn.disabled = isToday;
-        btn.style.opacity  = isToday ? '0.35' : '1';
-        btn.style.cursor   = isToday ? 'not-allowed' : 'pointer';
-        btn.onmouseover    = isToday ? null : function(){ this.style.background='rgba(6,182,212,0.22)'; };
-        btn.onmouseout     = isToday ? null : function(){ this.style.background='rgba(6,182,212,0.1)'; };
+        btn.disabled = false;
+        btn.style.opacity  = '1';
+        btn.style.cursor   = 'pointer';
+        btn.onmouseover    = function(){ this.style.background='rgba(6,182,212,0.22)'; };
+        btn.onmouseout     = function(){ this.style.background='rgba(6,182,212,0.1)'; };
       } else {
         const input = document.getElementById('monthFilter');
         const btn   = document.getElementById('nextMonthBtn');
         if (!btn || !input.value) return;
-        const now   = new Date();
-        const [y,m] = input.value.split('-').map(Number);
-        const isCurrent = (y === now.getFullYear() && m === now.getMonth() + 1) ||
-                          (y > now.getFullYear()) ||
-                          (y === now.getFullYear() && m > now.getMonth() + 1);
-        btn.disabled = isCurrent;
-        btn.style.opacity = isCurrent ? '0.35' : '1';
-        btn.style.cursor  = isCurrent ? 'not-allowed' : 'pointer';
-        btn.onmouseover   = isCurrent ? null : function(){ this.style.background='rgba(6,182,212,0.22)'; };
-        btn.onmouseout    = isCurrent ? null : function(){ this.style.background='rgba(6,182,212,0.1)'; };
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor  = 'pointer';
+        btn.onmouseover   = function(){ this.style.background='rgba(6,182,212,0.22)'; };
+        btn.onmouseout    = function(){ this.style.background='rgba(6,182,212,0.1)'; };
       }
     }
 
     // Navigate day by +1 or -1
     function shiftDate(delta) {
       const input = document.getElementById("dateFilter");
-      const current = input.value ? new Date(input.value + "T00:00:00") : new Date();
-      const today = new Date(); today.setHours(0,0,0,0);
-
-      if (delta > 0) {
-        // Block moving to future
-        current.setHours(0,0,0,0);
-        if (current.getTime() >= today.getTime()) {
-          showFutureWarning();
-          return;
-        }
+      let current;
+      if (input.value) {
+        const parts = input.value.split('-').map(Number);
+        current = new Date(parts[0], parts[1] - 1, parts[2]);
+      } else {
+        current = new Date();
       }
-
       current.setDate(current.getDate() + delta);
-      // Safety clamp
-      if (current > today) current.setTime(today.getTime());
-      input.valueAsDate = current;
+      input.value = formatDateInput(current);
       fetchData();
       updateNextBtnState();
     }
@@ -758,22 +751,7 @@
       const input = document.getElementById("monthFilter");
       if (!input.value) return;
       const [y, m] = input.value.split("-").map(Number);
-      const now = new Date();
-
-      if (delta > 0) {
-        // Block moving to future month
-        const isCurrentOrFuture = (y > now.getFullYear()) ||
-          (y === now.getFullYear() && m >= now.getMonth() + 1);
-        if (isCurrentOrFuture) {
-          showFutureWarning();
-          return;
-        }
-      }
-
       const d = new Date(y, m - 1 + delta, 1);
-      // Safety clamp
-      const maxMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      if (d > maxMonth) d.setTime(maxMonth.getTime());
       input.value = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
       fetchData();
       updateNextBtnState();
@@ -782,8 +760,9 @@
     // Jump back to today
     function goToToday() {
       const input = document.getElementById("dateFilter");
-      input.valueAsDate = new Date();
+      input.value = formatDateInput(new Date());
       fetchData();
+      updateNextBtnState();
     }
 
     // Query backend
@@ -866,9 +845,9 @@
     }
 
     window.onload = function () {
-      document.getElementById("dateFilter").valueAsDate = new Date();
+      document.getElementById("dateFilter").value = formatDateInput(new Date());
       toggleFilterType();
-      updateNextBtnState();           // Grey out › immediately since we start on today
+      updateNextBtnState();
       setInterval(fetchData, 10000); // 10s auto-refresh for chart data
     };
   </script>
