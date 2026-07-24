@@ -1,15 +1,6 @@
 import os
-# Tell FFmpeg: zero buffering, low delay, drop frames if behind
-# This is the key to real-time RTSP with no accumulated delay
-os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = (
-    'rtsp_transport;udp'
-    '|fflags;nobuffer'
-    '|flags;low_delay'
-    '|framedrop;1'
-    '|max_delay;0'
-    '|reorder_queue_size;0'
-    '|buffer_size;65536'
-)
+# Tell FFmpeg: zero buffering, low delay, TCP transport for Hikvision RTSP
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp;fflags;nobuffer;flags;low_delay;max_delay;0;reorder_queue_size;0;buffer_size;1024"
 import cv2
 # Do NOT limit threads — let OpenCV use all Pi cores for decode/encode/YOLO
 # cv2.setNumThreads(1)  <- removed: was capping all operations to 1 core
@@ -218,45 +209,39 @@ class ThreadedCamera:
             print(f"[CAM_THREAD] Opened: {self.cap.isOpened() if self.cap else False}")
 
         while self.started:
-            # ── Reconnect if camera dropped ──────────────────────────────────
             if not self.cap or not self.cap.isOpened():
                 print(f"[CAM_THREAD] Reconnecting to {self.source}...")
                 if self.cap:
                     self.cap.release()
-                time.sleep(2.0)
+                time.sleep(1.0)
                 self.cap = _open_cap(self.source)
                 _fail_count = 0
                 continue
 
-            # ── TIGHT GRAB LOOP ───────────────────────────────────────────────
-            # grab() is fast: tells FFmpeg to decode next packet but doesn't
-            # give us the pixel data. By calling it continuously we drain
-            # the entire accumulated buffer in milliseconds.
-            ok = self.cap.grab()
+            # 🚀 BUFFER DRAIN: Flush up to 15 queued frames to discard any stale video packets
+            grabbed_any = False
+            for _ in range(15):
+                if not self.cap.grab():
+                    break
+                grabbed_any = True
 
-            if not ok:
+            if not grabbed_any:
                 _fail_count += 1
                 if _fail_count >= MAX_FAILS:
                     print(f"[CAM_WATCHDOG] {MAX_FAILS} grab failures. Reconnecting...")
                     with self.read_lock:
                         self.grabbed = False
-                    self.cap.release()
+                    if self.cap:
+                        self.cap.release()
                     self.cap = None
                     _fail_count = 0
+                time.sleep(0.005)
                 continue
 
-            _fail_count = 0  # reset on success
+            _fail_count = 0
 
-            # ── Decode only when display interval has elapsed ─────────────────
-            # All the extra grab() calls above drain stale frames.
-            # retrieve() gives us the NEWEST decoded frame.
-            now = time.time()
-            if now - _last_retrieve < DISPLAY_INTERVAL:
-                continue   # grab again (drain) without decoding
-
+            # Decode ONLY the newest frame retrieved from the drained buffer
             ok2, frame = self.cap.retrieve()
-            _last_retrieve = now
-
             if not ok2 or frame is None:
                 continue
 

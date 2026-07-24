@@ -6,21 +6,14 @@ import base64
 import threading
 import argparse
 import os
-# Tell FFmpeg: zero buffering, low delay, drop frames freely
-# This eliminates the accumulated buffer that causes 10-25s display lag
-os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = (
-    'rtsp_transport;udp'
-    '|fflags;nobuffer'
-    '|flags;low_delay'
-    '|framedrop;1'
-    '|max_delay;0'
-    '|reorder_queue_size;0'
-    '|buffer_size;65536'
-)
+import os
+# Tell FFmpeg: zero buffering, low delay, TCP transport for Hikvision/Dahua RTSP
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp;fflags;nobuffer;flags;low_delay;max_delay;0;reorder_queue_size;0;buffer_size;1024"
 
 import torch
-# Do NOT limit torch threads — let YOLO use all 4 Pi cores for faster inference
-# torch.set_num_threads(1)  <- removed, was making YOLO 4x slower
+# Allow PyTorch YOLO to use multiple CPU threads for maximum inference speed
+if hasattr(torch, 'set_num_threads'):
+    torch.set_num_threads(4)
 
 import sys
 import json
@@ -52,7 +45,7 @@ GLOBAL_USER_ID = None
 
 class ThreadedCamera:
     """Dedicated background thread that continuously grabs the LATEST frame from RTSP.
-    Uses grab()+retrieve() to drain the buffer every cycle — guarantees 0ms latency."""
+    Flushes queued stale frames in a loop before retrieving to guarantee zero-latency streaming."""
     def __init__(self, source):
         self.source = source
         self.cap = self._open(source)
@@ -81,16 +74,13 @@ class ThreadedCamera:
         return self
 
     def update(self):
-        """Grab-only tight loop: drains FFmpeg buffer continuously.
-        Only retrieves (decodes) at 30fps — always shows the NEWEST frame."""
-        RETRIEVE_INTERVAL = 1.0 / 30.0
-        _last_retrieve = 0.0
+        """Zero-latency capture loop: continuously flushes stale RTSP buffer packets."""
         _fail_count = 0
         MAX_FAILS = 30
 
         while self.started:
             if not self.cap or not self.cap.isOpened():
-                time.sleep(2.0)
+                time.sleep(1.0)
                 try:
                     self.cap = self._open(self.source)
                 except Exception as e:
@@ -98,31 +88,32 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
-            # Fast grab — tells FFmpeg to decode packet but doesn't give pixel data.
-            # Calling this in a tight loop drains accumulated buffer instantly.
-            ok = self.cap.grab()
-            if not ok:
+            # 🚀 BUFFER DRAIN: Flush up to 15 queued frames to discard any stale video packets
+            grabbed_any = False
+            for _ in range(15):
+                if not self.cap.grab():
+                    break
+                grabbed_any = True
+
+            if not grabbed_any:
                 _fail_count += 1
                 if _fail_count >= MAX_FAILS:
-                    print("[CAM] Grab failures — reconnecting...")
-                    self.cap.release()
-                    time.sleep(2.0)
+                    print("[CAM] Consecutive grab failures — reconnecting...")
+                    if self.cap:
+                        self.cap.release()
+                    time.sleep(1.5)
                     try:
                         self.cap = self._open(self.source)
                     except Exception as e:
                         print(f"Cam reconnect error: {e}")
                     _fail_count = 0
+                time.sleep(0.005)
                 continue
 
             _fail_count = 0
 
-            # Only decode (retrieve) at 30fps — no point decoding faster
-            now = time.time()
-            if now - _last_retrieve < RETRIEVE_INTERVAL:
-                continue  # keep grabbing (draining) without decoding
-
+            # Decode ONLY the newest frame retrieved from the drained buffer
             ret, frame = self.cap.retrieve()
-            _last_retrieve = now
             if ret and frame is not None:
                 with self.read_lock:
                     self.grabbed = True
@@ -626,27 +617,23 @@ def send_warning_to_backend(confidence, breach_type="WARNING_PROXIMITY", severit
         print(f"❌ Failed to send warning ping to cloud: {e}")
 
 def generate_video_stream():
-    """Ultra low-latency MJPEG stream — skips duplicate frames, disables buffering."""
+    """Ultra low-latency MJPEG stream for dashboard"""
     global output_frame, lock
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 50]
-    last_frame_id = id(None)
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 55]
 
     while True:
         frame_to_send = None
         with lock:
             if output_frame is not None:
-                # Only grab if frame actually changed — avoids sending duplicate JPEG
-                if id(output_frame) != last_frame_id:
-                    frame_to_send = output_frame.copy()
-                    last_frame_id = id(output_frame)
+                frame_to_send = output_frame.copy()
 
         if frame_to_send is None:
-            time.sleep(0.005)
+            time.sleep(0.01)
             continue
 
         success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
         if not success:
-            time.sleep(0.005)
+            time.sleep(0.01)
             continue
 
         jpg_bytes = bytes(encoded_image)
@@ -654,8 +641,11 @@ def generate_video_stream():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n'
                b'Content-Length: ' + str(len(jpg_bytes)).encode() + b'\r\n'
-               b'Cache-Control: no-store, no-cache\r\n'
+               b'Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0\r\n'
+               b'Pragma: no-cache\r\n'
+               b'Expires: 0\r\n'
                b'\r\n' + jpg_bytes + b'\r\n')
+        time.sleep(0.01)  # ~60 FPS max transmission speed
 
 
 def generate_raw_stream():
