@@ -159,27 +159,23 @@ router.get("/data", optionalAuthMiddleware, async (req, res) => {
                 return res.json({ success: true, labels, data: new Array(24).fill(0) });
             }
 
-            const data = await Detection.aggregate([
-                {
-                    $match: {
-                        timestamp: { $gte: startDate, $lte: endDate },
-                        status: { $exists: true },
-                        $or: userMatchList
-                    }
-                },
-                {
-                    $group: {
-                        _id: { $hour: { date: "$timestamp", timezone: "+05:30" } },
-                        count: { $sum: 1 }
-                    }
-                }
-            ]);
+            const rawDocs = await Detection.find({
+                status: { $exists: true },
+                $or: userMatchList
+            }).select("timestamp createdAt status").lean();
 
-            // Fill in missing hours
             const hourlyData = new Array(24).fill(0);
-            data.forEach(item => {
-                if (item._id >= 0 && item._id < 24) {
-                    hourlyData[item._id] = item.count;
+
+            rawDocs.forEach(doc => {
+                let tDate = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || doc.createdAt || 0);
+                if (isNaN(tDate.getTime())) return;
+                
+                if (tDate >= startDate && tDate <= endDate) {
+                    const ist = new Date(tDate.getTime() + offset);
+                    const hr = ist.getUTCHours();
+                    if (hr >= 0 && hr < 24) {
+                        hourlyData[hr]++;
+                    }
                 }
             });
 
@@ -206,45 +202,31 @@ router.get("/data", optionalAuthMiddleware, async (req, res) => {
                 }
             }
 
-            // Month boundary: 1st of Month 00:00 IST
-            // Date(year, monthIndex, 1) is local system time. If server is UTC, it's UTC. 
-            // Safer to work with UTC offsets for consistency.
-
-            // Create UTC midnight of 1st day
             const firstDayUTC = new Date(Date.UTC(year, monthIndex, 1));
-            // Shift to IST start (-5:30)
             startDate = new Date(firstDayUTC.getTime() - offset);
 
-            // Create UTC midnight of 1st day of next month
             const nextMonthFirstDayUTC = new Date(Date.UTC(year, monthIndex + 1, 1));
-            // Shift to IST start (-5:30) -> This is end of current month
             endDate = new Date(nextMonthFirstDayUTC.getTime() - offset - 1);
 
-            // Calculate total days in this specific month (e.g. 28, 30, or 31)
             const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
-            // Aggregate by DAY OF MONTH (1 to daysInMonth) in IST
-            const data = await Detection.aggregate([
-                {
-                    $match: {
-                        timestamp: { $gte: startDate, $lte: endDate },
-                        status: { $exists: true },
-                        $or: userMatchList
-                    }
-                },
-                {
-                    $group: {
-                        _id: { $dayOfMonth: { date: "$timestamp", timezone: "+05:30" } },
-                        count: { $sum: 1 }
-                    }
-                }
-            ]);
+            const rawDocs = await Detection.find({
+                status: { $exists: true },
+                $or: userMatchList
+            }).select("timestamp createdAt status").lean();
 
-            // Fill in missing days (1 to daysInMonth)
             const dailyData = new Array(daysInMonth).fill(0);
-            data.forEach(item => {
-                if (item._id >= 1 && item._id <= daysInMonth) {
-                    dailyData[item._id - 1] = item.count;
+
+            rawDocs.forEach(doc => {
+                let tDate = doc.timestamp instanceof Date ? doc.timestamp : new Date(doc.timestamp || doc.createdAt || 0);
+                if (isNaN(tDate.getTime())) return;
+
+                if (tDate >= startDate && tDate <= endDate) {
+                    const ist = new Date(tDate.getTime() + offset);
+                    const dayOfMonth = ist.getUTCDate();
+                    if (dayOfMonth >= 1 && dayOfMonth <= daysInMonth) {
+                        dailyData[dayOfMonth - 1]++;
+                    }
                 }
             });
 
