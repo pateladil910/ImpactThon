@@ -557,12 +557,6 @@ def detect_objects():
         with raw_lock:
             raw_frame = frame
 
-        # Draw live date & time timestamp HUD at bottom of frame
-        now_str = datetime.datetime.now().strftime("%Y-%m-%d  %H:%M:%S")
-        cv2.rectangle(frame, (8, h - 28), (220, h - 6), (2, 6, 23), -1)
-        cv2.rectangle(frame, (8, h - 28), (220, h - 6), (6, 182, 212), 1)
-        cv2.putText(frame, now_str, (14, h - 13), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
-
         # Draw zone overlays
         with zone_lock:
             dz = DANGER_ZONE.copy()
