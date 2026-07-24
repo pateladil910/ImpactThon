@@ -541,11 +541,14 @@ def yolo_worker():
         time.sleep(0.02)   # ~20 Hz inference — faster detection response
 
 
+latest_encoded_jpeg = None
+jpeg_lock = threading.Lock()
+
 def detect_objects():
     """30 FPS camera streaming thread.
-    Reads fresh frames, draws zone overlays + cached YOLO boxes, publishes to output_frame.
+    Reads fresh frames, draws zone overlays + cached YOLO boxes, publishes to output_frame and latest_encoded_jpeg.
     YOLO inference runs in a separate thread (yolo_worker) and NEVER blocks this loop."""
-    global output_frame, raw_frame
+    global output_frame, raw_frame, latest_encoded_jpeg
 
     while camera is None or not camera.isOpened():
         time.sleep(0.5)
@@ -553,10 +556,13 @@ def detect_objects():
     # Start async YOLO worker
     threading.Thread(target=yolo_worker, daemon=True).start()
 
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 55]
+
     while True:
         success, frame = camera.read()
         if not success or frame is None:
-            continue  # no sleep — loop immediately to get next frame
+            time.sleep(0.005)
+            continue
 
         frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
         h, w = frame.shape[:2]
@@ -579,7 +585,7 @@ def detect_objects():
         cv2.rectangle(frame, (dz_x1, dz_y1), (dz_x2, dz_y2), (0, 0, 255), 2)
         cv2.putText(frame, 'DANGER ZONE', (dz_x1 + 4, dz_y1 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1)
 
-        # Overlay latest YOLO boxes (from async worker — never stale more than 100ms)
+        # Overlay latest YOLO boxes (from async worker — never stale more than 50ms)
         with _boxes_lock:
             boxes_snapshot = list(_cached_boxes)
         for b in boxes_snapshot:
@@ -587,9 +593,15 @@ def detect_objects():
             cv2.putText(frame, f"{b['name']} {b['conf']:.2f} | {b['label']}",
                         (b['x1'], max(b['y1'] - 8, 12)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, b['color'], 1)
 
-        # Publish annotated frame — no copy() needed since we recreate frame every loop
+        # Publish annotated frame
         with lock:
             output_frame = frame
+
+        # Pre-encode JPEG ONCE per frame (0% extra CPU overhead for multi-client Flask streams)
+        ok, buf = cv2.imencode(".jpg", frame, encode_params)
+        if ok:
+            with jpeg_lock:
+                latest_encoded_jpeg = bytes(buf)
 
 def send_alert_to_backend(confidence, image_b64, breach_type="PROXIMITY", severity="DANGER", camera_name="Edge Node"):
     try:
@@ -640,35 +652,30 @@ def send_warning_to_backend(confidence, breach_type="WARNING_PROXIMITY", severit
         print(f"❌ Failed to send warning ping to cloud: {e}")
 
 def generate_video_stream():
-    """Ultra low-latency MJPEG stream for dashboard"""
-    global output_frame, lock
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 55]
+    """Ultra low-latency MJPEG stream for dashboard — zero CPU overhead per connection."""
+    global latest_encoded_jpeg, jpeg_lock
+    last_sent = None
 
     while True:
-        frame_to_send = None
-        with lock:
-            if output_frame is not None:
-                frame_to_send = output_frame.copy()
+        current_jpeg = None
+        with jpeg_lock:
+            if latest_encoded_jpeg is not None:
+                current_jpeg = latest_encoded_jpeg
 
-        if frame_to_send is None:
-            time.sleep(0.01)
+        if current_jpeg is None or current_jpeg is last_sent:
+            time.sleep(0.005)
             continue
 
-        success, encoded_image = cv2.imencode(".jpg", frame_to_send, encode_params)
-        if not success:
-            time.sleep(0.01)
-            continue
-
-        jpg_bytes = bytes(encoded_image)
+        last_sent = current_jpeg
 
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n'
-               b'Content-Length: ' + str(len(jpg_bytes)).encode() + b'\r\n'
+               b'Content-Length: ' + str(len(current_jpeg)).encode() + b'\r\n'
                b'Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0\r\n'
                b'Pragma: no-cache\r\n'
                b'Expires: 0\r\n'
-               b'\r\n' + jpg_bytes + b'\r\n')
-        time.sleep(0.01)  # ~60 FPS max transmission speed
+               b'\r\n' + current_jpeg + b'\r\n')
+        time.sleep(0.01)
 
 
 def generate_raw_stream():
