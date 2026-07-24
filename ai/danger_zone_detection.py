@@ -1,6 +1,15 @@
 import os
-# UDP transport: lower latency than TCP on local network (no retransmit overhead)
-os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;udp|buffer_size;0|max_delay;0'
+# Tell FFmpeg: zero buffering, low delay, drop frames if behind
+# This is the key to real-time RTSP with no accumulated delay
+os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = (
+    'rtsp_transport;udp'
+    '|fflags;nobuffer'
+    '|flags;low_delay'
+    '|framedrop;1'
+    '|max_delay;0'
+    '|reorder_queue_size;0'
+    '|buffer_size;65536'
+)
 import cv2
 # Do NOT limit threads — let OpenCV use all Pi cores for decode/encode/YOLO
 # cv2.setNumThreads(1)  <- removed: was capping all operations to 1 core
@@ -181,89 +190,95 @@ class ThreadedCamera:
         return self
 
     def update_capture(self):
-        print(f"[DEBUG] [CAM_THREAD] update_capture thread started for source: {self.source}")
-        
-        # Asynchronous initialization to avoid blocking Flask request threads
-        if self.cap is None:
-            t_start = time.time()
-            if isinstance(self.source, str) and (self.source.startswith("rtsp://") or self.source.startswith("http://")):
-                self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+        """Capture thread: grabs frames as fast as possible to drain FFmpeg buffer.
+        Only decodes (retrieve) at DISPLAY_FPS rate to get the NEWEST frame.
+        This eliminates the accumulated delay that causes 25-second lag."""
+        print(f"[CAM_THREAD] Starting capture for: {self.source}")
+        DISPLAY_FPS   = 30          # decode at most 30fps
+        DISPLAY_INTERVAL = 1.0 / DISPLAY_FPS
+        _last_retrieve   = 0.0
+        _fail_count      = 0
+        MAX_FAILS        = 30       # reconnect after 30 consecutive grab failures
+
+        def _open_cap(src):
+            """Open VideoCapture with zero-buffer settings."""
+            if isinstance(src, str) and (src.startswith("rtsp://") or src.startswith("http://")):
+                cap = cv2.VideoCapture(src, cv2.CAP_FFMPEG)
             else:
-                self.cap = cv2.VideoCapture(self.source)
-            t_cap = time.time()
-            
-            if self.cap:
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-                self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
-            
-            print(f"[DEBUG] [CAM_THREAD] VideoCapture initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
-            
-            # Read first frame
-            if self.cap and self.cap.isOpened():
-                t_read_start = time.time()
-                grabbed, frame = self.cap.read()
-                t_read_end = time.time()
-                print(f"[DEBUG] [CAM_THREAD] First frame read in {t_read_end - t_read_start:.3f}s. Success: {grabbed}")
-                
-                if grabbed:
-                    with self.read_lock:
-                        self.grabbed = grabbed
-                        self.raw_frame = frame
+                cap = cv2.VideoCapture(src)
+            if cap and cap.isOpened():
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)          # minimal OpenCV buffer
+                cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+                cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 3000)
+            return cap
+
+        # ── Initial open ──────────────────────────────────────────────────────
+        if self.cap is None:
+            self.cap = _open_cap(self.source)
+            print(f"[CAM_THREAD] Opened: {self.cap.isOpened() if self.cap else False}")
 
         while self.started:
+            # ── Reconnect if camera dropped ──────────────────────────────────
             if not self.cap or not self.cap.isOpened():
-                time.sleep(2.0)
-                t_start = time.time()
-                if isinstance(self.source, str) and (self.source.startswith("rtsp://") or self.source.startswith("http://")):
-                    self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
-                else:
-                    self.cap = cv2.VideoCapture(self.source)
-                t_cap = time.time()
-                
-                if self.cap:
-                    self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                    self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-                    self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
-                print(f"[DEBUG] [CAM_THREAD] VideoCapture re-initialized in {t_cap - t_start:.3f}s. isOpened: {self.cap.isOpened() if self.cap else False}")
-                continue
-            
-            grabbed, frame = self.cap.read()
-            if grabbed:
-                # ── Buffer drain: discard stale frames so we always show NEWEST ──
-                # RTSP buffers multiple frames; without draining, display is always
-                # showing frames that are 0.5-2 seconds old
-                for _ in range(4):  # drain up to 4 stale frames
-                    ok = self.cap.grab()
-                    if not ok:
-                        break
-                # Retrieve the newest frame after draining
-                ok2, fresh = self.cap.retrieve()
-                if ok2 and fresh is not None:
-                    frame = fresh
-
-                # Resize to display resolution immediately — avoids encoding HD JPEG
-                display = cv2.resize(frame, (640, 480)) if frame.shape[:2] != (480, 640) else frame
-
-                with self.read_lock:
-                    self.grabbed = True
-                    self.raw_frame = frame
-                # Always keep display_frame fresh at full camera FPS
-                with self.display_lock:
-                    self.display_frame = display
-                if not hasattr(self, '_capture_count'):
-                    self._capture_count = 0
-                self._capture_count += 1
-                if self._capture_count <= 50 or self._capture_count % 100 == 0:
-                    print(f"[DEBUG] [CAM_THREAD] id={id(self)} | frame #{self._capture_count} | shape={frame.shape}")
-            else:
-                print(f"[CAM_WATCHDOG] Frame read failed for {self.source}. Reconnecting...")
-                with self.read_lock:
-                    self.grabbed = False
-                    self.processed_frame = None
+                print(f"[CAM_THREAD] Reconnecting to {self.source}...")
                 if self.cap:
                     self.cap.release()
                 time.sleep(2.0)
+                self.cap = _open_cap(self.source)
+                _fail_count = 0
+                continue
+
+            # ── TIGHT GRAB LOOP ───────────────────────────────────────────────
+            # grab() is fast: tells FFmpeg to decode next packet but doesn't
+            # give us the pixel data. By calling it continuously we drain
+            # the entire accumulated buffer in milliseconds.
+            ok = self.cap.grab()
+
+            if not ok:
+                _fail_count += 1
+                if _fail_count >= MAX_FAILS:
+                    print(f"[CAM_WATCHDOG] {MAX_FAILS} grab failures. Reconnecting...")
+                    with self.read_lock:
+                        self.grabbed = False
+                    self.cap.release()
+                    self.cap = None
+                    _fail_count = 0
+                continue
+
+            _fail_count = 0  # reset on success
+
+            # ── Decode only when display interval has elapsed ─────────────────
+            # All the extra grab() calls above drain stale frames.
+            # retrieve() gives us the NEWEST decoded frame.
+            now = time.time()
+            if now - _last_retrieve < DISPLAY_INTERVAL:
+                continue   # grab again (drain) without decoding
+
+            ok2, frame = self.cap.retrieve()
+            _last_retrieve = now
+
+            if not ok2 or frame is None:
+                continue
+
+            # Resize to 640×480 immediately — avoid encoding full HD JPEG
+            h, w = frame.shape[:2]
+            if (h, w) != (480, 640):
+                display = cv2.resize(frame, (640, 480))
+            else:
+                display = frame
+
+            with self.read_lock:
+                self.grabbed = True
+                self.raw_frame = frame
+            with self.display_lock:
+                self.display_frame = display
+
+            if not hasattr(self, '_capture_count'):
+                self._capture_count = 0
+            self._capture_count += 1
+            if self._capture_count <= 10 or self._capture_count % 150 == 0:
+                print(f"[CAM_THREAD] frame #{self._capture_count} | {w}x{h} -> 640x480")
+
 
     def update_inference(self):
         frame_count = 0
