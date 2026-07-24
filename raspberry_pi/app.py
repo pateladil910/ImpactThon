@@ -150,9 +150,9 @@ current_stats = {
 }
 stats_lock = threading.Lock()
 
-# Zone config (normalized 0-1000, default matches draw_zone.html)
-DANGER_ZONE = {"x": 360, "y": 100, "w": 240, "h": 350}   # default
-WARNING_ZONE = {"x": 240, "y": 50, "w": 380, "h": 410}  # default
+# Zone config (normalized 0-1000, covers main operator area)
+DANGER_ZONE = {"x": 100, "y": 100, "w": 800, "h": 850}   # Default covers main camera area
+WARNING_ZONE = {"x": 0, "y": 0, "w": 1000, "h": 1000}   # Default covers full frame
 zone_lock = threading.Lock()
 ZONES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zones.json")
 
@@ -392,10 +392,26 @@ def load_or_create_config():
     return token, user_id, None, None, None
 
 def _norm_to_px(zone, w, h):
-    x1 = int((zone["x"] / 1000) * w)
-    y1 = int((zone["y"] / 1000) * h)
-    x2 = int(((zone["x"] + zone["w"]) / 1000) * w)
-    y2 = int(((zone["y"] + zone["h"]) / 1000) * h)
+    zx = zone.get("x", 0)
+    zy = zone.get("y", 0)
+    zw = zone.get("w", 1000)
+    zh = zone.get("h", 1000)
+
+    if zx > 1000 or zw > 1000 or zy > 1000 or zh > 1000:
+        x1 = int(zx)
+        y1 = int(zy)
+        x2 = int(zx + zw)
+        y2 = int(zy + zh)
+    else:
+        x1 = int((zx / 1000.0) * w)
+        y1 = int((zy / 1000.0) * h)
+        x2 = int(((zx + zw) / 1000.0) * w)
+        y2 = int(((zy + zh) / 1000.0) * h)
+
+    x1 = max(0, min(w, x1))
+    y1 = max(0, min(h, y1))
+    x2 = max(0, min(w, x2))
+    y2 = max(0, min(h, y2))
     return x1, y1, x2, y2
 
 
