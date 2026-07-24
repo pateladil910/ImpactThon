@@ -91,20 +91,12 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
-            # Flush all queued RTSP frames to guarantee 0ms latency (drops stale FFMPEG buffer)
-            latest_frame = None
-            for _ in range(15):
-                if not self.cap.grab():
-                    break
-                ret, frame = self.cap.retrieve()
-                if ret and frame is not None:
-                    latest_frame = frame
-
-            if latest_frame is not None:
+            ret, frame = self.cap.read()
+            if ret and frame is not None:
                 _fail_count = 0
                 with self.read_lock:
                     self.grabbed = True
-                    self.frame = latest_frame
+                    self.frame = frame
             else:
                 _fail_count += 1
                 if _fail_count >= MAX_FAILS:
