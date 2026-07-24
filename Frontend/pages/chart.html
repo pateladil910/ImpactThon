@@ -916,6 +916,17 @@
       window.URL.revokeObjectURL(url);
     }
 
+    function updateDynamicMaxLimits() {
+      const now = new Date();
+      const todayStr = formatDateInput(now);
+      const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const dateEl = document.getElementById("dateFilter");
+      const monthEl = document.getElementById("monthFilter");
+
+      if (dateEl) dateEl.max = todayStr;
+      if (monthEl) monthEl.max = monthStr;
+    }
+
     window.onload = function () {
       const now = new Date();
       const todayStr = formatDateInput(now);
@@ -923,18 +934,16 @@
       const dateEl = document.getElementById("dateFilter");
       const monthEl = document.getElementById("monthFilter");
 
-      if (dateEl) {
-        dateEl.value = todayStr;
-        dateEl.max = todayStr;
-      }
-      if (monthEl) {
-        monthEl.value = monthStr;
-        monthEl.max = monthStr;
-      }
+      if (dateEl) dateEl.value = todayStr;
+      if (monthEl) monthEl.value = monthStr;
 
+      updateDynamicMaxLimits();
       toggleFilterType();
       updateNextBtnState();
-      setInterval(fetchData, 10000); // 10s auto-refresh for chart data
+      setInterval(() => {
+        updateDynamicMaxLimits();
+        fetchData();
+      }, 10000);
     };
   </script>
 
