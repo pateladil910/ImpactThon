@@ -54,6 +54,7 @@ class ThreadedCamera:
         self.cap = self._open(source)
         self.grabbed = False
         self.frame = None
+        self.frame_id = 0
         self.started = False
         self.read_lock = threading.Lock()
         self.thread = None
@@ -102,6 +103,7 @@ class ThreadedCamera:
                 with self.read_lock:
                     self.grabbed = True
                     self.frame = frame
+                    self.frame_id += 1
                 with perf_lock:
                     perf_metrics["rtsp_capture_ms"] = round(t_cap, 1)
             else:
@@ -121,8 +123,8 @@ class ThreadedCamera:
     def read(self):
         with self.read_lock:
             if self.frame is None:
-                return False, None
-            return self.grabbed, self.frame.copy()
+                return False, None, 0
+            return self.grabbed, self.frame.copy(), self.frame_id
 
     def isOpened(self):
         return self.cap.isOpened() if self.cap else False
@@ -570,12 +572,14 @@ def detect_objects():
     threading.Thread(target=yolo_worker, daemon=True).start()
 
     encode_params = [cv2.IMWRITE_JPEG_QUALITY, 40]
+    last_processed_frame_id = -1
 
     while True:
-        success, frame = camera.read()
-        if not success or frame is None:
-            time.sleep(0.005)
+        success, frame, f_id = camera.read()
+        if not success or frame is None or f_id <= last_processed_frame_id:
+            time.sleep(0.003)
             continue
+        last_processed_frame_id = f_id
 
         h, w = frame.shape[:2]
 
