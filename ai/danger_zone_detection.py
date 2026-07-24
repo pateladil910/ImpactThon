@@ -1,6 +1,6 @@
 import os
-# Tell FFmpeg: zero buffering, low delay, TCP transport for Hikvision RTSP
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp;fflags;nobuffer;flags;low_delay;max_delay;0;reorder_queue_size;0;buffer_size;1024"
+# Tell FFmpeg: RTSP transport TCP with no-buffer low-delay flags
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;0"
 import cv2
 # Do NOT limit threads — let OpenCV use all Pi cores for decode/encode/YOLO
 # cv2.setNumThreads(1)  <- removed: was capping all operations to 1 core

@@ -7,8 +7,8 @@ import threading
 import argparse
 import os
 import os
-# Tell FFmpeg: zero buffering, low delay, TCP transport for Hikvision/Dahua RTSP
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp;fflags;nobuffer;flags;low_delay;max_delay;0;reorder_queue_size;0;buffer_size;1024"
+# Tell FFmpeg: RTSP transport TCP with no-buffer low-delay flags
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;0"
 
 import torch
 # Allow PyTorch YOLO to use multiple CPU threads for maximum inference speed
