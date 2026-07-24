@@ -4,7 +4,7 @@ const DetectionSchema = new mongoose.Schema(
   {
     status: {
       type: String,
-      enum: ["SAFE", "DANGER"],
+      enum: ["SAFE", "WARNING", "DANGER"],
       required: true
     },
     message: String,

@@ -726,6 +726,7 @@ def generate_video_stream():
                b'Pragma: no-cache\r\n'
                b'Expires: 0\r\n'
                b'\r\n' + current_jpeg + b'\r\n')
+        time.sleep(0.04)  # 24 FPS video stream pace (~40ms per frame)
 
 
 def generate_raw_stream():
