@@ -41,7 +41,7 @@ router.get("/", optionalAuthMiddleware, async (req, res) => {
             ]
         } : {};
 
-        const records = await Detection.find(query).sort({ timestamp: -1 }).limit(500).lean();
+        const records = await Detection.find(query).sort({ timestamp: -1 }).limit(100).lean();
         
         // Map the fields for history.html
         const formatted = records.map(doc => {
@@ -72,13 +72,18 @@ router.get("/", optionalAuthMiddleware, async (req, res) => {
             const hours = String(istDate.getUTCHours()).padStart(2, '0');
             const minutes = String(istDate.getUTCMinutes()).padStart(2, '0');
             const seconds = String(istDate.getUTCSeconds()).padStart(2, '0');
+
+            let rawPhoto = doc.photo_base64 || doc.snapshotUrl || "";
+            if (rawPhoto.startsWith("data:image/jpeg;base64,")) {
+                rawPhoto = rawPhoto.replace("data:image/jpeg;base64,", "");
+            }
             
             return {
                 Event: doc.event || doc.message || "Machine proximity breach",
                 Status: doc.status || "DANGER",
                 Date: `${day}-${month}-${year}`,
                 Time: `${hours}:${minutes}:${seconds}`,
-                Photo: doc.photo_base64 || doc.snapshotUrl || "",
+                Photo: rawPhoto,
                 EmailStatus: doc.email_status || "sent"
             };
         }).filter(Boolean);
