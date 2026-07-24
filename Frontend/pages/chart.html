@@ -730,16 +730,26 @@
       }
     }
 
+    function parseInputDate(val) {
+      if (!val) return new Date();
+      if (val.includes('-')) {
+        const parts = val.split('-').map(Number);
+        if (parts[0] > 1000) {
+          // YYYY-MM-DD format
+          return new Date(parts[0], parts[1] - 1, parts[2]);
+        } else if (parts[2] > 1000) {
+          // DD-MM-YYYY format
+          return new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+      }
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? new Date() : d;
+    }
+
     // Navigate day by +1 or -1
     function shiftDate(delta) {
       const input = document.getElementById("dateFilter");
-      let current;
-      if (input.value) {
-        const parts = input.value.split('-').map(Number);
-        current = new Date(parts[0], parts[1] - 1, parts[2]);
-      } else {
-        current = new Date();
-      }
+      let current = parseInputDate(input.value);
       current.setDate(current.getDate() + delta);
       input.value = formatDateInput(current);
       fetchData();
