@@ -6,15 +6,21 @@ import base64
 import threading
 import argparse
 import os
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|max_delay;0|flags;low_delay"
+# Tell FFmpeg: zero buffering, low delay, drop frames freely
+# This eliminates the accumulated buffer that causes 10-25s display lag
+os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = (
+    'rtsp_transport;udp'
+    '|fflags;nobuffer'
+    '|flags;low_delay'
+    '|framedrop;1'
+    '|max_delay;0'
+    '|reorder_queue_size;0'
+    '|buffer_size;65536'
+)
 
 import torch
-torch.set_num_threads(1)
+# Do NOT limit torch threads — let YOLO use all 4 Pi cores for faster inference
+# torch.set_num_threads(1)  <- removed, was making YOLO 4x slower
 
 import sys
 import json
@@ -75,6 +81,13 @@ class ThreadedCamera:
         return self
 
     def update(self):
+        """Grab-only tight loop: drains FFmpeg buffer continuously.
+        Only retrieves (decodes) at 30fps — always shows the NEWEST frame."""
+        RETRIEVE_INTERVAL = 1.0 / 30.0
+        _last_retrieve = 0.0
+        _fail_count = 0
+        MAX_FAILS = 30
+
         while self.started:
             if not self.cap or not self.cap.isOpened():
                 time.sleep(2.0)
@@ -82,25 +95,38 @@ class ThreadedCamera:
                     self.cap = self._open(self.source)
                 except Exception as e:
                     print(f"Cam reconnect error: {e}")
+                _fail_count = 0
                 continue
 
-            # KEY FIX: grab() without sleep — drains RTSP network buffer instantly
-            # This ensures we always hold the LATEST real-time frame, never a stale one
-            grabbed = self.cap.grab()
-            if grabbed:
-                ret, frame = self.cap.retrieve()
-                if ret and frame is not None:
-                    with self.read_lock:
-                        self.grabbed = True
-                        self.frame = frame
-            else:
-                print("[CAM] Frame grab failed — reconnecting...")
-                self.cap.release()
-                time.sleep(2.0)
-                try:
-                    self.cap = self._open(self.source)
-                except Exception as e:
-                    print(f"Cam reconnect error: {e}")
+            # Fast grab — tells FFmpeg to decode packet but doesn't give pixel data.
+            # Calling this in a tight loop drains accumulated buffer instantly.
+            ok = self.cap.grab()
+            if not ok:
+                _fail_count += 1
+                if _fail_count >= MAX_FAILS:
+                    print("[CAM] Grab failures — reconnecting...")
+                    self.cap.release()
+                    time.sleep(2.0)
+                    try:
+                        self.cap = self._open(self.source)
+                    except Exception as e:
+                        print(f"Cam reconnect error: {e}")
+                    _fail_count = 0
+                continue
+
+            _fail_count = 0
+
+            # Only decode (retrieve) at 30fps — no point decoding faster
+            now = time.time()
+            if now - _last_retrieve < RETRIEVE_INTERVAL:
+                continue  # keep grabbing (draining) without decoding
+
+            ret, frame = self.cap.retrieve()
+            _last_retrieve = now
+            if ret and frame is not None:
+                with self.read_lock:
+                    self.grabbed = True
+                    self.frame = frame
 
     def read(self):
         with self.read_lock:
@@ -516,8 +542,7 @@ def detect_objects():
     while True:
         success, frame = camera.read()
         if not success or frame is None:
-            time.sleep(0.033)
-            continue
+            continue  # no sleep — loop immediately to get next frame
 
         frame = cv2.resize(frame, (STREAM_WIDTH, STREAM_HEIGHT))
         h, w = frame.shape[:2]
