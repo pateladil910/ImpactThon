@@ -122,7 +122,7 @@ class ThreadedCamera:
         with self.read_lock:
             if self.frame is None:
                 return False, None
-            return self.grabbed, self.frame
+            return self.grabbed, self.frame.copy()
 
     def isOpened(self):
         return self.cap.isOpened() if self.cap else False
@@ -284,17 +284,6 @@ def construct_camera_source(url, username=None, password=None):
         return url
     if isinstance(url, str) and url.isdigit():
         return int(url)
-
-    # Auto-switch 1080p/4K Main Streams to lightweight Sub-Streams for 0ms CPU latency
-    if "Channels/101" in url:
-        url = url.replace("Channels/101", "Channels/102")
-        print("⚡ Auto-switched Hikvision camera to Sub-Stream (Channels/102) for 0ms latency!")
-    elif "subtype=0" in url:
-        url = url.replace("subtype=0", "subtype=1")
-        print("⚡ Auto-switched Dahua camera to Sub-Stream (subtype=1) for 0ms latency!")
-    elif "/main" in url.lower():
-        url = url.replace("/main", "/sub").replace("/MAIN", "/sub")
-        print("⚡ Auto-switched camera to Sub-Stream (/sub) for 0ms latency!")
 
     from urllib.parse import quote, unquote
         
