@@ -372,6 +372,9 @@
           </div>
 
           <div class="header-actions">
+            <button onclick="showAllHistoryLogs()" class="action-btn" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:10px; padding:10px 18px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+              📋 Show All Logs
+            </button>
             <a href="chart.html" class="action-btn">
               📊 View Safety Analytics
             </a>
@@ -382,14 +385,15 @@
         </div>
 
         <!-- DATE FILTER CONTROLS FOR HISTORY LOGS -->
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; flex-wrap:wrap; background:rgba(2,6,23,0.65); padding:14px 20px; border-radius:16px; border:1px solid rgba(6,182,212,0.2);">
-          <span style="font-size:12px; font-weight:800; font-family:'Space Grotesk',sans-serif; color:var(--primary-neon); text-transform:uppercase; letter-spacing:0.8px;">📅 Filter By Day:</span>
-          <button onclick="shiftHistoryDate(-1)" title="Previous Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer;">‹</button>
-          <input type="date" id="historyDateFilter" class="date-input" onchange="applyHistoryDateFilter()" style="background:rgba(15,23,42,0.9); border:1px solid rgba(6,182,212,0.3); color:#06b6d4; padding:6px 14px; border-radius:8px; font-family:'Space Grotesk',sans-serif; font-weight:700; outline:none;">
-          <button id="nextHistoryBtn" onclick="shiftHistoryDate(1)" title="Next Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer;">›</button>
-          <button onclick="goToHistoryToday()" title="Jump to Today" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.3); color:var(--primary-neon); border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer;">Today</button>
-          <button onclick="showAllHistoryLogs()" title="Show All Records" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer;">All Logs</button>
-          <span id="history-filter-badge" style="font-size:11px; color:#94a3b8; font-family:'Space Grotesk',sans-serif; margin-left:auto;">Showing all records</span>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; flex-wrap:wrap; background:rgba(2,6,23,0.65); padding:14px 20px; border-radius:16px; border:1px solid rgba(6,182,212,0.2);">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:12px; font-weight:800; font-family:'Space Grotesk',sans-serif; color:var(--primary-neon); text-transform:uppercase; letter-spacing:0.8px;">📅 Filter By Day:</span>
+            <button onclick="shiftHistoryDate(-1)" title="Previous Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer;">‹</button>
+            <input type="date" id="historyDateFilter" class="date-input" onchange="applyHistoryDateFilter()" style="background:rgba(15,23,42,0.9); border:1px solid rgba(6,182,212,0.3); color:#06b6d4; padding:6px 14px; border-radius:8px; font-family:'Space Grotesk',sans-serif; font-weight:700; outline:none;">
+            <button id="nextHistoryBtn" onclick="shiftHistoryDate(1)" title="Next Day" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--primary-neon); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer;">›</button>
+            <button onclick="goToHistoryToday()" title="Jump to Today" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.3); color:var(--primary-neon); border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer;">Today</button>
+          </div>
+          <span id="history-filter-badge" style="font-size:11px; color:#94a3b8; font-family:'Space Grotesk',sans-serif;">Showing all records</span>
         </div>
 
         <div class="table-box">
@@ -603,11 +607,6 @@
     }
     setInterval(_updateLastRefreshed, 1000);
 
-    async function loadHistory() {
-      const tbody = document.getElementById("historyBody");
-
-      // Show skeleton immediately before the API call
-      if (tbody.innerHTML.trim() === '' || tbody.querySelector('.skeleton-row')) {
     window._rawHistoryData = [];
     window._activeDateFilter = "";
 
