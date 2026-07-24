@@ -546,7 +546,7 @@ def detect_objects():
     # Start async YOLO worker
     threading.Thread(target=yolo_worker, daemon=True).start()
 
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 55]
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 45]
 
     while True:
         success, frame = camera.read()
