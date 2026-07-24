@@ -88,12 +88,7 @@ class ThreadedCamera:
                 _fail_count = 0
                 continue
 
-            # Drain queued RTSP buffer packets to guarantee zero accumulation
-            for _ in range(5):
-                if not self.cap.grab():
-                    break
-
-            ret, frame = self.cap.retrieve()
+            ret, frame = self.cap.read()
             if ret and frame is not None:
                 _fail_count = 0
                 with self.read_lock:
@@ -117,7 +112,7 @@ class ThreadedCamera:
         with self.read_lock:
             if self.frame is None:
                 return False, None
-            return self.grabbed, self.frame.copy()
+            return self.grabbed, self.frame
 
     def isOpened(self):
         return self.cap.isOpened() if self.cap else False
@@ -551,7 +546,7 @@ def detect_objects():
     # Start async YOLO worker
     threading.Thread(target=yolo_worker, daemon=True).start()
 
-    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 45]
+    encode_params = [cv2.IMWRITE_JPEG_QUALITY, 40]
 
     while True:
         success, frame = camera.read()
