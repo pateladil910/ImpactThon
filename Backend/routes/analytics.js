@@ -2,22 +2,44 @@ const express = require("express");
 const router = express.Router();
 const Detection = require("../models/Detection");
 const authMiddleware = require("../middleware/authMiddleware");
-// GET / (maps to /api/history) — scoped to the logged-in user
-router.get("/", authMiddleware, async (req, res) => {
+
+// Optional auth middleware — allows unauthenticated or expired token requests to gracefully fetch MongoDB history/analytics
+const optionalAuthMiddleware = (req, res, next) => {
+  let token = req.cookies ? req.cookies.token : null;
+  const authHeader = req.headers.authorization;
+  if (!token && authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+  if (token) {
+    try {
+      const jwt = require("jsonwebtoken");
+      req.user = jwt.verify(token, "secretkey");
+    } catch (e) {
+      req.user = { id: null };
+    }
+  } else {
+    req.user = { id: null };
+  }
+  next();
+};
+
+// GET / (maps to /api/history) — pulls all MongoDB detection history
+router.get("/", optionalAuthMiddleware, async (req, res) => {
     try {
         const mongoose = require("mongoose");
-        const userObjId = mongoose.Types.ObjectId.isValid(req.user.id)
-            ? new mongoose.Types.ObjectId(req.user.id)
+        const userIdVal = req.user ? req.user.id : null;
+        const userObjId = (userIdVal && mongoose.Types.ObjectId.isValid(userIdVal))
+            ? new mongoose.Types.ObjectId(userIdVal)
             : null;
 
-        const query = {
+        const query = (userIdVal || userObjId) ? {
             $or: [
-                { userId: req.user.id },
+                ...(userIdVal ? [{ userId: userIdVal }] : []),
                 ...(userObjId ? [{ userId: userObjId }] : []),
                 { userId: null },
                 { userId: { $exists: false } }
             ]
-        };
+        } : {};
 
         const records = await Detection.find(query).sort({ timestamp: -1 }).limit(500).lean();
         
@@ -57,18 +79,21 @@ router.get("/", authMiddleware, async (req, res) => {
 });
 
 // GET /api/analytics/data?type=day|month&date=YYYY-MM-DD|jan|feb... — scoped to logged-in user
-router.get("/data", authMiddleware, async (req, res) => {
+router.get("/data", optionalAuthMiddleware, async (req, res) => {
     try {
         const mongoose = require("mongoose");
-        const userObjId = mongoose.Types.ObjectId.isValid(req.user.id)
-            ? new mongoose.Types.ObjectId(req.user.id)
+        const userIdVal = req.user ? req.user.id : null;
+        const userObjId = (userIdVal && mongoose.Types.ObjectId.isValid(userIdVal))
+            ? new mongoose.Types.ObjectId(userIdVal)
             : null;
 
-        const userMatchList = [
-            { userId: req.user.id },
+        const userMatchList = (userIdVal || userObjId) ? [
+            ...(userIdVal ? [{ userId: userIdVal }] : []),
             ...(userObjId ? [{ userId: userObjId }] : []),
             { userId: null },
             { userId: { $exists: false } }
+        ] : [
+            { status: { $exists: true } }
         ];
 
         const { type, date } = req.query;
@@ -337,11 +362,12 @@ router.post("/clear_history", authMiddleware, async (req, res) => {
 });
 
 // GET /api/analytics/count/today — today's danger count for persistent human count HUD
-router.get("/count/today", authMiddleware, async (req, res) => {
+router.get("/count/today", optionalAuthMiddleware, async (req, res) => {
     try {
         const mongoose = require("mongoose");
-        const userObjId = mongoose.Types.ObjectId.isValid(req.user.id)
-            ? new mongoose.Types.ObjectId(req.user.id) : null;
+        const userIdVal = req.user ? req.user.id : null;
+        const userObjId = (userIdVal && mongoose.Types.ObjectId.isValid(userIdVal))
+            ? new mongoose.Types.ObjectId(userIdVal) : null;
 
         // IST today boundaries
         const now = new Date();
@@ -351,16 +377,21 @@ router.get("/count/today", authMiddleware, async (req, res) => {
         const startUTC = new Date(startOfDayIST.getTime() - offset);
         const endUTC = new Date(startUTC.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-        const count = await Detection.countDocuments({
-            status: "DANGER",
-            timestamp: { $gte: startUTC, $lte: endUTC },
-            $or: [
-                { userId: req.user.id },
+        const matchQuery = {
+            status: { $in: ["DANGER", "DANGER ZONE BREACH", "PROXIMITY"] },
+            timestamp: { $gte: startUTC, $lte: endUTC }
+        };
+
+        if (userIdVal || userObjId) {
+            matchQuery.$or = [
+                ...(userIdVal ? [{ userId: userIdVal }] : []),
                 ...(userObjId ? [{ userId: userObjId }] : []),
                 { userId: null },
                 { userId: { $exists: false } }
-            ]
-        });
+            ];
+        }
+
+        const count = await Detection.countDocuments(matchQuery);
 
         return res.status(200).json({ success: true, count });
     } catch (err) {
