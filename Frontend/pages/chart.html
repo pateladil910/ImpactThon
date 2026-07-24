@@ -705,6 +705,14 @@
       toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
     }
 
+    function formatDateInput(d) {
+      if (!d || isNaN(d.getTime())) d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
     // Update disabled state of › next buttons based on current selection
     function updateNextBtnState() {
       const type = document.querySelector('input[name="filterType"]:checked').value;
