@@ -25,16 +25,18 @@ router.get("/stats", async (req, res) => {
     const totalUsers = await User.countDocuments();
     const totalDetections = await Detection.countDocuments();
     const totalIncidents = await Incident.countDocuments();
+    const totalContacts = await Contact.countDocuments();
 
     // Get latest 5 incidents
-    const recentIncidents = await Incident.find().sort({ createdAt: -1 }).limit(5);
+    const recentIncidents = await Incident.find().sort({ createdAt: -1 }).limit(10).lean();
 
     res.json({
       success: true,
       stats: {
         totalUsers,
         totalDetections,
-        totalIncidents
+        totalIncidents,
+        totalContacts
       },
       recentIncidents
     });
@@ -47,86 +49,41 @@ router.get("/stats", async (req, res) => {
 // 2. Get all users with DANGER detections, cameras status, and alert email telemetry
 router.get("/users", async (req, res) => {
   try {
-    const users = await User.aggregate([
-      // Lookup detections history
-      {
-        $lookup: {
-          from: "history",
-          localField: "_id",
-          foreignField: "userId",
-          as: "userDetections"
-        }
-      },
-      // Lookup cameras
-      {
-        $lookup: {
-          from: "cameras",
-          localField: "_id",
-          foreignField: "userId",
-          as: "userCameras"
-        }
-      },
-      {
-        $addFields: {
-          // Count only 'DANGER' status detections
-          dangerCount: {
-            $size: {
-              $filter: {
-                input: "$userDetections",
-                as: "d",
-                cond: { $eq: ["$$d.status", "DANGER"] }
-              }
-            }
-          },
-          totalDetections: { $size: "$userDetections" },
-          
-          // Cameras telemetry
-          camerasCount: { $size: "$userCameras" },
-          activeCamerasCount: {
-            $size: {
-              $filter: {
-                input: "$userCameras",
-                as: "c",
-                cond: { $eq: ["$$c.status", "Online"] }
-              }
-            }
-          },
+    const users = await User.find().select("-password").lean();
+    const cameras = await Camera.find().lean();
+    const detections = await Detection.find().select("userId status email_status").lean();
 
-          // Alert emails telemetry
-          emailAlertsSent: {
-            $size: {
-              $filter: {
-                input: "$userDetections",
-                as: "d",
-                cond: { $eq: ["$$d.email_status", "sent"] }
-              }
-            }
-          },
-          emailAlertsFailed: {
-            $size: {
-              $filter: {
-                input: "$userDetections",
-                as: "d",
-                cond: { $eq: ["$$d.email_status", "failed"] }
-              }
-            }
-          }
-        }
-      },
-      {
-        $project: {
-          password: 0,
-          userDetections: 0,
-          userCameras: 0
-        }
-      }
-    ]);
-    res.json({ success: true, users });
+    const usersWithTelemetry = users.map(user => {
+      const userIdStr = user._id.toString();
+
+      // User's cameras
+      const userCams = cameras.filter(c => c.userId && c.userId.toString() === userIdStr);
+      const activeCams = userCams.filter(c => c.status === "Online");
+
+      // User's detections
+      const userDetections = detections.filter(d => d.userId && d.userId.toString() === userIdStr);
+      const dangerDetections = userDetections.filter(d => d.status === "DANGER" || d.status === "DANGER ZONE BREACH");
+      const emailSent = userDetections.filter(d => d.email_status === "sent");
+      const emailFailed = userDetections.filter(d => d.email_status === "failed");
+
+      return {
+        ...user,
+        camerasCount: userCams.length,
+        activeCamerasCount: activeCams.length,
+        dangerCount: dangerDetections.length,
+        totalDetections: userDetections.length,
+        emailAlertsSent: emailSent.length,
+        emailAlertsFailed: emailFailed.length
+      };
+    });
+
+    res.json({ success: true, users: usersWithTelemetry });
   } catch (error) {
     console.error("Admin get users error:", error);
     res.status(500).json({ msg: "Server error retrieving users" });
   }
 });
+
 // 2.5 Get contact messages
 router.get("/contacts", async (req, res) => {
   try {
@@ -135,6 +92,17 @@ router.get("/contacts", async (req, res) => {
   } catch (error) {
     console.error("Admin get contacts error:", error);
     res.status(500).json({ msg: "Server error retrieving contacts" });
+  }
+});
+
+// 2.8 Get recent incident logs for stream panel
+router.get("/incidents", async (req, res) => {
+  try {
+    const incidents = await Incident.find().sort({ createdAt: -1 }).limit(25).lean();
+    res.json({ success: true, incidents });
+  } catch (error) {
+    console.error("Admin get incidents error:", error);
+    res.status(500).json({ msg: "Server error retrieving incidents" });
   }
 });
 

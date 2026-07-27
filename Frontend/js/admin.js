@@ -16,12 +16,29 @@ function getAuthHeaders() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Load initial dashboard metrics, operators, and logs
+  // 1. Load initial dashboard metrics, operators, logs, and server diagnostics
   loadDashboardData();
+  loadDiagnosticsData();
 
-  // 2. Set up real-time 3-second auto-refresh polling loop
+  // 2. Set up real-time auto-refresh polling loops
   setInterval(loadDashboardData, 3000);
+  setInterval(loadDiagnosticsData, 2000);
 });
+
+async function loadDiagnosticsData() {
+  try {
+    const res = await fetch(`${ADMIN_API_BASE}/diagnostics?t=${Date.now()}`, {
+      credentials: "include",
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (document.getElementById("stat-cpu")) document.getElementById("stat-cpu").textContent = `${data.cpu}%`;
+      if (document.getElementById("stat-ram")) document.getElementById("stat-ram").textContent = `${data.ram}%`;
+      if (document.getElementById("stat-temp")) document.getElementById("stat-temp").textContent = `${data.temp}°C`;
+    }
+  } catch (err) {}
+}
 
 async function loadDashboardData() {
   try {
@@ -40,9 +57,10 @@ async function loadDashboardData() {
 
     const statsData = await statsRes.json();
     if (statsData.success) {
-      document.getElementById("stat-users").textContent = statsData.stats.totalUsers;
-      document.getElementById("stat-detections").textContent = statsData.stats.totalDetections;
-      document.getElementById("stat-incidents").textContent = statsData.stats.totalIncidents;
+      if (document.getElementById("stat-users")) document.getElementById("stat-users").textContent = statsData.stats.totalUsers || 0;
+      if (document.getElementById("stat-detections")) document.getElementById("stat-detections").textContent = statsData.stats.totalDetections || 0;
+      if (document.getElementById("stat-incidents")) document.getElementById("stat-incidents").textContent = statsData.stats.totalIncidents || 0;
+      if (document.getElementById("stat-contacts")) document.getElementById("stat-contacts").textContent = statsData.stats.totalContacts || 0;
     }
 
     // Load Users (if Admin is not currently focusing on role selection dropdown)

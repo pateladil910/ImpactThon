@@ -225,7 +225,7 @@
       </div>
 
       <!-- STATS OVERVIEW -->
-      <div class="stats-grid">
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
         <div class="stat-card">
           <div class="stat-icon-wrapper">
             <svg class="stat-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -255,6 +255,48 @@
           </div>
           <h3 id="stat-incidents">0</h3>
           <p>Active System Incidents</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+            <svg class="stat-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+            </svg>
+          </div>
+          <h3 id="stat-contacts">0</h3>
+          <p>Inbound Feedback Messages</p>
+        </div>
+      </div>
+
+      <!-- SERVER HARDWARE & TELEMETRY BAR -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 20px; background: rgba(2, 6, 23, 0.7); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 14px; padding: 16px 20px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #06b6d4; box-shadow: 0 0 8px #06b6d4;"></div>
+          <div>
+            <div style="font-size: 11px; color: #94a3b8; font-family: 'Space Grotesk', sans-serif;">SERVER CPU USAGE</div>
+            <div id="stat-cpu" style="font-size: 18px; font-weight: 800; color: #06b6d4; font-family: 'Space Grotesk', sans-serif;">--%</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 8px #3b82f6;"></div>
+          <div>
+            <div style="font-size: 11px; color: #94a3b8; font-family: 'Space Grotesk', sans-serif;">RAM ALLOCATION</div>
+            <div id="stat-ram" style="font-size: 18px; font-weight: 800; color: #3b82f6; font-family: 'Space Grotesk', sans-serif;">--%</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></div>
+          <div>
+            <div style="font-size: 11px; color: #94a3b8; font-family: 'Space Grotesk', sans-serif;">CORE TEMPERATURE</div>
+            <div id="stat-temp" style="font-size: 18px; font-weight: 800; color: #10b981; font-family: 'Space Grotesk', sans-serif;">--°C</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b;"></div>
+          <div>
+            <div style="font-size: 11px; color: #94a3b8; font-family: 'Space Grotesk', sans-serif;">EDGE NODE CLUSTER</div>
+            <div style="font-size: 14px; font-weight: 800; color: #f59e0b; font-family: 'Space Grotesk', sans-serif;">RPI5 CORE ONLINE</div>
+          </div>
         </div>
       </div>
 
