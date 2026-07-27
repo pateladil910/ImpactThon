@@ -250,11 +250,15 @@ function renderLayoutMap() {
       }
     });
 
-    // Pointer events -> Premium Draggable coords positioning
     pin.addEventListener("pointerdown", onPointerDown);
 
     pinsContainer.appendChild(pin);
   });
+
+  // Auto-select first camera node if none is currently selected
+  if (!selectedCamera && factoryCams.length > 0) {
+    selectCameraNode(factoryCams[0]);
+  }
 }
 
 // ==========================================
